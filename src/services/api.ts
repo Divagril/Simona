@@ -4,10 +4,11 @@ import type { Producto } from '../types';
 
 const API_URL = 'https://simona-backend.onrender.com/api';
 
-export const getProductos = async (): Promise<Producto[]> => {
+export const getProductos = async () => {
   const response = await axios.get(`${API_URL}/productos`);
   return response.data;
 };
+
 
 export const addProducto = async (producto: Producto) => {
   return await axios.post(`${API_URL}/productos`, producto);
