@@ -83,9 +83,6 @@ const registrarKardex = async (prodId, nombre, tipo, motivo, cant, anterior, act
   } catch (e) { console.log("Error Kardex:", e); }
 };
 
-// --- RUTAS API ---
-
-// 1. KARDEX Y AUDITORÍA
 app.get('/api/kardex', async (req, res) => {
   try {
     const movimientos = await MovimientoInventario.find().sort({ fecha: -1 }).limit(100);
@@ -98,6 +95,10 @@ app.get('/api/auditoria', async (req, res) => {
     const logs = await Auditoria.find().sort({ fecha: -1 }).limit(100);
     res.json(logs);
   } catch (error) { res.status(500).json({ error: error.message }); }
+});
+
+app.get('/', (req, res) => {
+  res.send('🚀 Servidor de Tienda Simona funcionando correctamente');
 });
 
 // 2. PRODUCTOS
@@ -255,3 +256,5 @@ app.get('/api/reportes/stats', async (req, res) => {
 // --- INICIO ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+
+app.use(cors());
