@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings, Printer, Cloud, RefreshCw, Save, CheckCircle } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import axios from 'axios';
+import { getProductos } from '../services/api'; 
 
 const Config: React.FC = () => {
   const { showNotification } = useNotification();
@@ -21,11 +22,12 @@ const Config: React.FC = () => {
   const verificarConexion = async () => {
     setDbStatus('cargando');
     try {
-      await axios.get('http://localhost:5000/api/productos');
+      await getProductos(); 
       setDbStatus('conectado');
+      showNotification("✅ Conexión verificada con éxito");
     } catch (error) {
       setDbStatus('desconectado');
-      showNotification("❌ Error de conexión con la base de datos", true);
+      showNotification("❌ El servidor no responde", true);
     }
   };
 

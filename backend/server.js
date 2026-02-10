@@ -83,18 +83,23 @@ const registrarKardex = async (prodId, nombre, tipo, motivo, cant, anterior, act
   } catch (e) { console.log("Error Kardex:", e); }
 };
 
+
 app.get('/api/kardex', async (req, res) => {
   try {
-    const movimientos = await MovimientoInventario.find().sort({ fecha: -1 }).limit(100);
+    const movimientos = await MovimientoInventario.find().sort({ fecha: -1 }).limit(50);
     res.json(movimientos);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get('/api/auditoria', async (req, res) => {
   try {
-    const logs = await Auditoria.find().sort({ fecha: -1 }).limit(100);
+    const logs = await Auditoria.find().sort({ fecha: -1 }).limit(50);
     res.json(logs);
-  } catch (error) { res.status(500).json({ error: error.message }); }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get('/', (req, res) => {
