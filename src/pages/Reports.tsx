@@ -28,35 +28,46 @@ const Reports: React.FC = () => {
   const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
   const anios = [2024, 2025, 2026, 2027, 2028];
 
+  // --- CARGA DE DATOS ---
   const cargarDatosIniciales = async () => {
     try {
       const prods = await getProductos();
-      const cats = Array.from(new Set(prods.map(p => p.categoria))).filter(c => c);
-      setCategorias(cats);
-      consultarVentas();
-      consultarStatsSemanales();
-    } catch (e) { console.error(e); }
+      // Corrección del error TS7006 y TS2345:
+      const catsUnicas = Array.from(new Set(prods.map((p: any) => p.categoria))).filter(c => c) as string[];
+      setCategorias(catsUnicas);
+      
+      await consultarVentas();
+      await consultarStatsSemanales();
+    } catch (e) { 
+      console.error("Error al inicializar:", e); 
+    }
   };
 
   const consultarVentas = async () => {
     try {
       const data = await getVentasReporte(fechaDesde, fechaHasta, catFiltro);
       setVentas(data);
-    } catch (e) { showNotification("Error al cargar ventas", true); }
+    } catch (e) { 
+      showNotification("Error al cargar ventas", true); 
+    }
   };
 
   const consultarStatsSemanales = async () => {
     try {
       const data = await getStatsSemanales(); 
       setStatsSemanales(data);
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+      console.error("Error en stats:", e); 
+    }
   };
 
-  useEffect(() => { cargarDatosIniciales(); }, []);
+  useEffect(() => { 
+    cargarDatosIniciales(); 
+  }, []);
 
   const totalGeneral = ventas.reduce((acc, v) => acc + v.total, 0);
 
-  // --- GENERADOR DE PDF CORREGIDO ---
+  // --- GENERADOR DE PDF ---
   const exportarPDF = () => {
     if (ventas.length === 0) {
       showNotification("⚠️ No hay datos para exportar", true);
@@ -76,7 +87,7 @@ const Reports: React.FC = () => {
       new Date(v.fecha).toLocaleString(),
       v.items.map((it: any) => `${it.nombre} (x${it.cantidadSeleccionada || 1})`).join(', '),
       `S/. ${v.total.toFixed(2)}`,
-      v.metodoPago || v.metodo_pago || 'EFECTIVO' // CORRECCIÓN AQUÍ
+      v.metodoPago || v.metodo_pago || 'EFECTIVO'
     ]);
 
     autoTable(doc, {
@@ -96,6 +107,7 @@ const Reports: React.FC = () => {
 
     const finalY = (doc as any).lastAutoTable.finalY || 30;
     doc.setFontSize(12);
+    // Corrección del error de fuente:
     doc.setFont("helvetica", "bold");
     doc.text(`Total General: S/. ${totalGeneral.toFixed(2)}`, 195, finalY + 10, { align: "right" });
 
@@ -113,7 +125,7 @@ const Reports: React.FC = () => {
         </button>
       </div>
 
-      {/* FILTROS SUPERIORES (ff en Python) */}
+      {/* FILTROS SUPERIORES */}
       <div className="reports-filters-bar panel-blanco">
         <div className="filter-item">
           <span>Desde:</span>
@@ -157,14 +169,13 @@ const Reports: React.FC = () => {
                     <tr><td colSpan={5} style={{textAlign:'center', padding:'20px', color:'#bdc3c7'}}>No hay registros</td></tr>
                   ) : (
                     ventas.map((v) => (
-                      <tr key={v._id}>
+                      <tr key={v._id} className="row-hover">
                         <td style={{ fontSize: '11px', color: '#7f8c8d' }}>{new Date(v.fecha).toLocaleString()}</td>
                         <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
                         <td style={{ textAlign: 'center' }}>{v.items.reduce((a: any, b: any) => a + b.cantidadSeleccionada, 0)}</td>
                         <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
                         <td style={{ textAlign: 'center' }}>
                           <span className="badge-pago">
-                            {/* CORRECCIÓN DE NOMBRE DE VARIABLE AQUÍ TAMBIÉN */}
                             {v.metodoPago || v.metodo_pago || 'EFECTIVO'}
                           </span>
                         </td>
@@ -180,12 +191,12 @@ const Reports: React.FC = () => {
         {/* LADO DERECHO: KPI Y MENSUAL */}
         <div className="reports-right">
           <div className="kpi-total-card">
-            <span className="kpi-label">VENTAS TOTAL</span>
-            <span className="kpi-value">S/. {totalGeneral.toFixed(2)}</span>
+            <div className="kpi-label"><TrendingUp size={16} style={{marginRight:'5px'}}/> VENTAS TOTAL</div>
+            <div className="kpi-value">S/. {totalGeneral.toFixed(2)}</div>
           </div>
 
           <fieldset className="group-box-reports">
-              <legend className="group-legend"><PieChart size={16} /> Mensual</legend>
+            <legend className="group-legend"><PieChart size={16} /> Mensual</legend>
             <div className="mensual-filters">
               <select value={mesSeleccionado} onChange={e => setMesSeleccionado(Number(e.target.value))} className="input-pos-flat">
                 {meses.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
@@ -207,12 +218,16 @@ const Reports: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {statsSemanales.map((s, i) => (
-                  <tr key={i}>
-                    <td>{s.semana}</td>
-                    <td className="bold" style={{ textAlign: 'right' }}>S/. {s.total.toFixed(2)}</td>
-                  </tr>
-                ))}
+                {statsSemanales.length === 0 ? (
+                  <tr><td colSpan={2} style={{textAlign:'center', padding:'10px', color:'#ccc'}}>Sin datos</td></tr>
+                ) : (
+                  statsSemanales.map((s, i) => (
+                    <tr key={i}>
+                      <td>{s.semana}</td>
+                      <td className="bold" style={{ textAlign: 'right' }}>S/. {s.total.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </fieldset>
