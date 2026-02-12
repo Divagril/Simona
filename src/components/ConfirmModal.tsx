@@ -1,3 +1,4 @@
+// src/components/ConfirmModal.tsx
 import React from 'react';
 import { Trash2 } from 'lucide-react';
 
@@ -7,7 +8,7 @@ interface Props {
   onConfirm: () => void;
   titulo: string;
   mensaje: string;
-  colorBoton?: string;
+  colorBoton?: string; // <--- ESTA LÍNEA ES LA QUE QUITA EL ERROR ROJO
 }
 
 const ConfirmModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, titulo, mensaje, colorBoton = "#E74C3C" }) => {
@@ -19,20 +20,16 @@ const ConfirmModal: React.FC<Props> = ({ isOpen, onClose, onConfirm, titulo, men
         <div className="confirm-icon-circle" style={{ backgroundColor: `${colorBoton}20` }}>
           <Trash2 size={40} color={colorBoton} />
         </div>
-        
         <h3 className="confirm-title">{titulo}</h3>
         <p className="confirm-text">{mensaje}</p>
-
         <div className="confirm-actions-row">
-          <button onClick={onClose} className="btn-confirm-cancel">
-            Cancelar
-          </button>
+          <button onClick={onClose} className="btn-confirm-cancel">Cancelar</button>
           <button 
             onClick={() => { onConfirm(); onClose(); }} 
             className="btn-confirm-ok"
-            style={{ backgroundColor: colorBoton }}
+            style={{ backgroundColor: colorBoton }} // Aplica el color aquí
           >
-            Sí, Eliminar
+            Sí, Continuar
           </button>
         </div>
       </div>

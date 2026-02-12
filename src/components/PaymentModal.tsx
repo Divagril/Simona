@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle, CreditCard, Banknote } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -10,51 +10,60 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onConfirm }) => {
   const [metodo, setMetodo] = useState('EFECTIVO');
+  // Usamos string para que el campo empiece vacío y sea fácil de escribir
   const [pagoCon, setPagoCon] = useState<string>(''); 
   const [vuelto, setVuelto] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Calcular el vuelto automáticamente
   useEffect(() => {
     const montoPagado = pagoCon === '' ? 0 : Number(pagoCon);
-    setVuelto(metodo === 'EFECTIVO' ? montoPagado - total : 0);
+    if (metodo === 'EFECTIVO') {
+      setVuelto(montoPagado - total);
+    } else {
+      setVuelto(0);
+    }
   }, [pagoCon, total, metodo]);
 
+  // Resetear estados al abrir el modal
   useEffect(() => {
     if (isOpen) {
       setMetodo('EFECTIVO');
       setPagoCon('');
+      // Auto-foco en el input de pago
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
+  // Validar si el pago es suficiente
   const esValido = vuelto >= -0.01 || metodo !== 'EFECTIVO';
 
   return (
     <div className="modal-overlay">
       <div className="modal-container-tall">
-        {/* BOTÓN CERRAR X */}
+        {/* BOTÓN CERRAR SUPERIOR */}
         <button onClick={onClose} className="modal-close-x">
           <X size={20} />
         </button>
 
+        {/* ETIQUETA TOTAL A PAGAR (Icono bolsa + Texto azul oscuro) */}
         <div className="total-pagar-container">
-           <span className="money-bag-emoji">💰</span>
-           <span className="total-pagar-text">Total a Pagar:</span>
+          <span className="money-bag-emoji">💰</span>
+          <span className="total-pagar-text">Total a Pagar:</span>
         </div>
         
-        {/* CUADRO BLANCO DEL TOTAL (Mucha sombra y margen) */}
+        {/* CUADRO BLANCO CON MONTO GRANDE VERDE */}
         <div className="total-card-display">
-          <span className="label-light">TOTAL A COBRAR</span>
-          <div className="amount-highlight">S/. {total.toFixed(2)}</div>
+          <div className="total-amount-big">S/. {total.toFixed(2)}</div>
         </div>
 
-        {/* FORMULARIO CON ESPACIADO */}
         <div className="modal-inputs-stack">
-          <div className="input-field-modal">
+          {/* SELECCIÓN MÉTODO DE PAGO */}
+          <div className="input-group-modal">
             <label className="modal-label-bold">
-                <span className="modal-icon-emoji">💳</span> Método de Pago:
+              <span className="modal-icon-emoji">💳</span> Método de Pago:
             </label>
             <select 
               value={metodo} 
@@ -65,12 +74,14 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
               <option value="YAPE">YAPE</option>
               <option value="PLIN">PLIN</option>
               <option value="TARJETA">TARJETA</option>
+              <option value="TRANSFERENCIA">TRANSFERENCIA</option>
             </select>
           </div>
 
-          <div className="input-field-modal">
+          {/* INPUT PAGA CON (Subrayado y Negrita) */}
+          <div className="input-group-modal">
             <label className="modal-label-bold underline">
-               <span className="modal-icon-emoji">💵</span> Paga con:
+              <span className="modal-icon-emoji">💵</span> Paga con:
             </label>
             <input 
               ref={inputRef}
@@ -79,34 +90,38 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
               disabled={metodo !== 'EFECTIVO'}
               value={pagoCon}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => setPagoCon(e.target.value.replace(/[^0-9.]/g, ''))}
+              onChange={(e) => {
+                const val = e.target.value;
+                // Validar que solo entren números y un punto
+                if (val === '' || /^[0-9.]*$/.test(val)) setPagoCon(val);
+              }}
+              onKeyDown={(e) => { 
+                if(e.key === 'Enter' && esValido) onConfirm({ metodo, pagoCon: Number(pagoCon), vuelto }); 
+              }}
               className="modal-input-large"
             />
           </div>
-
-          {/* CUADRO DE VUELTO (TAMAÑO GRANDE) */}
-          <div className={`vuelto-panel ${vuelto >= 0 ? 'vuelto-success' : 'vuelto-pending'}`}>
-            <div className="vuelto-naranja-pos">
-               Vuelto: S/. {Math.max(0, vuelto).toFixed(2)}
-            </div>
-          </div>
         </div>
 
-        {/* BOTONES AL FINAL */}
+        {/* TEXTO VUELTO NARANJA A LA DERECHA */}
+        <div className="vuelto-naranja-pos">
+          Vuelto: S/. {Math.max(0, vuelto).toFixed(2)}
+        </div>
+
+        {/* BOTONES DE ACCIÓN (Rojo y Verde) */}
         <div className="modal-footer-flex">
-           <button onClick={onClose} className="btn-cancelar-modal">
-             Cancelar
-           </button>
-  
-           <button 
+          <button onClick={onClose} className="btn-cancelar-modal">
+            Cancelar
+          </button>
+          
+          <button 
             disabled={!esValido}
             onClick={() => onConfirm({ metodo, pagoCon: Number(pagoCon), vuelto })}
             className="btn-cobrar-modal"
-            >
-            {/* Este div simula el cuadrito con el check de tu foto */}
+          >
             <div className="check-box-icon">✓</div> 
             COBRAR
-           </button>
+          </button>
         </div>
       </div>
     </div>

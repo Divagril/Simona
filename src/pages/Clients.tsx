@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, RefreshCw, UserPlus, 
-  Trash2, DollarSign, History, ShoppingBag, 
-  X // <--- ESTO ES IMPORTANTE PARA QUE NO SALGA PANTALLA BLANCA
+  Trash2, DollarSign, History, X 
 } from 'lucide-react';
 import { 
   getClientesConDeuda, 
@@ -26,8 +25,8 @@ const Clients: React.FC = () => {
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [montoAbono, setMontoAbono] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
-  // Estado para la notificación de VUELTO lateral
+  
+  // Estado para la notificación de VUELTO (Lado Izquierdo)
   const [vueltoAlert, setVueltoAlert] = useState<number | null>(null);
 
   // --- CARGA DE DATOS ---
@@ -45,6 +44,7 @@ const Clients: React.FC = () => {
   }, []);
 
   // --- FUNCIONES LÓGICAS ---
+
   const seleccionarCliente = async (cliente: Cliente) => {
     setSelectedClient(cliente);
     try {
@@ -55,27 +55,31 @@ const Clients: React.FC = () => {
     }
   };
 
+  // Crear cliente con validación anti-duplicados
   const handleCrearCliente = async () => {
     const nombreLimpio = nuevoNombre.trim();
     if (!nombreLimpio) {
-       showNotification("⚠️ Escriba un nombre", true);
+       showNotification("⚠️ Escriba un nombre para el cliente", true);
        return;
     }
+
     const existe = clientes.some((c) => c.nombre.toLowerCase() === nombreLimpio.toLowerCase());
     if (existe) {
       showNotification(`⚠️ El cliente "${nombreLimpio}" ya existe`, true);
       return;
     }
+
     try {
        await crearCliente(nombreLimpio);
        setNuevoNombre(''); 
-       showNotification(`✅ Cliente "${nombreLimpio}" registrado`);
+       showNotification(`✅ Cliente registrado`);
        cargarClientes();
     } catch (error) {
-       showNotification("❌ Error al guardar", true);
+       showNotification("❌ Error al guardar cliente", true);
     }
   };
 
+  // Registrar pago con lógica de vuelto
   const handleAbonar = async () => {
     if (!selectedClient || !montoAbono) return;
     const montoPago = Number(montoAbono);
@@ -83,22 +87,18 @@ const Clients: React.FC = () => {
 
     try {
       if (montoPago > deudaActual) {
-        const vuelto = montoPago - deudaActual;
-        
-        // ACTIVAMOS LA NOTIFICACIÓN LATERAL
-        setVueltoAlert(vuelto);
-        // Se cerrará sola en 1 minuto
-        setTimeout(() => setVueltoAlert(null), 60000);
+        const vueltoCalculado = montoPago - deudaActual;
+        setVueltoAlert(vueltoCalculado); 
+        setTimeout(() => setVueltoAlert(null), 60000); // Se cierra en 1 min
 
         await registrarAbono(selectedClient._id, deudaActual);
       } else {
         await registrarAbono(selectedClient._id, montoPago);
-        showNotification("✅ Abono registrado");
+        showNotification("✅ Pago registrado correctamente");
       }
       
       setMontoAbono('');
       
-      // Refrescamos la lista y el cliente actual
       const res = await getClientesConDeuda();
       setClientes(res);
       const actualizado = res.find((c: any) => c._id === selectedClient._id);
@@ -108,13 +108,8 @@ const Clients: React.FC = () => {
         setMovimientos(movs);
       }
     } catch (error) {
-      showNotification("Error en el pago", true);
+      showNotification("❌ Error al procesar el abono", true);
     }
-  };
-
-  const abrirConfirmarEliminacion = () => {
-    if (!selectedClient) return;
-    setIsDeleteModalOpen(true);
   };
 
   const ejecutarEliminacionReal = async () => {
@@ -125,7 +120,7 @@ const Clients: React.FC = () => {
       setSelectedClient(null);
       cargarClientes();
     } catch (error) {
-      showNotification("No se pudo eliminar", true);
+      showNotification("No se pudo eliminar el cliente", true);
     }
   };
 
@@ -134,13 +129,15 @@ const Clients: React.FC = () => {
   );
 
   return (
-    <div className="clients-container" style={{ display: 'flex', gap: '20px', height: 'calc(100vh - 120px)' }}>
+    <div className="clients-container">
       
-      {/* PANEL IZQUIERDO */}
+      {/* PANEL IZQUIERDO: LISTA */}
       <div className="panel-blanco" style={{ width: '350px', display: 'flex', flexDirection: 'column', padding: '15px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+        <div className="clients-header-row">
           <h3 style={{margin: 0}}><Users size={20} /> Clientes</h3>
-          <button className="btn-icon-refresh" onClick={cargarClientes}><RefreshCw size={16} /></button>
+          <button className="btn-icon-refresh-teal" onClick={cargarClientes}>
+            <RefreshCw size={16} />
+          </button>
         </div>
 
         <input 
@@ -154,71 +151,73 @@ const Clients: React.FC = () => {
             <div 
               key={cliente._id}
               onClick={() => seleccionarCliente(cliente)}
-              style={{
-                backgroundColor: 'white', padding: '12px', borderRadius: '10px',
-                marginBottom: '10px', cursor: 'pointer', 
-                border: selectedClient?._id === cliente._id ? '2px solid #3498DB' : '1px solid #D5DBDB',
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-              }}
+              className={`modal-client-card ${selectedClient?._id === cliente._id ? 'selected-row' : ''}`}
             >
-              <span style={{ fontWeight: 'bold' }}>{cliente.nombre}</span>
-              <div style={{
-                fontSize: '11px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '5px',
-                backgroundColor: cliente.deudaTotal > 0.1 ? '#FADBD8' : '#D5F5E3',
-                color: cliente.deudaTotal > 0.1 ? '#C0392B' : '#239B56'
-              }}>
-                {cliente.deudaTotal > 0.1 ? `S/. ${cliente.deudaTotal.toFixed(2)}` : 'AL DÍA'}
+              <div className="modal-client-info">
+                <span className="modal-client-name">{cliente.nombre}</span>
+                <div className={`status-badge ${cliente.deudaTotal > 0.1 ? 'debt' : 'clean'}`}>
+                    {cliente.deudaTotal > 0.1 ? `S/. ${cliente.deudaTotal.toFixed(2)}` : 'AL DÍA'}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
-          <div className="create-client-container">
+        <div className="create-client-footer">
+          <div className="input-with-btn">
             <input 
-               type="text" placeholder="Nuevo cliente..." className="input-main create-input"
+               type="text" placeholder="Nuevo cliente..." className="input-main"
                value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
                onKeyDown={(e) => e.key === 'Enter' && handleCrearCliente()}
-             />
-           <button className="btn-add-client-green" onClick={handleCrearCliente}><UserPlus size={20} /></button>
+            />
+            <button className="btn-add-client-green" onClick={handleCrearCliente}>
+              <UserPlus size={20} />
+            </button>
          </div>
         </div>
       </div>
 
-      {/* PANEL DERECHO */}
-      <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <div className="panel-blanco" style={{ padding: '20px', borderBottom: '4px solid #BDC3C7', display: 'flex', justifyContent: 'space-between' }}>
+      {/* PANEL DERECHO: DETALLES */}
+      <div className="pos-right" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        
+        <div className="panel-blanco panel-header-cliente" style={{ padding: '20px' }}>
           {selectedClient ? (
-            <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
               <div>
-                <h1 style={{ margin: 0 }}>{selectedClient.nombre}</h1>
-                <button onClick={abrirConfirmarEliminacion} style={{color: '#E74C3C', background: 'none', border: 'none', cursor: 'pointer', marginTop: '5px', display: 'flex', alignItems:'center', gap: '5px'}}>
+                <h1 style={{ margin: 0, fontSize: '28px' }}>{selectedClient.nombre}</h1>
+                <button onClick={() => setIsDeleteModalOpen(true)} className="btn-delete-link">
                    <Trash2 size={14} /> Eliminar Cliente
                 </button>
               </div>
               <div style={{ textAlign: 'right' }}>
-                   <div style={{ fontWeight: 'bold', color: '#7F8C8D' }}>DEUDA TOTAL</div>
-                   <div style={{ fontSize: '42px', fontWeight: '900', color: selectedClient.deudaTotal <= 0.1 ? '#27AE60' : '#E74C3C' }}>
-                   {selectedClient.deudaTotal <= 0.1 ? 'AL DÍA' : `S/. ${selectedClient.deudaTotal.toFixed(2)}`}
+                   <div style={{ fontWeight: 'bold', color: '#7F8C8D', fontSize: '12px' }}>DEUDA TOTAL</div>
+                   <div className={`deuda-header-valor ${(selectedClient?.deudaTotal || 0) <= 0.1 ? 'text-verde' : 'text-rojo'}`}>
+                    {(selectedClient?.deudaTotal || 0) <= 0.1 ? 'AL DÍA' : `S/. ${selectedClient.deudaTotal.toFixed(2)}`}
                    </div>
               </div>
-            </>
+            </div>
           ) : (
-            <div style={{ color: '#BDC3C7', fontSize: '18px' }}>Seleccione un cliente para ver su historial</div>
+            <div style={{ color: '#BDC3C7', textAlign: 'center', width: '100%' }}>Seleccione un cliente</div>
           )}
         </div>
 
         {selectedClient && (
           <>
-            <div className="panel-blanco" style={{ padding: '15px', display: 'flex', gap: '15px', alignItems: 'center' }}>
-              <DollarSign size={24} color="#27AE60" />
-              <input 
-                type="number" 
-                placeholder={selectedClient.deudaTotal <= 0.1 ? "Sin deuda" : "Monto..."} 
-                className="input-main" style={{ width: '200px', fontSize: '18px' }}
-                value={montoAbono} onChange={e => setMontoAbono(e.target.value)}
-                disabled={selectedClient.deudaTotal <= 0.1} 
-              />
+            {/* PANEL DE ABONO CON $ ALINEADO */}
+            <div className="panel-blanco input-abono-group">
+              <div className="abono-input-container">
+                <DollarSign size={24} color="#27AE60" style={{ flexShrink: 0 }} />
+                <input 
+                  type="number" 
+                  placeholder={selectedClient.deudaTotal <= 0.1 ? "Sin deuda" : "Monto abono..."} 
+                  className="input-main" 
+                  style={{ flex: 1, fontSize: '18px' }}
+                  value={montoAbono} 
+                  onChange={e => setMontoAbono(e.target.value)}
+                  disabled={selectedClient.deudaTotal <= 0.1} 
+                />
+              </div>
+
               <button 
                 className="btn-registrar-pago-pro" 
                 onClick={handleAbonar} 
@@ -228,26 +227,27 @@ const Clients: React.FC = () => {
               </button>
             </div>
 
-            <div className="panel-blanco" style={{ flexGrow: 1, overflowY: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead style={{ background: '#F8F9F9', textAlign: 'left' }}>
+            {/* TABLA DE REGISTROS */}
+            <div className="table-history-wrapper">
+              <table className="modern-table">
+                <thead style={{ background: '#F8F9F9', position: 'sticky', top: 0 }}>
                   <tr>
-                    <th style={{ padding: '12px' }}>FECHA</th>
-                    <th style={{ padding: '12px' }}>CONCEPTO</th>
-                    <th style={{ padding: '12px', textAlign: 'right' }}>MONTO (S/.)</th>
+                    <th style={{ padding: '15px' }}>FECHA</th>
+                    <th>CONCEPTO</th>
+                    <th style={{ textAlign: 'right', paddingRight: '20px' }}>MONTO (S/.)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {movimientos.map(mov => (
-                    <tr key={mov._id} style={{ borderBottom: '1px solid #ECF0F1' }}>
-                      <td style={{ padding: '12px', fontSize: '12px' }}>{new Date(mov.fecha).toLocaleString()}</td>
-                      <td style={{ padding: '12px' }}>
+                    <tr key={mov._id}>
+                      <td style={{ fontSize: '12px', color: '#7F8C8D' }}>{new Date(mov.fecha).toLocaleString()}</td>
+                      <td>
                         <span style={{ fontWeight: 'bold', color: mov.tipo === 'DEUDA' ? '#E67E22' : '#27AE60' }}>
-                          {mov.tipo === 'DEUDA' ? '🛒 COMPRA' : '💵 ABONO'}
+                          {mov.tipo === 'DEUDA' ? '🛒 COMPRA' : '💵 PAGO'}
                         </span>
                         <div style={{fontSize: '11px', color: '#7F8C8D'}}>{mov.descripcion}</div>
                       </td>
-                      <td style={{ padding: '12px', textAlign: 'right', fontWeight: 'bold' }}>S/. {mov.monto.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right', paddingRight: '20px', fontWeight: 'bold' }}>S/. {mov.monto.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -257,30 +257,28 @@ const Clients: React.FC = () => {
         )}
       </div>
 
-      {/* NOTIFICACIÓN LATERAL DE VUELTO */}
+      {/* NOTIFICACIÓN LATERAL IZQUIERDA (VUELTO) */}
       {vueltoAlert !== null && (
-        <div className="vuelto-side-alert">
-          <div className="side-alert-content">
-            <div className="side-alert-icon">💰</div>
-            <div className="side-alert-text">
-              <span className="side-alert-title">DAR VUELTO</span>
-              <span className="side-alert-amount">S/. {vueltoAlert.toFixed(2)}</span>
+        <div className="vuelto-left-alert">
+          <div className="left-alert-content">
+            <div className="left-alert-icon">💰</div>
+            <div className="left-alert-text">
+              <span className="left-alert-title">DAR VUELTO</span>
+              <span className="left-alert-amount">S/. {vueltoAlert.toFixed(2)}</span>
             </div>
-            <button className="side-alert-close" onClick={() => setVueltoAlert(null)}>
-              <X size={18} />
-            </button>
+            <button className="left-alert-close" onClick={() => setVueltoAlert(null)}><X size={16} /></button>
           </div>
-          <div className="side-alert-progress"></div>
+          <div className="left-alert-progress"></div>
         </div>
       )}
 
-      {/* MODAL DE ELIMINACIÓN */}
+      {/* MODAL ELIMINAR */}
       <ConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={ejecutarEliminacionReal}
         titulo="¿Eliminar Cliente?"
-        mensaje={selectedClient ? "¿Seguro de eliminar a " + selectedClient.nombre + "?" : ""}
+        mensaje={selectedClient ? "¿Deseas borrar permanentemente a " + selectedClient.nombre + "?" : ""}
         colorBoton="#E74C3C" 
       />
     </div>

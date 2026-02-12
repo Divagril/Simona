@@ -6,8 +6,6 @@ import {
   Clock, 
   Info, 
   Package, 
-  ArrowUpCircle, 
-  ArrowDownCircle,
   History
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
@@ -22,10 +20,11 @@ const Audit: React.FC = () => {
   const cargarDatosAuditoria = async () => {
     setCargando(true);
     try {
-      const resLogs = await axios.get('http://localhost:5000/api/auditoria');
+      // Usamos la URL de Render
+      const resLogs = await axios.get('https://simona-backend.onrender.com/api/auditoria');
       setLogs(resLogs.data);
 
-      const resKardex = await axios.get('http://localhost:5000/api/kardex');
+      const resKardex = await axios.get('https://simona-backend.onrender.com/api/kardex');
       setMovimientos(resKardex.data);
       
     } catch (error) {
@@ -42,7 +41,6 @@ const Audit: React.FC = () => {
   return (
     <div className="audit-layout" style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
       
-      {/* ENCABEZADO PRINCIPAL */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h2 className="title-icon" style={{ fontSize: '24px', color: '#2C3E50' }}>
           <ShieldCheck size={28} color="#2C3E50" /> Auditoría y Control de Inventario
@@ -59,13 +57,13 @@ const Audit: React.FC = () => {
           <Package size={18} /> Kardex (Movimientos de Inventario)
         </legend>
         
-        <div className="table-wrapper" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div className="table-wrapper">
           <table className="modern-table">
             <thead>
               <tr>
                 <th>FECHA</th>
                 <th>PRODUCTO</th>
-                <th style={{ textAlign: 'center' }}>TIPO</th>
+                {/* --- SE ELIMINÓ LA COLUMNA TIPO AQUÍ --- */}
                 <th>MOTIVO</th>
                 <th style={{ textAlign: 'center' }}>STOCK</th> 
                 <th style={{ textAlign: 'right' }}>S. ANTERIOR</th>
@@ -75,9 +73,8 @@ const Audit: React.FC = () => {
             <tbody>
               {movimientos.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ textAlign: 'center', padding: '40px', color: '#BDC3C7' }}>
-                    No hay movimientos registrados. <br/>
-                    (Realice una venta o edite un stock para ver datos)
+                  <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#BDC3C7' }}>
+                    No hay movimientos registrados.
                   </td>
                 </tr>
               ) : (
@@ -85,11 +82,9 @@ const Audit: React.FC = () => {
                   <tr key={m._id} className="row-hover">
                     <td style={{ fontSize: '11px', color: '#7F8C8D' }}>{new Date(m.fecha).toLocaleString()}</td>
                     <td className="bold">{m.nombre_producto}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span style={{ color: m.tipo === 'ENTRADA' ? '#27AE60' : '#E74C3C', fontWeight: 'bold' }}>
-                        {m.tipo}
-                      </span>
-                    </td>
+                    
+                    {/* --- SE ELIMINÓ LA CELDA DE ICONOS AQUÍ --- */}
+                    
                     <td><span className="badge-motivo">{m.motivo}</span></td>
                     <td className="bold" style={{ textAlign: 'center' }}>{m.cantidad}</td>
                     <td style={{ textAlign: 'right', color: '#7F8C8D' }}>{m.stock_anterior}</td>
@@ -107,7 +102,7 @@ const Audit: React.FC = () => {
         <legend className="group-legend">
           <History size={20} style={{ marginRight: '8px' }} /> Historial de Acciones
         </legend>
-        <div className="table-wrapper" style={{ maxHeight: '300px', overflowY: 'auto' }}>
+        <div className="table-wrapper">
           <table className="modern-table">
             <thead>
               <tr>

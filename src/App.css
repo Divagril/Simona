@@ -1,217 +1,947 @@
-/* RESET DE CAJA - Muy importante */
-* {
-  box-sizing: border-box;
-}
 
-.app-container {
+/* --- CABECERA DEL FORMULARIO (Igual a la foto) --- */
+.header-row {
   display: flex;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  justify-content: space-between; /* Título a la izq, Botón a la der */
+  align-items: center;
+  margin-bottom: 15px;
 }
 
-/* --- SIDEBAR BASE --- */
-.sidebar {
-  background-color: #2C3E50; /* Color azul oscuro/gris */
-  width: 260px;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  transition: width 0.3s ease;
-  flex-shrink: 0;
-  border-right: 1px solid rgba(0,0,0,0.2);
-}
-
-.sidebar.collapsed {
-  width: 75px;
-}
-
-/* --- HEADER --- */
-.sidebar-header {
-  padding: 15px;
+.title-icon {
   display: flex;
   align-items: center;
-  gap: 15px;
-  height: 70px;
+  gap: 10px;
+  font-size: 20px;
+  font-weight: 800;
+  color: #2C3E50;
+  margin: 0;
+}
+/* --- ESTILO PARA EL PRODUCTO SELECCIONADO EN EL TICKET --- */
+.selected-row-cart {
+  background-color: #FADBD8 !important; /* Fondo rojo claro */
+  color: #C0392B !important;           /* Texto rojo oscuro */
+  font-weight: bold;
+  border-left: 5px solid #E74C3C;      /* Línea roja a la izquierda */
 }
 
-.toggle-btn-box {
-  background-color: white; /* El cuadradito blanco de la hamburguesa */
-  border: none;
-  border-radius: 4px;
-  width: 42px;
-  height: 42px;
+/* Asegurar que el cursor muestre que es cliqueable */
+.ticket-table-wrapper tr {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.input-label-bold {
+  font-weight: 800;
+  font-size: 13px;
+  color: #2C3E50;
+  margin-bottom: 5px;
+  display: block;
+}
+/* --- TÍTULO DEL TICKET CENTRADO --- */
+.ticket-title {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* <--- ESTO ES LO QUE LO CENTRA */
+  gap: 10px;               /* Espacio entre el icono y el texto */
+  font-size: 24px;
+  font-weight: 900;
+  color: #2C3E50;
+  margin: 0 0 15px 0;      /* Un poco de margen abajo */
+  width: 100%;             /* Ocupa todo el ancho para poder centrarse */
+  text-transform: uppercase;
+}
+/* --- BOTÓN REFRESCAR CUADRADO VERDE --- */
+.btn-refresh-square {
+  background-color: #27AE60 !important; /* VERDE */
+  color: white !important;              /* Icono Blanco */
+  border: none !important;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;                   /* Bordes un poco redondeados */
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  box-shadow: 0 3px 0 #1E8449;          /* Pequeña sombra 3D abajo */
+  transition: transform 0.1s;
 }
 
-.app-title-text {
-  color: white;
-  font-weight: 800;
-  font-size: 19px;
-  white-space: nowrap;
+.btn-refresh-square:active {
+  transform: translateY(2px);           /* Efecto de presionar */
+  box-shadow: none;
 }
-
-/* --- MENÚ --- */
-.nav-menu {
-  flex-grow: 1; /* Esto empuja el footer hacia abajo */
-  display: flex;
-  flex-direction: column;
-  padding: 10px 0;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 14px 20px;
-  text-decoration: none;
-  color: #BDC3C7;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.2s;
-  border-left: 5px solid transparent; /* Espacio para la barra celeste */
-}
-
-.nav-icon {
-  font-size: 20px;
-  width: 30px;
-  display: flex;
-  justify-content: center;
-}
-
-.nav-text {
-  margin-left: 12px;
-}
-
-/* --- ESTADO ACTIVO (CELESTE) --- */
-.nav-item.active {
-  background-color: rgba(255, 255, 255, 0.05);
-  color: white;
-  /* La barrita celeste de la izquierda de tu foto */
-  border-left: 5px solid #3498DB !important; 
-}
-
-.nav-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: white;
-}
-
-/* --- FOOTER: ADMIN CONECTADO --- */
-.sidebar-status-footer {
-  padding: 20px;
-  text-align: center;
-  margin-top: auto; /* IMPORTANTE: Lo manda al fondo */
-}
-
-.status-admin {
-  color: #27AE60; /* Verde Admin */
-  font-weight: bold;
-  font-size: 18px;
-}
-
-.status-connected {
-  color: #2ECC71; /* Verde Conectado */
-  font-size: 15px;
-  font-weight: 600;
-}
-
-/* Para cuando está colapsado */
-.collapsed .nav-text, 
-.collapsed .app-title-text,
-.collapsed .sidebar-status-footer {
-  display: none;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  padding: 12px 15px;
-  color: #BDC3C7;
-  text-decoration: none;
-  gap: 12px;
-  border-left: 4px solid transparent;
-}
-
-.nav-item.active {
-  background-color: #34495E;
-  color: white;
-  border-left: 4px solid #3498DB;
-}
-
-/* AREA DE CONTENIDO */
-.content-area {
-  flex-grow: 1;
-  padding: 20px;
-  overflow-y: auto;
-  background-color: #ECF0F1;
-}
-
-/* INVENTARIO LAYOUT */
-.inventory-layout {
-  display: flex;
-  gap: 20px;
-  height: calc(100vh - 40px); 
-  width: 100%;
-  padding: 10px 20px 20px 20px; /* Padding reducido abajo para llegar al borde */
-  box-sizing: border-box;
-}
-
-.form-container {
-  width: 400px; /* Ancho fijo para el formulario */
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #D5DBDB;
-  display: flex;
-  flex-direction: column; 
-  height: 100%; 
-  flex-shrink: 0;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-
-}
-
-.catalog-container {
-  flex: 1; /* La tabla ocupa todo el resto del espacio */
-  display: flex;
-  flex-direction: column;
-  height: 100%; /* Obliga al cuadro a llegar hasta abajo */
-  gap: 10px;
-}
-
-/* INPUTS */
-.input-main {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #BDC3C7;
-  border-radius: 6px;
-  margin-bottom: 5px;
-  font-size: 14px;
-}
-
-/* GROUPBOX (Datos) */
+/* El GroupBox (Cuadro de Datos) */
 .group-box {
-  border: 1px solid #d5dbdb;
+  border: 1px solid #D5DBDB;
   border-radius: 8px;
   padding: 15px;
-  margin-bottom: 10px;
-  flex-shrink: 0;
+  margin: 10px 0 20px 0;
 }
 
 .group-box legend {
-  font-weight: bold;
+  background-color: white;
   padding: 0 10px;
-  color: #3498DB;
+  margin-left: 10px;
+  font-weight: bold;
+  color: #2C3E50;
+}
+
+.btn-guardar { background-color: #27AE60; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.btn-editar { background-color: #3498DB; color: white; flex: 1; padding: 10px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }
+.btn-limpiar { background-color: #95A5A6; color: white; width: 100%; padding: 10px; border: none; border-radius: 6px; margin-top: 10px; font-weight: bold; cursor: pointer; }
+
+/* Tabla y Catálogo */
+.catalog-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .table-wrapper {
-  flex-grow: 1; /* HACE QUE EL CUADRO BLANCO CREZCA HASTA EL FONDO */
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
+  overflow-y: auto;
+}
+
+.modern-table { width: 100%; border-collapse: collapse; }
+.modern-table th {
+  background-color: #ECF0F1;
+  padding: 12px;
+  text-align: left;
+  position: sticky;
+  top: 0;
+  border-bottom: 2px solid #BDC3C7;
+}
+
+.btn-eliminar-moderno {
+  background-color: #E74C3C;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  float: right;
+  margin-top: 10px;
+}
+
+/* Texto del Título */
+.app-title-container {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* --- CLASE PARA OCULTAR ELEMENTOS --- */
+.hide {
+  display: none !important;
+  opacity: 0;
+}
+
+/* --- MÓVIL --- */
+.btn-close-mobile-internal { display: none; }
+
+.app-title-text { color: white; font-weight: 800; font-size: 19px; white-space: nowrap; }
+
+.nav-menu { flex-grow: 1; display: flex; flex-direction: column; padding: 10px 0; }
+
+.nav-item {
+  display: flex; align-items: center; padding: 14px 20px;
+  color: #BDC3C7; text-decoration: none; border-left: 5px solid transparent;
+  transition: 0.2s;
+}
+
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-left: 5px solid #3498DB !important; /* Barra celeste */
+}
+
+.sidebar-status-footer {
+  padding: 20px; text-align: center; margin-top: auto;
+}
+.status-admin { color: #27AE60; font-weight: bold; font-size: 18px; }
+.status-connected { color: #2ecc71; font-size: 14px; font-weight: 600; }
+
+/* =========================================
+   INVENTARIO (LAYOUT CORREGIDO)
+   ========================================= */
+.inventory-layout {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 45px);
+  width: 100%;
+  padding: 5px 15px 15px 15px;
+}
+
+
+/* --- ESTA ES LA CORRECCIÓN CLAVE --- */
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  margin-top: auto; /* <--- ESTO EMPUJA LOS BOTONES AL FONDO */
+}
+
+.catalog-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.table-wrapper {
+  flex: 1;
+  overflow-y: auto;
   background: white;
   border: 1px solid #D5DBDB;
   border-radius: 12px;
-  overflow-y: auto; /* Scroll interno si hay muchos productos */
-  min-height: 0; 
+}
+
+legend {
+  background-color: #FFFFFF !important;
+  padding: 0 10px;
+  margin-left: 15px;
+  font-weight: 800;
+  color: #2C3E50;
+}
+.modern-table { width: 100%; border-collapse: collapse; }
+.modern-table thead th {
+  position: sticky; top: 0; background-color: #ECF0F1;
+  padding: 12px; text-align: left; border-bottom: 2px solid #BDC3C7;
+  color: #7F8C8D; font-size: 13px;
+}
+.modern-table td { padding: 10px; border-bottom: 1px solid #F2F3F4; }
+
+/* COLORES DE FILA */
+.low-stock { background-color: #FADBD8 !important; color: #C0392B !important; }
+.selected-row { background-color: #D6EAF8 !important; color: #1B4F72 !important; }
+
+/* BOTONES */
+.btn-guardar { background-color: #27AE60; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+.btn-editar { background-color: #3498DB; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; }
+.btn-limpiar { background-color: #95A5A6; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
+.btn-eliminar-moderno { background-color: #E74C3C; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
+
+
+.mobile-header {
+  display: none; /* Oculto en PC */
+}
+
+/* --- OVERLAY PARA QUE EL MODAL FLOTE AL CENTRO --- */
+.modal-overlay {
+  position: fixed; /* Esto lo saca del flujo y lo pone sobre la pantalla */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro transparente */
+  display: flex;
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center;     /* Centra verticalmente */
+  z-index: 99999;          /* Asegura que esté por encima de TODO */
+  backdrop-filter: blur(3px); /* Efecto borroso de fondo */
+}
+
+/* --- CUADRO DE CONFIRMACIÓN PEQUEÑO --- */
+.modal-container-small {
+  background: white !important;
+  width: 90%;
+  max-width: 400px;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: popIn 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes popIn {
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Icono del tacho en el círculo */
+.confirm-icon-circle {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  background-color: #FADBD8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Botones de la interfaz de confirmación */
+.confirm-actions-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.btn-confirm-cancel {
+  flex: 1;
+  background-color: #BDC3C7 !important;
+  color: #2C3E50 !important;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-confirm-ok {
+  flex: 1.5;
+  background-color: #E74C3C !important; /* Rojo */
+  color: white !important;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  filter: grayscale(1); /* Lo pone gris */
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+/* =========================================
+   ESTRUCTURA DEL PUNTO DE VENTA (POS)
+   ========================================= */
+.pos-layout {
+  display: flex;
+  gap: 20px;
+  height: calc(100vh - 50px); /* Altura total sin scroll en el body */
+  width: 100%;
+}
+
+.pos-left {
+  flex: 0 0 58%; /* Ancho de la lista de productos */
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+}
+
+.pos-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+/* --- TABLA DEL TICKET CON SCROLL (SOLUCIÓN MÓVIL) --- */
+.ticket-table-wrapper {
+  flex: 1;
+  overflow-y: auto;   /* Scroll vertical para ver muchos productos */
+  overflow-x: auto;   /* <--- ESTA ES LA CLAVE: Permite mover a la derecha en celular */
+  width: 100%;
+  margin-top: 10px;
+  -webkit-overflow-scrolling: touch; /* Hace que el scroll sea suave en iPhone/Android */
+}
+
+.ticket-table-wrapper .modern-table {
+  width: 100%;
+  min-width: 320px;   /* <--- Fuerza a que la tabla tenga un tamaño mínimo y no se aplaste */
+  border-collapse: collapse;
+}
+
+/* Ajuste de celdas para que no se amontonen */
+.ticket-table-wrapper th, 
+.ticket-table-wrapper td {
+  padding: 12px 8px;
+  white-space: nowrap; /* Evita que el texto se rompa en dos líneas */
+}
+
+/* Alineaciones */
+.ticket-table-wrapper td:nth-child(1) { text-align: left; }
+.ticket-table-wrapper td:nth-child(2) { text-align: center; }
+.ticket-table-wrapper td:nth-child(3) { text-align: right; font-weight: bold; }
+
+.total-section {
+  text-align: right;
+  padding: 15px 0;
+}
+
+.total-amount {
+  font-size: 60px; /* Tamaño gigante de la foto */
+  font-weight: 900;
+  color: #e74c3c;
+  line-height: 1;
+}
+
+/* --- BUSCADOR POS --- */
+.group-box-pos {
+  border: 1px solid #d5dbdb;
+  border-radius: 12px;
+  padding: 15px;
+  background: white;
+}
+
+.group-box-pos legend {
+  background: white;
+  padding: 0 10px;
+  font-weight: 800;
+  margin-left: 15px;
+  font-size: 16px;
+}
+
+.btn-teal-refresh {
+  background-color: #1abc9c;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  float: right;
+  margin-bottom: 10px;
+}
+
+/* --- BARRA DE SELECCIÓN (LA DE ABAJO) --- */
+.selection-bar {
+  background: white;
+  border: 1px solid #d5dbdb;
+  border-radius: 12px;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.sel-price {
+  font-size: 32px;
+  font-weight: 900;
+  color: #3498db;
+}
+
+.btn-agregar-pos {
+  background-color: #f39c12; /* Color naranja de la foto */
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: 900;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #d68910;
+}
+
+
+/* --- BOTONERA POS --- */
+.pos-actions-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.pos-actions-grid button {
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn-cobrar-big { background-color: #27ae60 !important; height: 55px; font-size: 18px !important; }
+.btn-purple { background-color: #8e44ad !important; }
+.btn-dark-blue { background-color: #34495e !important; }
+.btn-orange { background-color: #f39c12 !important; }
+.btn-blue { background-color: #3498db !important; }
+.btn-red-solid { background-color: #e74c3c !important; }
+.btn-gray-solid { background-color: #95a5a6 !important; }
+
+/* =========================================
+   RESPONSIVE PARA CELULARES
+   ========================================= */
+@media (max-width: 1024px) {
+  .pos-layout {
+    flex-direction: column;
+    height: auto;
+    overflow-y: visible;
+  }
+
+  .pos-left, .pos-right {
+    width: 100% !important;
+    flex: none;
+  }
+
+  .total-amount {
+    font-size: 45px;
+  }
+
+  .selection-bar {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+
+  .btn-row {
+    grid-template-columns: 1fr; /* Una sola columna de botones en móvil */
+  }
+}
+
+/* --- POS LAYOUT --- */
+.pos-layout {
+  display: flex;
+  gap: 15px;
+  height: calc(100vh - 40px); /* LLEGA HASTA ABAJO */
+  padding: 5px 15px 10px 15px;
+}
+
+.pos-left { flex: 0 0 58%; display: flex; flex-direction: column; height: 100%; }
+.pos-right { flex: 1; display: flex; flex-direction: column; height: 100%; }
+
+/* --- TABLAS QUE SE ESTIRAN --- */
+.table-container-pos, .ticket-table-wrapper {
+  flex: 1; /* Esto llena el espacio vacío */
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #D5DBDB;
+  border-radius: 12px;
+  min-height: 0;
+}
+/* --- CONTENEDOR DEL TICKET --- */
+.panel-ticket-blue {
+  background: white;
+  border: 2px solid #3498db;
+  border-radius: 15px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden; /* Evita que el panel azul se estire */
+}
+
+/* --- ESTO PERMITE QUE SOLO SE MUEVA LA TABLA --- */
+.ticket-table-wrapper {
+  flex: 1;
+  width: 100%;
+  overflow-x: auto;   /* <--- ACTIVA EL MOVIMIENTO HORIZONTAL */
+  overflow-y: auto;   /* Mantiene el movimiento vertical */
+  margin-top: 10px;
+  border-bottom: 1px solid #eee;
+  /* Para que el dedo deslice suave en iPhone/Android */
+  -webkit-overflow-scrolling: touch; 
+}
+
+.ticket-table-wrapper .modern-table {
+  /* Al poner min-width, la tabla siempre medirá esto. 
+     Si el celular mide menos, aparecerá el scroll solo en la tabla */
+  min-width: 450px !important; 
+  table-layout: fixed; /* Mantiene las columnas firmes */
+  width: 100%;
+}
+
+/* --- ANCHOS DE COLUMNAS PARA QUE NO SE AMONTONEN --- */
+.ticket-table-wrapper th:nth-child(1), 
+.ticket-table-wrapper td:nth-child(1) { 
+  width: 50%; /* Producto */
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis; /* Si el nombre es largo pone ... */
+}
+
+.ticket-table-wrapper th:nth-child(2), 
+.ticket-table-wrapper td:nth-child(2) { 
+  width: 20%; /* Cantidad */
+  text-align: center;
+}
+
+.ticket-table-wrapper th:nth-child(3), 
+.ticket-table-wrapper td:nth-child(3) { 
+  width: 30%; /* Total */
+  text-align: right;
+  padding-right: 10px;
+}
+
+/* --- FIX PARA EL TOTAL --- */
+.total-section {
+  width: 100%;
+  background: white;
+  z-index: 5;
+}
+/* --- TOTAL GIGANTE --- */
+.total-section { text-align: right; border-top: 3px double #3498db; padding: 10px 0; }
+.total-amount { font-size: 56px; font-weight: 900; color: #e74c3c; line-height: 1; }
+
+/* --- BOTONES POS (COLORES EXACTOS) --- */
+.pos-actions-grid { display: flex; flex-direction: column; gap: 8px; }
+.btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+.pos-actions-grid button {
+  border: none; border-radius: 8px; color: white; font-weight: 700;
+  padding: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+
+.btn-cobrar-big { background-color: #27AE60 !important; height: 50px; font-size: 18px !important; }
+.btn-purple { background-color: #8E44AD !important; }
+.btn-dark-blue { background-color: #34495E !important; }
+.btn-orange { background-color: #F39C12 !important; }
+.btn-blue { background-color: #3498DB !important; }
+.btn-red-solid { background-color: #E74C3C !important; }
+.btn-gray-solid { background-color: #95A5A6 !important; }
+
+.pos-legend {
+  background-color: #FFFFFF !important;
+  padding: 0 10px;
+  margin-left: 15px;
+  font-weight: 800;
+  color: #2C3E50;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Botón Recargar Lista (Verde con icono azul) */
+.btn-recargar-verde {
+  background-color: #1ABC9C;
+  color: white;
+  border: none;
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  float: right; /* Lo pega a la derecha */
+  margin-bottom: 10px;
+}
+
+.icon-refresh {
+  background-color: #3498DB; /* El cuadradito azul de tu foto */
+  padding: 2px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid white;
+}
+
+/* Input de búsqueda azul */
+.input-pos-flat {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #3498DB; /* Borde azul como en tu foto */
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
+  clear: both; /* Para que el botón de arriba no lo tape */
+}
+
+.product-name-display {
+  font-size: 20px;
+  font-weight: 800;
+  color: #2C3E50;
+}
+
+.product-price-display {
+  font-size: 36px;
+  font-weight: 900;
+  color: #3498DB; /* Precio en azul */
+  line-height: 1;
+}
+
+.btn-add-main:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #D68910;
+}
+
+.btn-add-main:disabled {
+  background-color: #E5E8E8;
+  box-shadow: none;
+  color: #BDC3C7;
+}
+
+/* Input de cantidad */
+.qty-wrapper {
+  text-align: center;
+}
+
+.qty-wrapper label {
+  font-size: 10px;
+  font-weight: 900;
+  color: #7F8C8D;
+  display: block;
+}
+
+.qty-input-pos {
+  width: 70px;
+  height: 45px;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 900;
+  border: 2px solid #2C3E50;
+  border-radius: 8px;
+}
+.manual-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-dark-pos {
+  background-color: #2C3E50;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.selection-bar-modern-final {
+  background: white;
+  border: 2px solid #3498DB; /* Borde azul de la foto */
+  border-radius: 18px;
+  padding: 15px 25px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 10px 0;
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.1);
+}
+
+.sel-left-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sel-badge-blue {
+  color: #3498DB;
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+/* --- TARJETA DE VENTAS TOTAL (CENTRADA Y VERDE) --- */
+.kpi-total-card {
+  background: white !important;
+  border-radius: 12px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;    /* Centra contenido horizontalmente */
+  justify-content: center; /* Centra contenido verticalmente */
+  border: 1px solid #D5DBDB;
+  border-top: 6px solid #27AE60; /* Barrita verde arriba */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.kpi-label {
+  color: #7F8C8D;
+  font-weight: 800;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 5px;
+}
+
+.kpi-value {
+  color: #27AE60;
+  font-size: 42px; /* Tamaño grande impactante */
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* --- RECUADRO MENSUAL (GROUPBOX) --- */
+.reports-sidebar fieldset.group-box {
+  background-color: white !important;
+  border: 1px solid #D5DBDB;
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+}
+/* =========================================
+   ESTILOS DE INVENTARIO (RENOVADO)
+   ========================================= */
+
+/* Layout Principal: Dos columnas (Formulario izquierda, Catálogo derecha) */
+.inventory-layout {
+  display: flex;
+  gap: 20px;
+  height: 100%;
+  width: 100%;
+  padding: 10px;
+  overflow: hidden; /* Evita doble scroll */
+}
+
+/* --- PANEL IZQUIERDO (FORMULARIO) --- */
+.form-container {
+  width: 320px; /* Ancho fijo para el formulario */
+  background-color: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #E5E8E8;
+  flex-shrink: 0; /* No dejes que se achique */
+}
+
+/* Ajuste de inputs dentro del formulario */
+.input-field { margin-bottom: 12px; }
+
+.input-field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #566573;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.input-main {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #D5DBDB;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border 0.2s;
+}
+.input-main:focus { border-color: #3498DB; box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1); }
+
+/* Fila para Precio y Stock */
+.grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* El cuadro "Datos" */
+fieldset.group-box {
+  border: 1px solid #D5DBDB;
+  border-radius: 10px;
+  padding: 15px;
+  margin: 15px 0;
+}
+fieldset.group-box legend {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2C3E50;
+  padding: 0 5px;
+}
+
+/* --- BOTONES DEL FORMULARIO --- */
+.form-footer { margin-top: auto; } /* Empuja los botones al final */
+
+.buttons-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.btn-guardar {
+  background-color: #27AE60;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  flex: 1;
+  transition: transform 0.1s;
+}
+.btn-guardar:active { transform: scale(0.98); }
+
+.btn-editar {
+  background-color: #3498DB;
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  flex: 1;
+  transition: transform 0.1s;
+}
+.btn-editar:active { transform: scale(0.98); }
+
+.btn-limpiar {
+  background-color: #95A5A6;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  width: 100%;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+/* --- PANEL DERECHO (CATÁLOGO) --- */
+.catalog-container {
+  flex: 1; /* Toma todo el espacio restante */
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  border: 1px solid #E5E8E8;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Importante para que la tabla haga scroll dentro */
+}
+
+/* Cabecera del catálogo (Título y Buscador) */
+.catalog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.catalog-search-box {
+  position: relative;
+  width: 300px;
+}
+.lupa-inventario {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+}
+.input-busqueda-inventario {
+  width: 100%;
+  padding: 8px 10px 8px 30px;
+  border-radius: 20px;
+  border: 1px solid #BDC3C7;
+  outline: none;
+}
+
+/* --- TABLA --- */
+.table-wrapper {
+  flex: 1; /* Ocupa el alto disponible */
+  overflow-y: auto; /* Scroll vertical */
+  border: 1px solid #ECF0F1;
+  border-radius: 8px;
 }
 
 .modern-table {
@@ -219,913 +949,492 @@
   border-collapse: collapse;
 }
 
-.modern-table th {
+.modern-table thead th {
   background-color: #ECF0F1;
-  color: #2C3E50;
-  padding: 12px;
-  text-align: left;
-  border-bottom: 2px solid #BDC3C7;
-}
-
-.modern-table td {
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-/* BOTONES */
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.btn-guardar { background-color: #27AE60; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold; }
-.btn-editar { background-color: #3498DB; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; flex: 1; font-weight: bold; }
-.btn-limpiar { background-color: #95A5A6; color: white; border: none; padding: 10px; border-radius: 4px; width: 100%; cursor: pointer; margin-top: 5px; }
-
-.title-icon {
-  font-size: 22px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-}
-/* Contenedor principal del formulario */
-.form-container {
-  width: 400px;
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  border: 1px solid #D5DBDB;
-  display: flex;
-  flex-direction: column; /* Organiza el contenido en columna */
-  height: 100%; /* SE ESTIRA HASTA EL FINAL */
-  flex-shrink: 0;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
-
-/* Título y Botón Refresh */
-.header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 15px;
-}
-
-.title-icon {
-  font-size: 20px;
-  font-weight: 800;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.btn-icon-refresh {
-  background-color: #1abc9c;
-  color: white;
-  border: none;
-  padding: 6px;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-/* Etiquetas e Inputs */
-.input-field {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 10px;
-}
-
-.input-main {
-  padding: 8px 12px;
-  border: 1px solid #bdc3c7;
-  border-radius: 6px;
-  font-size: 14px;
-  width: 100%;
-}
-
-.group-box {
-  border: 1px solid #d5dbdb;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 10px;
-  flex-shrink: 0;
-}
-
-.group-box legend {
-  font-weight: bold;
-  font-size: 14px;
-  color: #2c3e50;
-  padding: 0 10px;
-}
-
-/* Filas en cuadrícula (2 columnas) */
-.grid-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-/* Botones con colores exactos */
-.action-buttons {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.btn-guardar {
-  background-color: #27ae60; /* Verde */
-  color: white;
-  border: none;
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-editar {
-  background-color: #3498db; /* Azul */
-  color: white;
-  border: none;
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-limpiar {
-  background-color: #95a5a6; /* Gris */
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-guardar:hover, .btn-editar:hover, .btn-limpiar:hover {
-  opacity: 0.9;
-}
-
-
-/* Eliminar flechas en Chrome, Safari, Edge y Opera */
-input::-webkit-outer-spin-button,
-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-
-/* Eliminar flechas en Firefox */
-input[type=number] {
-  -moz-appearance: textfield;
-}
-
-/* Para que los códigos automáticos resalten un poco más */
-.bold-code {
-  font-family: 'Courier New', Courier, monospace;
-  color: #2980b9;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-/* Estilo para resaltar filas con poco stock */
-.modern-table tr.low-stock {
-  background-color: #FADBD8 !important; /* Rojo suave/Rosado */
-  color: #C0392B; /* Texto rojo oscuro para que se lea bien */
-}
-
-/* Opcional: que al pasar el mouse sobre la fila roja se oscurezca un poco */
-.modern-table tr.low-stock:hover {
-  background-color: #F5B7B1 !important;
-}
-
-/* --- ESTILO DEL BUSCADOR (Igual a la foto) --- */
-.search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.search-emoji {
-  position: absolute;
-  left: 12px;
-  font-size: 16px;
-  pointer-events: none; /* Para que no interfiera al hacer clic */
-}
-
-.search-input-modern {
-  padding: 8px 12px 8px 38px !important; /* Espacio para la lupa */
-  border: 1px solid #BDC3C7;
-  border-radius: 8px;
-  width: 250px;
-  font-size: 15px;
   color: #5D6D7E;
-  background-color: white;
-}
-.search-input-modern::placeholder {
-  color: #ABB2B9;
-  font-style: normal;
-}
-
-/* --- ESTILO DEL BOTÓN ELIMINAR (Igual a la foto) --- */
-.btn-eliminar-foto {
-  background-color: #E74C3C; /* Rojo de la imagen */
-  color: white;
-  border: none;
-  padding: 8px 18px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px; /* Espacio entre el tacho y el texto */
-  cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  transition: background 0.2s;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 12px 10px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  text-align: left;
 }
 
-.btn-eliminar-foto:hover {
-  background-color: #C0392B;
+.modern-table tbody td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #F2F3F4;
+  font-size: 14px;
+  color: #2C3E50;
 }
 
-/* Alineación del pie de la tabla */
+.row-hover:hover { background-color: #F4F6F7; cursor: pointer; }
+.selected-row { background-color: #D6EAF8 !important; } /* Fila seleccionada azulito */
+
+/* Alertas de Stock */
+.low-stock { background-color: #FADBD8 !important; color: #C0392B; }
+
+/* Botón Eliminar Flotante */
 .footer-row {
+  margin-top: 15px;
   display: flex;
   justify-content: flex-end;
-  padding-top: 15px;
-  flex-shrink: 100%; /* Evita que el botón se aplaste */
 }
 
 .btn-eliminar-moderno {
-  background-color: #E74C3C; /* Rojo intenso */
+  background-color: #E74C3C;
   color: white;
   border: none;
-  padding: 10px 22px;
-  border-radius: 10px; /* Bordes redondeados suaves */
+  padding: 10px 25px;
+  border-radius: 8px;
   font-weight: bold;
-  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px; /* Espacio entre el icono y el texto */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  gap: 8px;
+  box-shadow: 0 4px 0 #C0392B;
+  transition: transform 0.1s;
+}
+.btn-eliminar-moderno:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #C0392B;
+}
+
+/* Asegura que el título "Mensual" corte la línea */
+.reports-sidebar legend.group-legend {
+  background-color: white !important;
+  padding: 0 10px;
+  font-weight: 800;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* --- RESPONSIVE PARA EL BOTÓN Y SELECTS --- */
+.mensual-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.btn-container-center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+/* --- LISTA DE SEMANAS INTERACTIVAS --- */
+.weeks-interactive-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.week-instruction {
+  font-size: 11px;
+  color: #7F8C8D;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.week-press-item {
+  background: #F8F9F9;
+  border: 1px solid #D5DBDB;
+  border-radius: 10px;
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-eliminar-moderno:hover {
-  background-color: #C0392B; /* Rojo más oscuro al pasar el mouse */
-  transform: translateY(-1px);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+.week-press-item:hover {
+  background: #EBF5FB;
+  border-color: #3498DB;
 }
 
-.btn-eliminar-moderno:active {
-  transform: translateY(1px);
-}
-
-.icon-trash {
-  font-size: 18px;
-}
-
-/* Clase para la fila seleccionada (Celeste como en la foto) */
-.modern-table tr.selected-row {
-  background-color: #D6EAF8 !important; /* Celeste claro */
-  color: #1B4F72; /* Texto azul oscuro para contraste */
-  border: 1px dashed #3498DB; /* Opcional: un borde sutil para que resalte más */
-}
-
-/* Evitar que el efecto hover tape el color de selección */
-.modern-table tr.selected-row:hover {
-  background-color: #AED6F1 !important; /* Un celeste un poco más oscuro al pasar el mouse */
-}
-
-/* IMPORTANTE: Si la fila es 'low-stock' pero está seleccionada, el celeste debe ganar */
-.modern-table tr.selected-row.low-stock {
-  background-color: #D6EAF8 !important; 
-  color: #1B4F72;
-}
-/* --- LAYOUT POS --- */
-.pos-layout {
-  display: flex;
-  gap: 15px;
-  /* Ajustamos la altura para que ocupe casi toda la pantalla */
-  height: calc(100vh - 45px); 
-  width: 100%;
-  padding: 5px 15px 10px 15px; /* Poco padding abajo para que pegue al borde */
-  box-sizing: border-box;
-}
-
-/* --- COLUMNAS --- */
-.pos-left, .pos-right {
-  height: 100%; /* Obliga a las columnas a llegar al final */
-  display: flex;
-  flex-direction: column;
-}
-
-.pos-left {
-  flex: 0 0 55%;
-}
-
-.pos-right {
-  flex: 1;
-}
-
-.panel-ticket-blue {
-  background: white;
-  border: 2px solid #3498db;
-  border-radius: 12px;
-  padding: 15px;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-.table-container-pos {
-  flex: 1; /* Crece para llenar el espacio */
-  overflow-y: auto;
-  border: 1px solid #d5dbdb;
-  background: white;
-  min-height: 200px; /* Altura mínima */
-}
-
-.ticket-table-wrapper {
-  flex: 1;
-  overflow-y: auto;
-}
-
-.ticket-title {
+.week-name {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 10px;
-  font-size: 20px;
-  font-weight: 800;
-  margin: 0 0 15px 0;
-  color: #2c3e50;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.total-section {
-  text-align: right;
-  border-top: 3px double #3498db;
-  padding: 10px 0;
-}
-
-total-amount {
-  font-size: 52px; /* Más grande */
-  font-weight: 900;
-  color: #e74c3c; /* Rojo vibrante */
-  letter-spacing: -1px;
-}
-
-
-/* --- CONTENEDOR TIPO GROUPBOX (Igual a la imagen) --- */
-.group-box-pos {
-  border: 1px solid #D5DBDB; /* Color gris suave del borde */
-  border-radius: 12px;
-  padding: 10px 15px 15px 15px;
-  background-color: white;
-  margin-bottom: 10px;
-}
-
-/* El título que corta la línea */
-.group-legend {
   font-weight: bold;
-  font-size: 15px;
   color: #2C3E50;
-  padding: 0 10px;
-  margin-left: 10px;
 }
 
-/* Fila del botón Recargar */
-.search-header-row {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 10px;
+.week-total {
+  font-weight: 800;
+  color: #34495E;
 }
 
-/* Botón Verde (Teal) de la imagen */
-.btn-recargar-verde {
-  background-color: #1ABC9C; /* Color esmeralda/teal exacto */
+/* El cuadrito de check al lado de la semana */
+.week-check {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #BDC3C7;
+  border-radius: 4px;
+  background: white;
+}
+.week-press-item.active {
+  background-color: #D6EAF8 !important; /* Celeste fuerte */
+  border: 2px solid #3498DB !important; /* Borde azul */
+  transform: scale(1.02); /* Se agranda un poquito al estar activo */
+}
+
+.week-check.checked {
+  background-color: #27AE60 !important; /* El check se pone verde al marcar */
+  border-color: #1E8449 !important;
+}
+
+.week-check.checked::after {
+  content: "✓";
   color: white;
+  font-size: 10px;
+  position: absolute;
+  top: -1px;
+  left: 2px;
+}
+.btn-ver-stats {
+  background-color: #34495E !important;
+  color: white !important;
   border: none;
-  padding: 8px 16px;
+  padding: 12px 25px;
   border-radius: 8px;
   font-weight: bold;
-  font-size: 14px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%; /* En móvil ocupa todo el ancho */
   transition: background 0.2s;
 }
 
-.btn-recargar-verde:hover {
-  background-color: #16A085;
+.btn-ver-stats:hover {
+  background-color: #2C3E50 !important;
 }
-
-.icon-refresh {
-  background-color: #3498DB; /* Cuadrito azul del icono en la imagen */
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid white;
-}
-
-/* Inputs apilados */
-.search-inputs-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.input-pos-flat {
-  width: 100%;
-  padding: 10px 15px;
-  border: 1px solid #BDC3C7; /* Borde gris como la foto */
-  border-radius: 8px;
-  font-size: 15px;
-  outline: none;
+.sel-prod-name {
+  font-size: 22px;
+  font-weight: 800;
   color: #2C3E50;
-  background-color: white;
 }
 
-.input-pos-flat::placeholder {
-  color: #ABB2B9; /* Color suave del placeholder */
-}
-
-.input-pos-flat:focus {
-  border-color: #3498DB; /* Se pone azul al escribir */
-}
-
-.group-box-pos legend {
-  font-weight: bold;
-  font-size: 13px;
-  color: #2c3e50;
-  padding: 0 8px;
-}
-
-.input-modern-pos {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
-  border: 1px solid #3498db;
-  border-radius: 6px;
-}
-
-/* --- TABLA POS --- */
-.table-container-pos {
-  flex: 1;
-  overflow-y: auto;
-  border: 1px solid #d5dbdb;
-}
-
-.selection-bar {
-  margin-bottom: 10px;
-  flex-shrink: 0; /* No deja que este panel se encoja */
-}
-
-.group-box-pos {
-  margin-bottom: 5px;
-  flex-shrink: 0;
-}
-
-
-.sel-info { display: flex; flex-direction: column; }
-.sel-price { font-size: 24px; font-weight: 900; color: #3498db; }
-
-.qty-input { width: 70px; padding: 8px; text-align: center; border-radius: 6px; border: 1px solid #bdc3c7; }
-
-/* --- BOTONES DE COLORES (IGUAL A LA FOTO) --- */
-.btn-teal-refresh { background-color: #1abc9c; color: white; border: none; padding: 5px 12px; border-radius: 5px; float: right; font-size: 12px; cursor: pointer; }
-.btn-agregar-pos { background-color: #f39c12; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.btn-cobrar-big { background-color: #27ae60; color: white; border: none; width: 100%; height: 50px; border-radius: 8px; font-size: 18px; font-weight: 800; cursor: pointer; margin-bottom: 10px; }
-.btn-red-outline { background-color: #e74c3c; color: white; flex: 1; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-.btn-gray-outline { background-color: #95a5a6; color: white; flex: 1; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-
-.btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
-
-.total-section {
-  text-align: right;
-  border-top: 3px double #3498db; /* Doble línea elegante */
-  padding: 15px 0;
-  margin-top: 5px;
-}
-
-.total-amount { font-size: 40px; font-weight: 900; color: #e74c3c; }
-
-.manual-row { display: flex; gap: 10px; align-items: center; }
-.btn-dark-pos { background-color: #2c3e50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-
-.qty-input {
-  width: 80px;
-  height: 40px;
-  padding: 8px;
-  text-align: center;
-  font-size: 18px;
-  font-weight: bold;
-  border-radius: 8px;
-  outline: none;
-}
-
-.qty-input:focus {
-  border-color: #3498db;
-  background-color: #f7f9f9;
-}
-
-.qty-input-pos {
-  width: 80px;
-  height: 40px;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  border-radius: 8px;
-  color: #3498db;
-  outline: none;
-}
-
-.qty-input-pos:focus {
-  border-color: #3498db;
-  background-color: #f4f6f7;
-}
-
-.selection-bar {
-  background: white;
-  margin: 10px 0;
-  padding: 15px;
-  border-radius: 10px;
-  border: 1px solid #d5dbdb;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.total-amount {
-  font-size: 48px;
+.sel-prod-price {
+  font-size: 42px; /* Precio gigante */
   font-weight: 900;
-  color: #e74c3c;
-  display: block;
+  color: #3498DB;
+  line-height: 1;
 }
 
-/* El contenedor con el borde */
-.pos-group-box {
-  border: 1px solid #D5DBDB; /* Gris suave del borde */
-  border-radius: 8px;       /* Bordes redondeados */
-  padding: 15px;
-  margin-bottom: 10px;
-  background-color: white;
-  display: block;
-}
-
-/* El título "legend" que se posiciona sobre la línea */
-.pos-legend {
-  font-weight: 800;          /* Negrita fuerte */
-  font-size: 17px;
-  color: #2C3E50;            /* Azul muy oscuro/Gris */
-  padding: 0 12px;           /* Espacio a los lados para tapar la línea */
-  margin-left: 15px;         /* Separación desde la esquina izquierda */
+.sel-right-controls {
   display: flex;
   align-items: center;
-  gap: 8px;                  /* Espacio entre la lupa y el texto */
-  background-color: white;   /* Fondo blanco para que tape la línea del borde */
-  width: auto;               /* Que solo ocupe el ancho del texto */
-  float: none;               /* Reset por si acaso */
+  gap: 20px;
 }
 
-.search-icon-emoji {
-  font-size: 22px;           /* <--- Tamaño de la lupa aumentado */
-  display: inline-block;
-  transform: translateY(-1px); /* Ajuste fino de posición hacia arriba si es necesario */
-}
-
-/* Contenedor de los inputs dentro */
-.pos-search-content {
+.qty-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-top: 5px;
-}
-
-/* Contenedor del título y buscador en la misma línea */
-.catalog-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
-  width: 100%;
+  gap: 4px;
 }
 
-/* Caja de búsqueda pequeña y elegante para el catálogo */
-.catalog-search-box {
-  position: relative;
-  display: flex;
-  align-items: center;
+.qty-group label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #7F8C8D;
 }
 
-.lupa-inventario {
-  position: absolute;
-  left: 12px;
-  font-size: 16px; /* Tamaño normal para el catálogo */
-  pointer-events: none;
-}
-
-.input-busqueda-inventario {
-  padding: 8px 12px 8px 35px !important;
-  border: 1px solid #BDC3C7;
-  border-radius: 20px; /* Redondeado tipo cápsula */
-  width: 250px;
-  font-size: 14px;
+.qty-input-big {
+  width: 85px;
+  height: 55px;
+  border: 2px solid #2C3E50;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 28px;
+  font-weight: 900;
   outline: none;
-  background-color: white;
-  transition: border-color 0.2s;
 }
 
-.input-busqueda-inventario:focus {
-  border-color: #3498DB;
-  box-shadow: 0 0 5px rgba(52, 152, 219, 0.2);
-}
-
-/* --- OVERLAY: ESTO CORRIGE EL CENTRADO --- */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw; /* Ocupa todo el ancho del navegador */
-  height: 100vh; /* Ocupa todo el alto del navegador */
-  background-color: rgba(0, 0, 0, 0.5); /* Fondo oscuro */
+/* --- BOTÓN AGREGAR NARANJA (CON RELIEVE) --- */
+.btn-agregar-orange {
+  background-color: #F39C12 !important;
+  color: white !important;
+  border: none;
+  padding: 0 25px;
+  height: 60px;
+  border-radius: 15px;
+  font-weight: 900;
+  font-size: 18px;
+  cursor: pointer;
   display: flex;
-  justify-content: center; /* CENTRA HORIZONTALMENTE */
-  align-items: center;     /* CENTRA VERTICALMENTE */
-  z-index: 9999;           /* Por encima de todo */
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 5px 0 #D68910; /* Relieve inferior */
+  transition: all 0.1s;
+}
+
+.btn-agregar-orange:active {
+  transform: translateY(3px);
+  box-shadow: 0 2px 0 #D68910;
+}
+
+.plus-icon { font-size: 24px; }
+
+.modal-overlay {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex; justify-content: center; align-items: center; z-index: 9999;
   backdrop-filter: blur(3px);
 }
 
-/* --- CONTENEDOR DEL MODAL (ALTURA AJUSTADA) --- */
+.modal-close-x {
+  position: absolute; right: 15px; top: 15px;
+  background: #D5DBDB; border: none; width: 35px; height: 35px;
+  border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; cursor: pointer;
+}
+
+/* Etiquetas e Iconos */
+.total-pagar-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 5px; }
+.total-pagar-text { color: #2C3E50; font-weight: 800; font-size: 18px; }
+.modal-label-bold { display: flex; align-items: center; gap: 8px; color: #2C3E50; font-weight: 800; font-size: 16px; margin-top: 15px; margin-bottom: 8px; }
+.underline { text-decoration: underline; }
+
+/* Cuadro de monto verde */
+.total-card-display { background: white; padding: 20px; border-radius: 15px; text-align: center; margin-bottom: 5px; }
+.total-amount-big { font-size: 52px; font-weight: 900; color: #27AE60; }
+
+/* Rectángulos Celestes */
+.modal-select-modern, .modal-input-large {
+  width: 100%; padding: 12px; font-size: 24px; font-weight: bold;
+  border: 2px solid #3498DB !important; border-radius: 12px;
+  text-align: center; outline: none; background: white;
+}
+
+/* Vuelto Naranja */
+.vuelto-naranja-pos {
+  text-align: right; color: #E67E22 !important;
+  font-weight: 800; font-size: 26px; margin: 15px 0;
+}
+
+/* Botones Finales */
+.modal-footer-flex { display: flex; gap: 12px; margin-top: 10px; }
+.btn-cancelar-modal {
+  flex: 1; background-color: #E74C3C !important; color: white !important;
+  border: none; padding: 12px; border-radius: 8px; font-weight: 800; cursor: pointer;
+}
+.btn-cobrar-modal {
+  flex: 1; background-color: #27AE60 !important; color: white !important;
+  border: none; padding: 12px; border-radius: 8px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+}
+
+/* Icono de Checkbox */
+.check-box-icon {
+  background-color: white; color: #27AE60; width: 20px; height: 20px;
+  border-radius: 3px; border: 1px solid #000;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+
+/* --- CONTENEDOR DEL TICKET (WRAPPER) --- */
+.ticket-modal-wrapper {
+  background: #D5DBDB; /* Fondo gris para que resalte el papel */
+  padding: 40px 20px 20px 20px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* --- EL PAPEL BLANCO --- */
+.thermal-paper-sheet {
+  background-color: white !important; /* FONDO BLANCO SOLIDO */
+  color: black !important;
+  width: 300px;
+  padding: 25px;
+  font-family: 'Courier New', Courier, monospace;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+  border: 1px solid #BDC3C7;
+}
+
+.thermal-title { text-align: center; font-size: 22px; font-weight: 900; margin: 0; }
+.thermal-header { text-align: center; font-size: 13px; line-height: 1.4; }
+.thermal-bold { font-weight: bold; }
+
+.thermal-divider {
+  width: 100%;
+  border-top: 1px dashed #000;
+  margin: 12px 0;
+}
+
+.thermal-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.thermal-prod-name {
+  max-width: 150px;
+  word-wrap: break-word; /* Evita que el nombre largo rompa el papel */
+}
+
+.thermal-total-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 900;
+  font-size: 20px;
+  color: black;
+}
+
+.thermal-thanks {
+  text-align: center;
+  font-style: italic;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* BOTÓN DE IMPRESIÓN */
+.btn-thermal-print {
+  background-color: #2C3E50;
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-thermal-print:hover {
+  background-color: #1A252F;
+}
+/* --- CORRECCIÓN PARA EL SELECT Y CONTENEDOR --- */
 .modal-container-tall {
   background: #F4F6F7;
   width: 450px;
-  /* Quitamos el min-height excesivo y dejamos que respire */
-  height: auto; 
-  max-height: 95vh; /* No permite que se salga de la pantalla */
+  /* IMPORTANTE: Esto evita que sea más ancho que el celular */
+  max-width: 95vw; 
   border-radius: 20px;
-  padding: 30px; /* Reducimos de 40 a 30 */
+  padding: 25px;
   position: relative;
   display: flex;
   flex-direction: column;
   box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-  gap: 15px; /* Espacio uniforme entre elementos */
+  gap: 15px;
 }
 
-/* --- BOTÓN CERRAR (CORREGIDO PARA QUE NO SEA UNA BARRA) --- */
-.modal-close-x {
-  position: absolute;
-  right: 15px;
-  top: 15px;
-  background: #D5DBDB;
-  border: none;
-  width: 35px;
-  height: 35px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+/* Ajuste del Select para que no se desborde */
+.modal-select-modern {
+  width: 100%;
+  max-width: 100%; /* No permite que crezca más que el padre */
+  padding: 12px;
+  font-size: 22px; /* Un poco más pequeño para que quepa bien */
+  font-weight: bold;
+  border: 2px solid #3498DB !important;
+  border-radius: 12px;
+  background-color: white;
   color: #2C3E50;
-  transition: background 0.2s;
+  outline: none;
+  
+  /* Eliminamos text-align: center porque en móviles causa desbordes en la lista */
+  text-align: left; 
+  padding-left: 15px;
+  
+  /* Asegura que el navegador maneje bien el ancho */
+  appearance: none; 
+  background-image: url("data:image/svg+xml;charset=UTF-16,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233498db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 18px;
 }
 
-.modal-close-x:hover {
-  background: #BDC3C7;
-}
-
-/* --- AJUSTE DE TARJETA DE TOTAL --- */
-.total-card-display {
-  background: white;
-  padding: 20px; /* Reducido para achicar altura */
-  border-radius: 15px;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-}
-
-.amount-highlight {
-  font-size: 48px; /* Un poco más pequeño que antes */
-  font-weight: 900;
-  color: #27AE60;
-  margin-top: 5px;
-}
-
-/* --- INPUTS --- */
 .modal-inputs-stack {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Reducido el espacio entre inputs */
+  gap: 20px;
+  width: 100%; /* Ocupa todo el ancho del modal */
+  max-width: 100%;
 }
 
-.modal-select-modern, .modal-input-large {
+/* Grupo de etiqueta + input */
+.input-group-modal {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* --- EL SELECT (CORREGIDO PARA QUE NO SE SALGA) --- */
+.modal-select-modern {
+  width: 100% !important;
+  max-width: 100% !important; /* <--- ESTO EVITA QUE SE SALGA */
+  box-sizing: border-box !important; /* Incluye el borde en el ancho total */
+  
+  padding: 12px 40px 12px 15px; /* Espacio para el texto y la flecha */
+  font-size: 22px;
+  font-weight: bold;
+  border: 2px solid #3498DB !important; /* Color celeste */
+  border-radius: 12px;
+  background-color: white;
+  color: #2C3E50;
+  outline: none;
+  cursor: pointer;
+
+  /* Quitar el estilo nativo que causa el error en celulares */
+  appearance: none; 
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* Flechita personalizada para que siempre se vea igual */
+  background-image: url("data:image/svg+xml;charset=UTF-16,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%233498db' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 15px center;
+  background-size: 18px;
+}
+
+/* --- EL INPUT "PAGA CON" (DEBE TENER EL MISMO ANCHO EXACTO) --- */
+.modal-input-large {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   padding: 12px;
   font-size: 24px;
   font-weight: bold;
-  border: 2px solid #3498DB !important; /* Celeste intenso de la foto */
+  border: 2px solid #3498DB !important;
   border-radius: 12px;
   text-align: center;
   background-color: white;
-  color: #2C3E50;
-  outline: none; /* Quita el borde feo que pone el navegador al hacer clic */
 }
-
-.modal-input-large:focus {
-  border-color: #5DADE2 !important;
-  box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
-}
-
-/* --- PANEL VUELTO --- */
-.vuelto-panel {
-  padding: 15px 20px;
+/* Asegura que el select y el input no se salgan del modal */
+.modal-select-modern, .modal-input-large {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important; /* Mantiene el borde adentro del ancho */
+  border: 2px solid #3498DB !important; /* Celeste */
   border-radius: 12px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-/* Contenedor de los botones para que estén uno al lado del otro */
-.modal-footer-buttons {
-  display: flex;
-  gap: 15px;
-  margin-top: 25px;
-  width: 100%;
-}
-
-/* --- BOTÓN CANCELAR (ROJO) --- */
-.btn-cancelar-final {
-  flex: 1;
-  background-color: #E74C3C !important; /* Rojo exacto */
-  color: white !important;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 16px;
-  cursor: pointer;
-  text-align: center;
-  transition: background 0.2s;
-}
-
-.btn-cancelar-final:hover {
-  background-color: #C0392B !important;
-}
-
-/* --- BOTÓN COBRAR (VERDE) --- */
-.btn-cobrar-final {
-  flex: 1;
-  background-color: #27AE60 !important; /* Verde exacto */
-  color: white !important;
-  border: none;
-  padding: 14px;
-  border-radius: 10px;
-  font-weight: 800;
-  font-size: 16px;
-  cursor: pointer;
-  
-  /* Esto centra la palabra y el icono en la mitad */
-  display: flex;
-  align-items: center;
-  justify-content: center; 
-  gap: 10px;
-  transition: background 0.2s;
-}
-
-.btn-cobrar-final:hover {
-  background-color: #1E8449 !important;
-}
-
-/* Estado cuando el botón está desactivado (cuando no alcanza el dinero) */
-.btn-cobrar-final:disabled {
-  background-color: #A9DFBF !important; /* Verde pálido */
-  cursor: not-allowed;
-  opacity: 0.7;
-}
-
-/* Estilo para el cuadrito del check */
-.icon-check-box {
-  background-color: white;
-  color: #27AE60;
-  border-radius: 3px;
-  padding: 0 2px;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  width: 20px;
+  padding: 12px;
+  font-size: 24px;
   font-weight: bold;
-}
-
-/* Contenedor de la etiqueta */
-.total-pagar-container {
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Lo centra en el modal */
-  gap: 8px;                /* Espacio entre la bolsa y el texto */
-  margin-bottom: 10px;
-}
-
-/* El texto "Total a Pagar:" */
-.total-pagar-text {
-  color: #2C3E50;          /* Azul oscuro / Gris oscuro de la imagen */
-  font-weight: 800;        /* Negrita extra fuerte */
-  font-size: 18px;         /* Tamaño ajustado a la foto */
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
-
-/* El icono de la bolsita */
-.money-bag-emoji {
-  font-size: 22px;         /* Tamaño de la bolsa de dinero */
-  display: flex;
-  align-items: center;
-}
-
-/* Ajuste opcional: Si quieres que el número verde esté más cerca */
-.total-amount-big {
-  font-size: 52px;
-  font-weight: 900;
-  color: #27AE60;
-  margin-top: 0;           /* Pegado a la etiqueta de arriba */
-  line-height: 1;
-}
-
-/* Estilo exacto para la etiqueta Método de Pago */
-.modal-label-bold {
-  display: flex;
-  align-items: center;
-  gap: 8px;            /* Espacio entre icono y texto */
-  color: #2C3E50;      /* Color azul oscuro/gris de la foto */
-  font-weight: 800;    /* Negrita extra fuerte */
-  font-size: 16px;
-  margin-bottom: 8px;
-}
-
-/* El icono del billete */
-.modal-icon-emoji {
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-}
-
-/* Contenedor para que los botones midan lo mismo */
-.modal-footer-flex {
-  display: flex;
-  gap: 12px;
-  margin-top: 20px;
-  width: 100%;
-}
-
-/* --- BOTÓN CANCELAR (ROJO) --- */
-.btn-cancelar-modal {
-  flex: 1;
-  background-color: #E74C3C !important; /* Rojo de la imagen */
-  color: white !important;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 16px;
-  cursor: pointer;
   text-align: center;
+  background-color: white;
+  outline: none;
 }
 
-/* --- BOTÓN COBRAR (VERDE) --- */
-.btn-cobrar-modal {
-  flex: 1;
-  background-color: #27AE60 !important; /* Verde de la imagen */
-  color: white !important;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: 800;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center; /* Centra el icono y el texto en la mitad */
-  gap: 8px;
-}
-
+/* El cuadro del check en el botón cobrar */
 .check-box-icon {
   background-color: white;
-  color: #27ae60;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  border: 1px solid #145a32;
+  color: #27AE60;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid #000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1133,126 +1442,207 @@ total-amount {
   font-weight: 900;
 }
 
-.pos-actions-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-/* Efecto al pasar el mouse */
-.btn-cancelar-modal:hover { background-color: #C0392B !important; }
-.btn-cobrar-modal:hover { background-color: #1E8449 !important; }
-
-/* Botón desactivado */
-.btn-cobrar-modal:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
+/* El texto de Vuelto a la derecha */
 .vuelto-naranja-pos {
-  width: 100%;
-  text-align: right;        /* Todo el texto a la derecha */
-  color: #E67E22 !important; /* Naranja */
+  text-align: right;
+  color: #E67E22 !important;
   font-weight: 800;
   font-size: 26px;
-  margin: 15px 0;
-  display: block;           /* Asegura que no sea un flex container */
+  margin: 10px 0;
 }
-
-/* --- MODAL SELECCIONAR CLIENTE --- */
+/* --- CONTENEDOR DEL MODAL DE CLIENTES --- */
 .modal-container-client {
-  background: #F0F0F0; /* Fondo gris claro de ventana */
-  width: 450px;
-  border-radius: 8px;
+  background: #F0F3F4 !important; /* Fondo gris claro sólido */
+  width: 420px;
+  max-width: 95vw; /* Se ajusta al celular */
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-  border: 1px solid #7F8C8D;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+  display: flex;
+  flex-direction: column;
 }
 
+/* Cabecera blanca con título */
 .modal-header-gray {
-  background: white; /* Parte superior blanca */
-  padding: 8px 15px;
+  background: white;
+  padding: 12px 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid #D5DBDB;
 }
 
-.modal-title-small {
-  font-size: 14px;
-  color: #2C3E50;
-  font-weight: 500;
+/* Botón X pequeño circular */
+.modal-close-x-small {
+  background: #ECF0F1;
+  border: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
 }
 
 .modal-body-client {
-  padding: 30px 20px;
+  padding: 20px;
 }
 
-.label-with-icon {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+/* Buscador azul */
+.input-client-search {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  font-size: 16px;
+  border: 2px solid #3498DB !important;
+  border-radius: 10px;
+  outline: none;
   margin-bottom: 15px;
 }
 
-.icon-user-black {
-  font-size: 20px;
+/* Lista de tarjetas blancas */
+.modal-clients-list {
+  max-height: 280px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.label-text-bold {
+.modal-client-card {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  border: 1px solid #E5E8E8;
+}
+
+.modal-client-name {
+  font-weight: 800;
+  color: #2C3E50;
+  font-size: 16px;
+}
+
+.modal-client-badge {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-top: 5px;
+  display: inline-block;
+}
+
+.modal-client-badge.clean { background: #D5F5E3; color: #239B56; }
+.modal-client-badge.debt { background: #FADBD8; color: #C0392B; }
+
+/* Botón Cancelar largo */
+.btn-modal-gray-full {
+  width: 100%;
+  background-color: #BDC3C7 !important;
+  color: #2C3E50 !important;
+  border: none;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 15px;
+  cursor: pointer;
+}
+/* Posicionamiento de la lupa dentro del input */
+.search-container-modal {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+
+/* Modal fondo sólido y centrado */
+.modal-container-client {
+  background: #F4F6F7 !important;
+  width: 420px;
+  max-width: 95vw;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+}
+.search-container-modal {
+  position: relative;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.icon-s-modal {
+  position: absolute;
+  left: 12px;
+  top: 46%; /* Ajustado un poco más arriba para centrar visualmente */
+  transform: translateY(-50%);
+  color: #7F8C8D;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.input-client-search {
+  width: 100%;
+  padding: 12px 15px 12px 40px !important; /* Espacio para la lupa */
+  font-size: 16px;
+  border: 2px solid #3498DB !important;
+  border-radius: 10px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* Color del texto que escribes */
+.input-client-search::placeholder {
+  color: #ABB2B9;
+}
+/* --- ESTILO PARA EL BOTÓN CREAR Y FIAR (Dentro del modal) --- */
+.no-results-modal {
+  text-align: center;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+/* El texto de aviso */
+.no-results-modal p {
+  color: #7F8C8D;
+  font-size: 15px;
+  margin-bottom: 5px;
+}
+
+/* El botón verde profesional */
+.btn-create-new-modal {
+  background-color: #27AE60 !important; /* Verde como el de Guardar */
+  color: white !important;
+  border: none !important;
+  padding: 12px 25px;
+  border-radius: 10px;
   font-weight: 800;
   font-size: 16px;
-  color: #2C3E50;
-}
-
-/* El rectángulo con borde celeste de la foto */
-.input-client-blue {
-  width: 100%;
-  padding: 10px 15px;
-  font-size: 18px;
-  border: 2px solid #3498DB !important; /* Celeste */
-  border-radius: 8px;
-  outline: none;
-  background: white;
-}
-
-/* --- BOTONES DEL PIE --- */
-.modal-footer-btns {
+  cursor: pointer;
   display: flex;
-  gap: 15px;
-  margin-top: 25px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%; /* Para que sea fácil de tocar en el celular */
+  box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
+  transition: transform 0.2s, background-color 0.2s;
 }
 
-.btn-modal-gray-light {
-  flex: 1;
-  background-color: #D5DBDB !important; /* Gris de la foto */
-  color: #2C3E50 !important;
-  border: 1px solid #BDC3C7;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
+.btn-create-new-modal:hover {
+  background-color: #1E8449 !important;
+  transform: translateY(-1px);
 }
 
-.btn-modal-purple {
-  flex: 1.5;
-  background-color: #8E44AD !important; /* Morado exacto */
-  color: white !important;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
+.btn-create-new-modal:active {
+  transform: translateY(1px);
 }
 
-.btn-modal-purple:hover {
-  background-color: #7D3C98 !important;
-}
-
-/* --- INTERFAZ DE CONFIRMACIÓN INTERNA --- */
 .confirm-create-container {
   padding: 40px 30px;
   text-align: center;
@@ -1260,10 +1650,12 @@ total-amount {
   display: flex;
   flex-direction: column;
   align-items: center;
+  border-radius: 15px;
 }
 
+/* El círculo del icono azul de arriba */
 .confirm-icon-box {
-  background-color: #EBF5FB;
+  background-color: #EBF5FB; /* Azul muy claro */
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -1277,14 +1669,17 @@ total-amount {
   margin: 0 0 10px 0;
   color: #2C3E50;
   font-size: 22px;
+  font-weight: 800;
 }
 
 .confirm-create-container p {
   margin: 5px 0;
   color: #7F8C8D;
   font-size: 15px;
+  line-height: 1.4;
 }
 
+/* Fila de botones abajo */
 .confirm-actions {
   display: flex;
   gap: 15px;
@@ -1292,362 +1687,440 @@ total-amount {
   width: 100%;
 }
 
+/* Botón "No, Corregir" (Gris) */
 .btn-confirm-no {
   flex: 1;
-  background-color: #ECF0F1;
-  border: 1px solid #BDC3C7;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.btn-confirm-yes {
-  flex: 1.5;
-  background-color: #3498DB;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #2980B9;
-}
-
-.btn-confirm-yes:hover {
-  background-color: #2980B9;
-}
-
-/* --- ESTILO PARA EL MODAL DE CONFIRMACIÓN (VACIAR) --- */
-.modal-container-small {
-  background: white !important;
-  width: 400px !important;
-  border-radius: 20px !important;
-  padding: 30px !important;
-  text-align: center !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: center !important;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.3) !important;
-}
-
-.confirm-icon-circle {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 20px;
-  background-color: #F2F3F4; /* Fondo suave para el icono */
-}
-
-.confirm-title {
-  font-size: 24px !important;
-  font-weight: 800 !important;
-  color: #2C3E50 !important;
-  margin: 0 0 10px 0 !important;
-}
-
-.confirm-text {
-  font-size: 16px !important;
-  color: #7F8C8D !important;
-  margin-bottom: 25px !important;
-}
-
-/* --- BOTONES DEL MODAL DE CONFIRMACIÓN --- */
-.confirm-actions-row {
-  display: flex !important;
-  gap: 15px !important;
-  width: 100% !important;
-}
-
-.btn-confirm-cancel {
-  flex: 1 !important;
-  background-color: #BDC3C7 !important; /* Gris */
+  background-color: #BDC3C7 !important; /* Gris profesional */
   color: #2C3E50 !important;
   border: none !important;
-  padding: 14px !important;
-  border-radius: 10px !important;
-  font-weight: bold !important;
-  font-size: 16px !important;
-  cursor: pointer !important;
-}
-
-.btn-confirm-ok {
-  flex: 1 !important;
-  background-color: #E74C3C !important; /* Rojo */
-  color: white !important;
-  border: none !important;
-  padding: 14px !important;
-  border-radius: 10px !important;
-  font-weight: 800 !important;
-  font-size: 16px !important;
-  cursor: pointer !important;
-}
-
-.btn-confirm-ok:hover { background-color: #C0392B !important; }
-.btn-confirm-cancel:hover { background-color: #A6ACAF !important; }
-
-/* --- BUSCADOR DESPLEGABLE --- */
-/* --- BUSCADOR DESPLEGABLE EN MODAL --- */
-.search-dropdown-container {
-  position: relative;
-  width: 100%;
-}
-
-.suggestions-list {
-  position: absolute;
-  top: 100%; /* Justo debajo del input */
-  left: 0;
-  right: 0;
-  background: white;
-  border: 2px solid #3498DB;
-  border-top: none;
-  border-radius: 0 0 10px 10px;
-  max-height: 180px;
-  overflow-y: auto;
-  z-index: 1000;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
-}
-
-.suggestion-item {
-  padding: 12px 15px;
+  padding: 14px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 15px;
   cursor: pointer;
-  font-size: 16px;
-  color: #2C3E50;
-  border-bottom: 1px solid #F2F3F4;
   transition: background 0.2s;
 }
 
-.suggestion-item:hover {
-  background-color: #D6EAF8; /* Celeste como la foto de selección */
-  color: #1B4F72;
-  font-weight: bold;
+.btn-confirm-no:hover {
+  background-color: #A6ACAF !important;
 }
 
-/* Cambia el redondeado del input cuando la lista está abierta */
-.input-client-blue.with-list {
-  border-radius: 10px 10px 0 0 !important;
-}
-
-.suggestion-item:last-child {
-  border-bottom: none;
-}
-
-
-.icon-item {
-  font-size: 14px;
-  opacity: 0.6;
-}
-
-/* Cambiar bordes del input cuando la lista está abierta */
-.input-client-blue:focus {
-  border-radius: 8px 8px 0 0; /* Quita las esquinas de abajo para unir con la lista */
-}
-
-/* --- BUSCADOR DENTRO DEL MODAL --- */
-.search-container-modal {
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.icon-s-modal {
-  position: absolute;
-  left: 12px;
-  top: 12px;
-  color: #7F8C8D;
-}
-
-.input-client-search {
-  width: 100%;
-  padding: 10px 15px 10px 40px;
-  font-size: 16px;
-  border: 2px solid #3498DB;
-  border-radius: 8px;
-  outline: none;
-}
-
-/* --- LISTA DE TARJETAS EN MODAL --- */
-.modal-clients-list {
-  max-height: 250px;
-  overflow-y: auto;
-  background: #F8F9F9;
-  border-radius: 8px;
-  padding: 10px;
-  border: 1px solid #D5DBDB;
-}
-
-.modal-client-card {
-  background: white;
-  padding: 12px 15px;
+/* Botón "Sí, Crear y Fiar" (Azul) */
+.btn-confirm-yes {
+  flex: 1.5;
+  background-color: #3498DB !important; /* Azul principal */
+  color: white !important;
+  border: none !important;
+  padding: 14px;
   border-radius: 10px;
-  margin-bottom: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  font-weight: 800;
+  font-size: 16px;
   cursor: pointer;
-  border: 1px solid #E5E8E8;
-  transition: all 0.2s;
+  box-shadow: 0 4px 0 #2980B9; /* Efecto de profundidad */
+  transition: transform 0.1s;
 }
 
-.modal-client-card:hover {
-  border-color: #3498DB;
-  transform: translateX(5px);
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+.btn-confirm-yes:hover {
+  background-color: #2980B9 !important;
 }
 
-.modal-client-name {
-  font-weight: bold;
-  color: #2C3E50;
-  display: block;
+.btn-confirm-yes:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #2980B9;
+}
+
+/* Espacio entre nombre y badge en la lista del modal */
+.modal-client-info {
+  display: flex;
+  align-items: center;
+  gap: 15px; /* <--- ESPACIO ENTRE NOMBRE Y AL DÍA */
 }
 
 .modal-client-badge {
   font-size: 11px;
-  font-weight: 800;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-top: 4px;
-  display: inline-block;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
 }
 
-.modal-client-badge.clean { background: #D5F5E3; color: #239B56; }
-.modal-client-badge.debt { background: #FADBD8; color: #C0392B; }
-
-/* --- BOTONES DE CREACIÓN --- */
-.no-results-modal {
-  text-align: center;
-  padding: 20px;
+/* Posición de la lupa */
+.icon-s-modal {
+  position: absolute;
+  left: 12px;
+  top: 46%; /* Lupa un poco más arriba */
+  transform: translateY(-50%);
+  color: #7F8C8D;
+  pointer-events: none;
+  z-index: 10;
 }
 
-.btn-create-new-modal {
-  background-color: #27AE60;
-  color: white;
-  border: none;
-  padding: 10px 20px;
+/* Estilo del badge para que no se pegue al texto */
+.modal-client-badge {
+  font-size: 11px;
+  font-weight: 900;
+  padding: 3px 10px;
+  border-radius: 5px;
+  white-space: nowrap; /* Evita que el texto del badge se rompa en dos líneas */
+}
+
+
+.input-flat-modern {
+  padding: 10px 12px;
+  border: 1px solid #BDC3C7;
   border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 10px auto;
+  outline: none;
+  font-size: 14px;
+  color: #2C3E50;
 }
 
-.btn-create-alternate {
-  width: 100%;
-  background: none;
-  border: 1px dashed #27AE60;
-  color: #27AE60;
-  padding: 10px;
-  margin-top: 10px;
-  border-radius: 8px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-/* --- MODAL DE TICKET --- */
-.ticket-modal-container {
-  background: #D5DBDB; /* Fondo gris para resaltar el papel blanco */
-  padding: 30px;
+.panel-ticket-blue {
+  background: white;
+  border: 2px solid #3498db;
   border-radius: 15px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  position: relative;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  height: 100%;
+  min-height: 450px; /* Altura mínima para que no se vea chato en móvil */
 }
 
-.thermal-paper {
+
+/* --- TICKET PANEL --- */
+.ticket-table-wrapper .modern-table {
+  table-layout: auto; /* <--- Vuelve a automático para que se vea normal */
+  width: 100%;
+}
+
+.ticket-table-wrapper th, .ticket-table-wrapper td {
+  padding: 10px 5px;
+}
+
+/* Solo alineamos el texto */
+.ticket-table-wrapper td:nth-child(2) { text-align: center; }
+.ticket-table-wrapper td:nth-child(3) { text-align: right; }
+
+.table-container-pos {
+  flex: 1;
+  overflow-y: auto;   /* Scroll vertical */
+  overflow-x: auto;   /* <--- ACTIVA EL MOVIMIENTO A LA DERECHA */
   background: white;
-  width: 300px; /* Ancho típico de ticket */
-  padding: 20px;
-  font-family: 'Courier New', Courier, monospace;
-  color: black;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  margin-bottom: 20px;
+  border: 1px solid #D5DBDB;
+  border-radius: 12px;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
-.shop-name { text-align: center; margin: 0; font-size: 20px; }
-.ticket-header { text-align: center; font-size: 13px; }
-.ticket-table { width: 100%; font-size: 13px; border-collapse: collapse; margin: 10px 0; }
-.ticket-total-row { display: flex; justify-content: space-between; font-weight: 900; font-size: 18px; }
-.thanks { text-align: center; margin-top: 10px; font-style: italic; }
+.table-container-pos .modern-table {
+  table-layout: fixed; /* Fuerza a respetar los anchos de abajo */
+  width: 100%;
+  min-width: 450px;    /* <--- Ancho mínimo para que quepan las 3 columnas en el cel */
+}
 
-.btn-print-ticket {
-  background-color: #34495E;
-  color: white;
-  border: none;
-  padding: 12px 25px;
-  border-radius: 8px;
-  font-weight: bold;
+/* --- ANCHOS DE COLUMNAS PARA LA LISTA DE PRODUCTOS --- */
+.table-container-pos th:nth-child(1), 
+.table-container-pos td:nth-child(1) { 
+  width: 50%; /* Producto */
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.table-container-pos th:nth-child(2), 
+.table-container-pos td:nth-child(2) { 
+  width: 20%; /* Stock */
+  text-align: center;
+}
+
+.table-container-pos th:nth-child(3), 
+.table-container-pos td:nth-child(3) { 
+  width: 30%; /* Precio */
+  text-align: right;
+  padding-right: 10px;
+}
+
+/* --- ALINEACIÓN CABECERA CLIENTES --- */
+.clients-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+/* Botón Refrescar (Teal) */
+.btn-icon-refresh-teal {
+  background-color: #1ABC9C !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px;
+  border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px;
-}
-.selected-row-cart {
-  background-color: #D6EAF8 !important; /* Celeste */
-  border-left: 4px solid #E74C3C; /* Una marquita roja a la izquierda */
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Contenedor de creación abajo a la izquierda */
-.create-client-container {
+.clients-container {
   display: flex;
-  gap: 8px;
+  gap: 20px;
+  height: calc(100vh - 60px);
+}
+
+/* Panel Blanco (Molde para todas las tarjetas) */
+.panel-blanco {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  margin-bottom: 20px; /* Separación entre cuadros */
+}
+
+/* --- BOTÓN ELIMINAR (LINK ROJO) --- */
+.btn-delete-link {
+  color: #E74C3C;
+  background: #FADBD8;
+  border: 1px solid #E6B0AA;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 10px;
+  transition: 0.2s;
+}
+
+.btn-delete-link:hover {
+  background: #E74C3C;
+  color: white;
+}
+
+/* --- INPUT DE ABONO Y BOTÓN --- */
+.input-abono-group {
+  padding: 25px !important;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  background-color: #F8F9F9 !important; /* Un gris muy ligero para diferenciarlo */
+  border: 1px dashed #BDC3C7;
+}
+
+/* --- TABLA DE HISTORIAL --- */
+.table-history-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+/* --- SECCIÓN NUEVO CLIENTE (ABAJO) --- */
+.create-client-footer {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #eee;
 }
 
-.create-input {
-  flex: 1;
-  height: 42px;
-  border: 1px solid #BDC3C7;
+.input-with-btn {
+  display: flex; /* Esto pone el input y el botón en la misma línea */
+  gap: 8px;
+  width: 100%;
 }
 
-/* Botón Verde para añadir cliente */
+.input-with-btn input {
+  flex: 1; /* El input ocupa todo el espacio posible */
+}
+
+/* Botón Añadir (Verde) */
 .btn-add-client-green {
-  background-color: #27AE60; /* Verde éxito */
-  color: white;
-  border: none;
+  background-color: #27AE60 !important;
+  color: white !important;
+  border: none !important;
   width: 45px;
-  height: 42px;
+  height: 42px; /* Misma altura que el input */
   border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  flex-shrink: 0; /* Evita que el botón se achique */
+  box-shadow: 0 2px 4px rgba(39, 174, 96, 0.2);
 }
 
 .btn-add-client-green:hover {
-  background-color: #1E8449;
-  transform: scale(1.05);
+  background-color: #1E8449 !important;
+}
+.reports-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  min-height: 100%;
 }
 
-.btn-add-client-green:active {
-  transform: scale(0.95);
+/* Barra de Filtros */
+.reports-filters-bar {
+  display: flex;
+  flex-wrap: wrap; /* Permite que los filtros bajen si no caben */
+  align-items: flex-end;
+  gap: 15px;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
 }
 
-input:disabled {
-  cursor: not-allowed;
-  color: #95A5A6;
-  border-color: #D5DBDB !important;
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1; /* Crece para ocupar espacio */
+  min-width: 140px; /* Evita que se hagan demasiado chiquitos */
 }
 
-button:disabled {
-  filter: grayscale(1); /* Lo pone un poco gris */
-  cursor: not-allowed;
+.filter-group label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #7F8C8D;
 }
 
-.btn-registrar-pago-pro {
-  background-color: #27AE60; /* Verde esmeralda */
+/* Botones de acción en los filtros */
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-search-blue {
+  background-color: #3498DB;
   color: white;
   border: none;
+  width: 45px;
+  height: 42px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-pdf-red {
+  background-color: #E74C3C;
+  color: white;
+  border: none;
+  padding: 0 20px;
+  height: 42px;
+  border-radius: 8px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+/* --- GRID DE CONTENIDO (Tabla + Stats) --- */
+.reports-grid {
+  display: grid;
+  grid-template-columns: 1fr 350px; /* 2 columnas en PC */
+  gap: 20px;
+  align-items: start;
+}
+.group-box-manual {
+  border: 1px solid #D5DBDB;
+  border-radius: 15px;
+  padding: 15px;
+  background: white;
+  margin-top: 10px;
+}
+
+.legend-manual {
+  background: white;
+  padding: 0 10px;
+  font-weight: 800;
+  margin-left: 15px;
+  color: #2C3E50;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.manual-inputs-row {
+  display: flex;
+  gap: 10px;
+  align-items: center; /* <--- ESTO ALINEA EL BOTÓN CON LOS INPUTS */
+  margin-top: 10px;
+}
+/* --- SELECTOR DE SEMANAS (CHIPS) --- */
+.week-selector {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9f9;
+  border-radius: 8px;
+}
+
+.week-chips {
+  display: flex;
+  flex-wrap: wrap; /* Si hay 10 semanas, las baja a la siguiente línea */
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.week-chips .chip {
+  background-color: white;
+  border: 1px solid #BDC3C7;
+  color: #7F8C8D;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.week-chips .chip.active {
+  background-color: #3498DB; /* Azul cuando está seleccionado */
+  color: white;
+  border-color: #2980B9;
+  box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+}
+
+.week-chips .chip:hover {
+  border-color: #3498DB;
+}
+
+/* Ajuste tabla stats */
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+.stats-table th { font-size: 11px; color: #7F8C8D; border-bottom: 1px solid #eee; padding: 8px 0; }
+.stats-table td { padding: 10px 0; border-bottom: 1px solid #f2f3f4; }
+/* --- BADGES DE ESTADO (ÓVALOS) --- */
+.status-badge {
+  padding: 5px 12px;
+  border-radius: 20px; /* Hace que sea un óvalo */
+  font-weight: 800;
+  font-size: 12px;
+  text-align: center;
+  min-width: 90px;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* Color para cuando NO debe (Verde) */
+.status-badge.clean {
+  background-color: #D5F5E3 !important; /* Verde clarito fondo */
+  color: #239B56 !important;           /* Verde oscuro texto */
+  border: 1px solid #ABEBC6;
+}
+/* --- BOTÓN REGISTRAR PAGO (CLIENTES) --- */
+.btn-registrar-pago-pro {
+  background-color: #27AE60 !important; /* Verde esmeralda */
+  color: white !important;
+  border: none !important;
   padding: 12px 25px;
   border-radius: 10px;
   font-weight: 800;
@@ -1655,28 +2128,31 @@ button:disabled {
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 10px; /* Espacio entre el billete y el texto */
+  justify-content: center;
+  gap: 10px;
   transition: all 0.2s ease;
   box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2);
-  text-transform: uppercase; /* Letras mayúsculas para que resalte */
+  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
+/* Efecto al pasar el mouse */
 .btn-registrar-pago-pro:hover:not(:disabled) {
-  background-color: #1E8449; /* Verde más oscuro al pasar el mouse */
-  transform: translateY(-2px);
+  background-color: #1E8449 !important; /* Verde más oscuro */
+  transform: translateY(-2px); /* Sube un poquito */
   box-shadow: 0 6px 12px rgba(39, 174, 96, 0.3);
 }
 
+/* Cuando el botón está presionado */
 .btn-registrar-pago-pro:active:not(:disabled) {
   transform: translateY(0);
 }
 
-/* Estilo cuando el cliente no debe nada (Bloqueado) */
+/* Cuando está bloqueado (porque está AL DÍA) */
 .btn-registrar-pago-pro:disabled {
-  background-color: #BDC3C7; /* Gris */
+  background-color: #BDC3C7 !important; /* Gris */
+  opacity: 0.6;
   cursor: not-allowed;
-  opacity: 0.7;
   box-shadow: none;
 }
 
@@ -1684,27 +2160,171 @@ button:disabled {
   font-size: 18px;
 }
 
-/* --- NOTIFICACIÓN LATERAL (VUELTO) --- */
-.vuelto-side-alert {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  width: 300px;
-  background-color: #27AE60; /* Verde éxito */
-  color: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  z-index: 9999;
-  overflow: hidden;
-  animation: slideInRight 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+/* Color para cuando SI debe (Rojo) */
+.status-badge.debt {
+  background-color: #FADBD8 !important; /* Rojo clarito fondo */
+  color: #C0392B !important;           /* Rojo oscuro texto */
+  border: 1px solid #E6B0AA;
 }
 
-@keyframes slideInRight {
-  from { transform: translateX(120%); }
+/* Efecto para el número grande de la derecha (Header) */
+.deuda-header-valor {
+  font-size: 42px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.text-verde { color: #27AE60 !important; }
+.text-rojo { color: #E74C3C !important; }
+
+.vuelto-left-alert {
+  position: fixed;
+  bottom: 30px; /* La ponemos abajo para que no tape el menú */
+  left: 300px;  /* Desplazada para que no tape el Sidebar */
+  width: 320px;
+  background-color: white;
+  border-left: 8px solid #27AE60; /* Verde éxito */
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  z-index: 10000;
+  overflow: hidden;
+  animation: slideInLeft 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* =========================================
+   2. SIDEBAR (MENÚ IZQUIERDO CORREGIDO)
+   ========================================= */
+.sidebar {
+  background-color: #2C3E50;
+  width: 260px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+  overflow: hidden; /* <--- ESTO ES CLAVE: Corta todo lo que sobresalga */
+  white-space: nowrap; /* Evita que el texto baje de línea */
+  border-right: 1px solid rgba(0,0,0,0.1);
+}
+
+.sidebar.collapsed {
+  width: 80px; /* Ancho fijo cuando está cerrado */
+}
+
+/* --- HEADER --- */
+.sidebar-header {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px; /* Centra el botón cuando está cerrado */
+  gap: 15px;
+  min-width: 260px; /* Asegura que el contenido interno no se aplaste */
+}
+
+.toggle-btn-box {
+  background-color: white;
+  border: none;
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px; /* Tamaño fijo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.1s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.toggle-btn-box:active { transform: scale(0.95); }
+
+.app-title-text {
+  color: white;
+  font-weight: 800;
+  font-size: 20px;
+  opacity: 1;
+  transition: opacity 0.2s;
+}
+
+/* --- MENÚ DE NAVEGACIÓN --- */
+.nav-menu {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  gap: 5px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 25px; /* Padding para centrar iconos */
+  color: #BDC3C7;
+  text-decoration: none;
+  transition: all 0.2s;
+  border-left: 5px solid transparent;
+  height: 50px;
+  overflow: hidden;
+}
+
+.nav-icon {
+  font-size: 22px;
+  min-width: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-text {
+  margin-left: 15px;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* Estado Activo */
+.nav-item.active {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: white;
+  border-left: 5px solid #3498DB !important;
+}
+
+.nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* --- FOOTER --- */
+.sidebar-status-footer {
+  padding: 20px;
+  text-align: center;
+  background-color: rgba(0,0,0,0.2);
+  margin-top: auto;
+}
+
+/* --- REGLAS PARA OCULTAR TEXTO CUANDO ESTÁ CERRADO --- */
+.sidebar.collapsed .app-title-text,
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .sidebar-status-footer {
+  display: none !important; /* Desaparece por completo */
+  opacity: 0;
+}
+
+/* Ajuste para centrar los iconos cuando está cerrado */
+.sidebar.collapsed .nav-item {
+  padding: 12px 0;
+  justify-content: center;
+}
+
+.sidebar.collapsed .nav-icon {
+  margin: 0;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-150%); }
   to { transform: translateX(0); }
 }
 
-.side-alert-content {
+.left-alert-content {
   padding: 15px 20px;
   display: flex;
   align-items: center;
@@ -1712,34 +2332,33 @@ button:disabled {
   position: relative;
 }
 
-.side-alert-icon {
-  font-size: 30px;
-}
+.left-alert-icon { font-size: 30px; }
 
-.side-alert-text {
+.left-alert-text {
   display: flex;
   flex-direction: column;
 }
 
-.side-alert-title {
+.left-alert-title {
   font-size: 12px;
   font-weight: 800;
-  opacity: 0.9;
+  color: #7F8C8D;
   letter-spacing: 1px;
 }
 
-.side-alert-amount {
-  font-size: 24px;
+.left-alert-amount {
+  font-size: 26px;
   font-weight: 900;
+  color: #27AE60;
 }
 
-.side-alert-close {
+.left-alert-close {
   position: absolute;
   top: 8px;
-  right: 8px;
-  background: rgba(255,255,255,0.2);
+  right: 10px;
+  background: #F2F3F4;
   border: none;
-  color: white;
+  color: #7F8C8D;
   width: 26px;
   height: 26px;
   border-radius: 50%;
@@ -1747,225 +2366,145 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.2s;
+  font-weight: bold;
 }
 
-.side-alert-close:hover {
-  background: rgba(255,255,255,0.4);
+.left-alert-close:hover {
+  background: #E5E8E8;
+  color: #E74C3C;
 }
 
-/* Barra de progreso de 1 minuto */
-.side-alert-progress {
-  height: 4px;
-  background-color: rgba(0,0,0,0.2);
+/* Barra de tiempo de 1 minuto */
+.left-alert-progress {
+  height: 5px;
+  background-color: #27AE60;
   width: 100%;
   transform-origin: left;
-  animation: shrinkProgress 60s linear forwards;
+  animation: shrinkLeft 60s linear forwards;
 }
 
-@keyframes shrinkProgress {
+@keyframes shrinkLeft {
   from { transform: scaleX(1); }
   to { transform: scaleX(0); }
 }
 
-/* --- LAYOUT REPORTES --- */
-.reports-layout {
+/* Contenedor que junta el $ y el Input */
+.abono-input-container {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
-  height: calc(100vh - 50px);
-}
-
-.reports-header-main {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.reports-filters-bar {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  padding: 12px 20px;
-}
-
-.filter-item { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 13px; }
-
-.btn-search-blue {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 15px;
-  cursor: pointer;
-}
-
-.btn-pdf-red {
-  background-color: #E74C3C;
-  color: white;
-  border: none;
-  padding: 8px 20px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* --- GRID DE CONTENIDO --- */
-.reports-content-grid {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 20px;
-  flex: 1;
-}
-
-.group-box-reports {
-  border: 1px solid #BDC3C7;
-  border-radius: 8px;
-  padding: 15px;
-  background: white;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.table-wrapper-reports {
-  flex: 1;
-  overflow-y: auto;
-}
-
-/* --- TARJETA KPI CENTRADA --- */
-.kpi-total-card {
-  background: white;
-  border: 1px solid #D5DBDB;
-  border-radius: 12px;
-  padding: 30px 20px; /* Aumentamos espacio arriba y abajo */
-  display: flex;
-  flex-direction: column;
-  align-items: center;    /* CENTRA TODO HORIZONTALMENTE */
-  justify-content: center; /* CENTRA TODO VERTICALMENTE */
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-  
-  /* Opcional: Cambiar la barrita verde al borde superior para que se vea más simétrico */
-  border-top: 6px solid #27AE60; 
-  border-left: 1px solid #D5DBDB; 
-}
-
-.kpi-label {
-  color: #7F8C8D;
-  font-weight: bold;
-  font-size: 15px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 10px;
-  text-align: center;
-}
-
-.kpi-value {
-  color: #27AE60;
-  font-size: 48px; /* Tamaño impactante */
-  font-weight: 900;
-  text-align: center;
-  line-height: 1;
-}
-
-
-/* --- SECCIÓN MENSUAL --- */
-.mensual-filters {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  align-items: center; /* Alinea verticalmente al centro */
   gap: 10px;
-  margin-bottom: 10px;
-}
-
-.stats-table {
   width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
+  flex: 1;
+}
+.table-responsive-container {
+  width: 100%;
+  overflow-x: auto;           /* Activa el scroll a la derecha */
+  overflow-y: auto;           /* Mantiene el scroll vertical */
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
+  -webkit-overflow-scrolling: touch; /* Scroll suave en celulares */
 }
 
-.stats-table th { color: #7F8C8D; border-bottom: 2px solid #ECF0F1; padding: 10px; text-align: left; }
-.stats-table td { padding: 10px; border-bottom: 1px solid #F2F3F4; }
-
-.badge-pago {
-  font-size: 10px;
-  background: #EBF5FB;
-  color: #2980B9;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-weight: bold;
+.table-responsive-container .modern-table {
+  min-width: 750px !important; /* Fuerza a la tabla a medir 750px para que haya scroll */
+  table-layout: fixed;        /* Mantiene las columnas firmes */
+  width: 100%;
 }
-/* --- LAYOUT CONFIGURACIÓN --- */
+
+/* --- ANCHOS DE COLUMNAS PARA REPORTES --- */
+/* Fecha */
+.table-responsive-container th:nth-child(1), 
+.table-responsive-container td:nth-child(1) { width: 140px; font-size: 11px; }
+
+/* Producto (Le damos más espacio) */
+.table-responsive-container th:nth-child(2), 
+.table-responsive-container td:nth-child(2) { 
+  width: 250px; 
+  white-space: normal; /* Permite que el nombre baje si es muy largo */
+}
+
+/* Cantidad */
+.table-responsive-container th:nth-child(3), 
+.table-responsive-container td:nth-child(3) { width: 80px; text-align: center; }
+
+/* Total */
+.table-responsive-container th:nth-child(4), 
+.table-responsive-container td:nth-child(4) { width: 100px; text-align: right; }
+
+/* Pago */
+.table-responsive-container th:nth-child(5), 
+.table-responsive-container td:nth-child(5) { width: 100px; text-align: center; }
+
+
+.icon-dollar {
+  flex-shrink: 0; /* Evita que el símbolo se aplaste */
+}
+/* =========================================
+   ESTILOS DE CONFIGURACIÓN (ARREGLO VISUAL)
+   ========================================= */
+
 .config-layout {
-  max-width: 900px;
+  max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
+  width: 100%;
 }
 
-.config-main-title {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  font-size: 24px;
-  color: #2C3E50;
-  margin-bottom: 30px;
-  font-weight: 800;
-}
-
+/* El recuadro blanco */
 .config-box {
   background: white;
-  padding: 25px !important;
-  margin-bottom: 25px !important;
+  padding: 20px;
+  border-radius: 12px;
+  border: 1px solid #D5DBDB;
+  margin-bottom: 20px;
 }
 
-.config-label {
-  font-size: 14px;
-  color: #7F8C8D;
-  margin-bottom: 10px;
-}
-
+/* El selector (Dropdown) */
 .config-select {
-  font-size: 16px !important;
-  text-align: left !important;
-  padding-left: 15px !important;
+  width: 100%; /* Ocupa todo el ancho */
+  padding: 12px 15px;
+  font-size: 16px;
+  border: 1px solid #BDC3C7;
+  border-radius: 8px;
+  background-color: white;
   margin-bottom: 15px;
+  outline: none;
 }
 
-/* --- BOTONES CONFIG --- */
-.btn-guardar-config {
-  background-color: #27AE60;
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 12px;
-  border-radius: 8px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-}
-
+/* --- BOTONES GRANDES Y BONITOS --- */
+.btn-guardar-config, 
 .btn-reconnect-config {
-  background-color: #3498DB;
-  color: white;
+  width: 100%; /* Fundamental para móvil */
+  padding: 14px;
   border: none;
-  width: 100%;
-  padding: 12px;
   border-radius: 8px;
-  font-weight: bold;
+  font-weight: 800;
+  font-size: 15px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
-  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  transition: transform 0.1s;
 }
 
-/* --- ESTADOS DB --- */
+/* Botón Guardar (Verde) */
+.btn-guardar-config {
+  background-color: #27AE60 !important;
+  color: white !important;
+}
+.btn-guardar-config:active { transform: translateY(2px); }
+
+/* Botón Reconectar (Azul) */
+.btn-reconnect-config {
+  background-color: #3498DB !important;
+  color: white !important;
+  margin-top: 10px;
+}
+.btn-reconnect-config:active { transform: translateY(2px); }
+
+/* --- MENSAJES DE ESTADO (CON FONDO DE COLOR) --- */
 .db-status-container {
   margin-bottom: 15px;
 }
@@ -1974,433 +2513,543 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-weight: bold;
-  font-size: 16px;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.status-msg.success { color: #27AE60; }
-.status-msg.error { color: #E74C3C; }
-.status-msg.loading { color: #F39C12; }
-
-.config-footer-info {
-  text-align: center;
-  margin-top: 50px;
-  color: #BDC3C7;
-  font-size: 12px;
-}
-
-.spin {
-  animation: rotation 2s infinite linear;
-}
-
-@keyframes rotation {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(359deg); }
-}
-
-.badge-motivo {
-  background-color: #ECF0F1;
-  color: #34495E;
-  padding: 3px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.badge-audit-action {
-  background-color: #EBF5FB;
-  color: #2980B9;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 800;
-}
-
-/* --- BARRA DE SELECCIÓN MEJORADA --- */
-.selection-bar-modern {
-  background: #ffffff;
-  border: 1px solid #d5dbdb;
-  border-radius: 15px;
-  padding: 20px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: all 0.3s ease;
-  margin: 10px 0;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-}
-
-/* Efecto cuando hay un producto seleccionado */
-.selection-bar-modern.active {
-  border-color: #3498db;
-  box-shadow: 0 8px 20px rgba(52, 152, 219, 0.15);
-  background: linear-gradient(to right, #ffffff, #f7fbff);
-}
-
-/* Información del Producto */
-.sel-product-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.product-tag {
-  font-size: 11px;
-  font-weight: 800;
-  color: #3498db;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.product-name-display {
-  font-size: 20px;
-  font-weight: 800;
-  color: #2c3e50;
-}
-
-.product-price-display {
-  font-size: 32px;
-  font-weight: 900;
-  color: #3498db;
-  line-height: 1;
-}
-
-.unit-price {
-  font-size: 13px;
-  color: #7f8c8d;
-  font-weight: 500;
-}
-
-.no-selection {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  color: #bdc3c7;
-  font-style: italic;
-  font-size: 16px;
-}
-
-/* Controles de Cantidad */
-.sel-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.qty-wrapper {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-}
-
-.qty-wrapper label {
-  font-size: 10px;
-  font-weight: 800;
-  color: #7f8c8d;
-}
-
-.qty-input-pos {
-  width: 90px;
-  height: 50px;
-  border: 2px solid #2c3e50;
-  border-radius: 10px;
-  text-align: center;
-  font-size: 24px;
-  font-weight: 900;
-  color: #2c3e50;
-  outline: none;
-}
-
-.qty-input-pos:focus {
-  border-color: #3498db;
-  background-color: #f0f7ff;
-}
-
-/* Botón Agregar */
-.btn-add-main {
-  background-color: #f39c12; /* Naranja brillante */
-  color: white;
-  border: none;
-  height: 60px;
-  padding: 0 30px;
-  border-radius: 12px;
-  font-weight: 900;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 4px 0 #d68910; /* Sombra sólida tipo botón de juego */
-}
-
-.btn-add-main:hover:not(:disabled) {
-  background-color: #e67e22;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 0 #d35400;
-}
-
-.btn-add-main:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 transparent;
-}
-
-.btn-add-main:disabled {
-  background-color: #d5dbdb;
-  box-shadow: none;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-/* --- HACER QUE LA CABECERA DE LA TABLA SEA FIJA --- */
-.modern-table thead th {
-  position: sticky;       /* Esto hace que se quede pegado */
-  top: 0;                /* En la posición 0 de arriba */
-  z-index: 10;           /* Para que los datos pasen POR DEBAJO y no por encima */
-  background-color: #ECF0F1; /* Debe tener color sólido para que no sea transparente */
-  border-bottom: 2px solid #BDC3C7;
   padding: 12px;
-  text-align: left;
-}
-
-/* Asegurar que el contenedor tenga el scroll correctamente */
-.table-wrapper {
-  flex: 1;
-  overflow-y: auto;      /* Permite el scroll interno */
-  min-height: 0;
-  position: relative;    /* Ayuda al posicionamiento sticky */
-}
-
-/* --- ESTILO GROUPBOX BLANCO UNIVERSAL --- */
-fieldset.group-box-pos, 
-fieldset.group-box, 
-fieldset.group-box-reports {
-  border: 1px solid #D5DBDB; /* Borde gris suave */
-  border-radius: 12px;       /* Bordes redondeados */
-  padding: 20px;            /* Espaciado interno */
-  background-color: #FFFFFF; /* FONDO BLANCO PURO */
-  margin-bottom: 20px;
-  display: block;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05); /* Sombra muy sutil */
-}
-
-/* --- ESTILO DEL TÍTULO (LEGEND) --- */
-legend {
-  background-color: #FFFFFF; /* Fondo blanco para "tapar" la línea */
-  padding: 0 12px;           /* Espacio a los lados del texto */
-  margin-left: 15px;         /* Separación desde la izquierda */
-  font-weight: 800;          /* Texto bien negrita */
-  color: #2C3E50;            /* Color azul oscuro/gris */
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;                  /* Espacio entre icono y texto */
-  width: auto;
-}
-
-/* Iconos dentro de los títulos */
-legend span, legend svg {
-  display: flex;
-  align-items: center;
-}
-
-/* RESET GENERAL */
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #ECF0F1;
-  overflow: hidden;
-}
-
-/* LAYOUT PRINCIPAL */
-.app-container { display: flex; width: 100vw; height: 100vh; }
-.content-area { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #ECF0F1; }
-
-/* GROUPBOX BLANCO (Títulos sobre la línea) */
-fieldset.group-box, fieldset.group-box-pos, fieldset.group-box-reports {
-  border: 1px solid #D5DBDB;
-  border-radius: 12px;
-  padding: 20px;
-  background-color: #FFFFFF !important; /* Blanco Puro */
-  margin-bottom: 15px;
-  display: block;
-}
-
-legend {
-  background-color: #FFFFFF !important;
-  padding: 0 12px;
-  margin-left: 15px;
-  font-weight: 800;
-  color: #2C3E50;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* TABLAS */
-.modern-table { width: 100%; border-collapse: collapse; background: white; }
-.modern-table thead th {
-  position: sticky; top: 0; z-index: 10;
-  background-color: #ECF0F1;
-  padding: 12px; text-align: left;
-  border-bottom: 2px solid #BDC3C7;
-}
-.modern-table td { padding: 10px; border-bottom: 1px solid #eee; }
-.row-hover:hover { background-color: #F8F9F9; cursor: pointer; }
-.low-stock { background-color: #FADBD8 !important; color: #C0392B; }
-.selected-row { background-color: #D6EAF8 !important; color: #1B4F72; }
-
-/* INPUTS */
-.input-main, .input-pos-flat {
-  width: 100%; padding: 10px; border: 1px solid #BDC3C7; border-radius: 8px; outline: none;
-}
-.input-main:focus, .input-pos-flat:focus { border-color: #3498DB; }
-
-/* ELIMINAR FLECHAS INPUT NUMBER */
-input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-input[type=number] { -moz-appearance: textfield; }
-
-/* BOTONES COLORES */
-.btn-guardar { background-color: #27AE60; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-editar { background-color: #3498DB; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-.btn-eliminar-moderno { background-color: #E74C3C; color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: bold; cursor: pointer; }
-
-.total-label {
-  font-size: 14px;
-  font-weight: 800;
-  color: #7f8c8d;
-  display: block;
-  margin-bottom: -5px;
-}
-
-.btn-cobrar-big {
-  background-color: #27ae60 !important;
-  color: white;
-  border: none;
-  width: 100%;
-  height: 55px;
-  border-radius: 10px;
-  font-size: 22px;
-  font-weight: 800;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 4px 0 #1e8449; /* Efecto de profundidad */
-  transition: all 0.1s;
-}
-
-.btn-cobrar-big:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #1e8449;
-}
-
-.btn-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.btn-row button {
-  border: none;
   border-radius: 8px;
-  padding: 12px 5px;
-  font-weight: 700;
+  font-weight: bold;
   font-size: 14px;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+}
+.app-container {
+  display: flex;            /* <--- ESTO ES LA CLAVE: Los pone lado a lado */
+  flex-direction: row;      /* Dirección horizontal */
+  height: 100vh;            /* Ocupa el 100% de la altura de la pantalla */
+  width: 100vw;             /* Ocupa el 100% del ancho */
+  overflow: hidden;         /* Evita que aparezcan barras de scroll dobles */
 }
 
-.pos-actions-grid button {
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 700;
-  font-size: 15px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  cursor: pointer;
-  padding: 12px 5px;
-  transition: opacity 0.2s;
+/* 2. El área donde se carga el Inventario/POS/Etc */
+.content-area {
+  flex: 1;                  /* Ocupa todo el espacio restante a la derecha */
+  height: 100%;             /* Altura completa */
+  overflow-y: auto;         /* Permite hacer scroll si el contenido es largo */
+  padding: 10px;            /* Un poco de espacio interno */
+  position: relative;
+  background-color: #ECF0F1; /* Fondo gris claro */
 }
-
-.pos-actions-grid button:hover {
-  opacity: 0.9;
-}
-
-/* --- COLORES EXACTOS DE LA IMAGEN --- */
-.btn-cobrar-big {
-  background-color: #27AE60 !important; /* Verde */
-  height: 50px;
-  font-size: 18px !important;
-}
-
-.btn-purple { background-color: #8E44AD !important; } /* Morado */
-.btn-dark-blue { background-color: #34495E !important; } /* Gris oscuro */
-.btn-orange { background-color: #F39C12 !important; } /* Naranja */
-.btn-blue { background-color: #3498DB !important; } /* Azul celeste */
-.btn-red-solid { background-color: #E74C3C !important; } /* Rojo */
-.btn-gray-solid { background-color: #95A5A6 !important; } /* Gris */
-
-/* El cuadrito blanco del check en el botón verde */
-.icon-bg-white {
-  background-color: white;
+/* Colores de estado */
+.status-msg.success {
+  background-color: #D5F5E3;
   color: #27AE60;
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
+  border: 1px solid #ABEBC6;
+}
+
+.status-msg.error {
+  background-color: #FADBD8;
+  color: #E74C3C;
+  border: 1px solid #E6B0AA;
+}
+
+.status-msg.loading {
+  background-color: #FCF3CF;
+  color: #F39C12;
+  border: 1px solid #F9E79F;
+}
+
+/* --- AJUSTE RESPONSIVE (MÓVIL) --- */
+@media (max-width: 768px) {
+  .input-abono-group {
+    flex-direction: column !important; /* El botón se va abajo */
+    gap: 15px !important;
+  }
+
+  .abono-input-container {
+    width: 100%; /* El grupo de $ e input ocupa todo el ancho */
+  }
+
+  .btn-registrar-pago-pro {
+    width: 100% !important; /* El botón verde ocupa todo el ancho abajo */
+  }
+}
+.mobile-top-bar {
+  display: none; 
+}
+
+.btn-manual-dark {
+  background-color: #2C3E50;  /* Azul oscuro elegante (Midnight Blue) */
+  color: white;               /* Texto blanco */
+  border: none;
+  padding: 0 25px;            /* Relleno a los lados */
+  height: 42px;               /* Altura fija para igualar a los inputs */
+  border-radius: 8px;         /* Bordes redondeados */
+  font-weight: 800;           /* Letra gruesa */
+  font-size: 15px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
-  font-weight: bold;
-  border: 1px solid #145A32;
+  gap: 8px;                   /* Espacio si decides ponerle un icono */
+  box-shadow: 0 4px 6px rgba(44, 62, 80, 0.3); /* Sombra suave */
+  transition: all 0.2s ease;
+  text-transform: uppercase;  /* Opcional: Texto en mayúsculas */
+  letter-spacing: 0.5px;
 }
 
-/* Iconos de los otros botones */
-.pos-actions-grid button span {
-  font-size: 18px;
+/* Efecto al pasar el mouse (Hover) */
+.btn-manual-dark:hover {
+  background-color: #1A252F;  /* Se oscurece un poco */
+  transform: translateY(-2px); /* Se eleva ligeramente */
+  box-shadow: 0 6px 12px rgba(44, 62, 80, 0.4);
 }
 
-/* Contenedor para centrar el botón */
-.btn-container-center {
-  display: flex;
-  justify-content: center; /* Lo centra horizontalmente */
-  width: 100%;
-  margin-bottom: 15px;
+/* Efecto al hacer clic (Active) */
+.btn-manual-dark:active {
+  transform: translateY(1px); /* Baja al presionar */
+  box-shadow: 0 2px 4px rgba(44, 62, 80, 0.3);
 }
-
-/* Ajuste del botón */
-.btn-ver-stats {
-  background-color: #34495E;
-  color: white;
-  border: none;
-  padding: 10px 25px; /* Le damos aire a los lados */
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
+/* ==========================================================================
+   BLOQUE RESPONSIVE ÚNICO (SOLO PARA CELULARES Y TABLETS)
+   ========================================================================== */
+@media (max-width: 768px) {
   
-  /* IMPORTANTE: Cambia width: 100% por width: auto */
-  width: auto; 
-  min-width: 180px; /* Ancho mínimo para que se vea bien */
-  
-  transition: background 0.2s;
-}
 
-.btn-ver-stats:hover {
-  background-color: #2C3E50;
+  .input-abono-group input {
+    width: 100% !important; /* Cuadro de texto ancho completo */
+    height: 50px !important; /* Más alto para el dedo */
+    font-size: 18px !important;
+    text-align: center;
+  }
+
+  .btn-registrar-pago-pro {
+    width: 100% !important;  /* Botón ancho completo */
+    height: 55px !important; /* Más alto para el dedo */
+    font-size: 16px !important;
+    justify-content: center !important;
+    margin: 0 !important;
+  }
+
+  .panel-header-cliente div {
+    text-align: center !important;
+  }
+  .mobile-top-header {
+    display: flex !important;
+    align-items: center;
+    background-color: #2C3E50;
+    height: 60px;
+    padding: 0 15px;
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 9000;
+    width: 100%;
+  }
+
+  .mobile-app-name { color: white; font-weight: 800; font-size: 18px; }
+  .btn-open-menu { background: rgba(255,255,255,0.1); border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
+
+  .sidebar.mobile-open {
+    left: 0 !important; /* Se muestra */
+    width: 260px !important;
+  }
+
+  /* Fondo oscuro cuando el menú está abierto */
+  .mobile-overlay-shadow {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(0,0,0,0.5);
+    z-index: 9500;
+  }
+
+  /* 3. Evitar que desaparezcan los textos en móvil */
+  .sidebar.mobile-open .nav-text {
+    display: inline !important;
+  }
+
+  /* 4. Contenedor de contenido se ajusta */
+  .app-container { flex-direction: column; }
+  .content-area { height: calc(100vh - 60px); padding: 10px; }
+
+  /* 5. Ajustes de los módulos para que bajen en cascada */
+  .inventory-layout, .pos-layout, .reports-grid, .clients-container {
+    flex-direction: column !important;
+    height: auto !important;
+  }
+  .form-container, .pos-left, .pos-right, .reports-sidebar {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .mobile-top-bar {
+    display: flex !important; /* <--- IMPORTANTE: Aquí sí se muestra */
+    align-items: center;
+    justify-content: space-between;
+    background: #2C3E50;
+    padding: 0 15px;
+    height: 60px;
+    color: white;
+    position: sticky;
+    top: 0;
+    z-index: 9000;
+    width: 100%;
+
+  }
+  .mobile-logo {
+    font-weight: 800;
+    font-size: 18px;
+    color: white;
+  }
+
+  .btn-toggle-mobile {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Forzar ancho completo en paneles izquierdo/derecho */
+  .form-container, .pos-left, .pos-right, .reports-sidebar, 
+  .table-responsive-container, .clients-container > div {
+    width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+  }
+  /* --- 4. TABLAS CON DESLIZAMIENTO LATERAL --- */
+  .table-wrapper, .table-container-pos, .table-responsive-container, .table-history-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid #D5DBDB;
+    background: white;
+    border-radius: 8px;
+  }
+  .modern-table { min-width: 600px !important; } /* Evita que se amontone el texto */
+
+  /* --- 5. PUNTO DE VENTA (POS) --- */
+  .total-amount { font-size: 42px !important; text-align: center; }
+  .selection-bar-modern-final {
+    flex-direction: column !important;
+    text-align: center;
+    padding: 15px !important;
+  }
+  .btn-agregar-orange { width: 100%; justify-content: center; }
+  .btn-row { grid-template-columns: 1fr; } /* Botones uno debajo de otro */
+
+  /* --- 6. REPORTES (ORDEN ESTRATÉGICO) --- */
+  .reports-filters-bar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .kpi-total-card { order: -1; } /* El total verde sale primero */
+  .filter-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 3fr !important;
+    gap: 10px;
+  }
+  .btn-ver-stats { width: 100% !important; margin: 10px 0 !important; }
+
+  /* --- 7. MODALES (CASI PANTALLA COMPLETA) --- */
+  .modal-container-tall, .modal-container-client, .modal-container-small {
+    width: 95% !important;
+    padding: 20px !important;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .amount-highlight { font-size: 38px !important; }
+
+  /* 2. La tabla: le damos un ancho mínimo para que no se aplaste */
+  .table-wrapper .modern-table {
+    min-width: 650px !important; /* Ajusta este valor según cuántas columnas tengas */
+    table-layout: fixed; /* Mantiene las columnas firmes */
+    width: 100%;
+  }
+
+  /* 3. Definimos anchos por columna para que se vea ordenado */
+  /* COD */
+  .table-wrapper th:nth-child(1), 
+  .table-wrapper td:nth-child(1) { width: 100px; text-align: left; }
+  
+  /* PROD (Le damos más espacio) */
+  .table-wrapper th:nth-child(2), 
+  .table-wrapper td:nth-child(2) { 
+    width: 200px; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+  }
+
+  /* UNI */
+  .table-wrapper th:nth-child(3), 
+  .table-wrapper td:nth-child(3) { width: 100px; text-align: center; }
+
+  /* PRE */
+  .table-wrapper th:nth-child(4), 
+  .table-wrapper td:nth-child(4) { width: 100px; text-align: right; }
+
+  /* STK */
+  .table-wrapper th:nth-child(5), 
+  .table-wrapper td:nth-child(5) { width: 80px; text-align: center; }
+
+
+  .group-box-manual {
+    padding: 15px;
+    margin: 5px 0;
+  }
+
+  /* Cambiamos de fila a columna para que los inputs bajen */
+  .manual-inputs-row {
+    flex-direction: column; 
+    gap: 10px; /* Espacio entre el nombre, el precio y el botón */
+    width: 100%;
+  }
+
+  /* Los cuadros de texto ahora ocupan todo el ancho */
+  .input-flat-modern {
+    width: 100% !important; 
+    height: 48px; /* Altura cómoda para el dedo */
+    font-size: 16px; /* Evita que el celular haga zoom molesto al escribir */
+    padding: 0 15px;
+  }
+
+  /* Ajuste del Título y Buscador del Catálogo */
+  .catalog-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px;
+    margin-bottom: 15px;
+  }
+
+  .input-busqueda-inventario {
+    width: 100% !important;
+    height: 45px;
+    font-size: 16px;
+  }
+
+  /* Anchos de columnas fijos en móvil para que se vea ordenado */
+  .modern-table th:nth-child(1), .modern-table td:nth-child(1) { width: 110px; } /* COD */
+  .modern-table th:nth-child(2), .modern-table td:nth-child(2) { width: 180px; } /* PROD */
+  .modern-table th:nth-child(3), .modern-table td:nth-child(3) { width: 90px; }  /* UNI */
+  .modern-table th:nth-child(4), .modern-table td:nth-child(4) { width: 90px; }  /* PRE */
+  .modern-table th:nth-child(5), .modern-table td:nth-child(5) { width: 80px; }  /* STK */
+
+  /* Botón eliminar pegado a la derecha abajo */
+  .footer-row {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .btn-eliminar-moderno {
+    width: 50%; /* Botón más grande en móvil */
+    justify-content: center;
+    height: 48px;
+  }
+  .app-container, .content-area {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: hidden; /* Prohibido el scroll horizontal en toda la pantalla */
+  }
+
+  .table-wrapper {
+    width: 100% !important;
+    overflow-x: auto !important; /* ACTIVA EL SCROLL SOLO AQUÍ */
+    display: block;
+    background: white;
+    border: 1px solid #D5DBDB;
+    border-radius: 12px;
+    -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
+  }
+
+  .modern-table {
+    /* Forzamos a que la tabla sea más ancha que el celular */
+    min-width: 600px !important; 
+    table-layout: fixed; /* Columnas firmes */
+  }
+
+  /* Ajuste de anchos para que no se vea deformado al deslizar */
+  .modern-table th:nth-child(1), .modern-table td:nth-child(1) { width: 120px; } /* COD */
+  .modern-table th:nth-child(2), .modern-table td:nth-child(2) { width: 180px; } /* PROD */
+  .modern-table th:nth-child(3), .modern-table td:nth-child(3) { width: 80px; }  /* UNI */
+  .modern-table th:nth-child(4), .modern-table td:nth-child(4) { width: 100px; } /* PRE */
+  .modern-table th:nth-child(5), .modern-table td:nth-child(5) { width: 70px; }  /* STK */
+
+  .modern-table td {
+    white-space: nowrap; /* Evita que el texto salte de línea */
+    padding: 12px 8px !important;
+  }
+
+  .reports-grid {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .table-responsive-container {
+    max-height: 400px; /* Evita que la tabla sea infinita hacia abajo */
+  }
+
+  /* 3. El resumen mensual lo mandamos al final */
+  .reports-sidebar {
+    order: 3 !important;
+    width: 100% !important;
+  }
+
+  /* Ajuste de la tabla para que no se apriete */
+  .modern-table {
+    min-width: 550px !important; /* Fuerza a que haya algo de scroll lateral para que se vea bien */
+  }
+
+  /* --- BOTÓN "VER REPORTE MENSUAL" --- */
+  .btn-ver-stats {
+    background-color: #34495E !important;
+    color: white !important;
+    width: 100% !important; /* Botón grande para el dedo */
+    padding: 14px !important;
+    border-radius: 8px !important;
+    margin: 10px 0 !important;
+    display: block !important;
+  }
+  .inventory-layout {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .form-container { width: 100%; height: auto; margin-bottom: 20px; }
+  .catalog-container { width: 100%; height: 500px; } /* Altura fija para tabla en móvil */
+  .catalog-header { flex-direction: column; gap: 10px; align-items: stretch; }
+  .catalog-search-box { width: 100%; }
+
+  /* Quitamos márgenes que empujan el contenido fuera de la pantalla */
+  .reports-filters-bar {
+    height: auto !important;
+    padding: 15px !important;
+  }
+  .vuelto-left-alert {
+    left: 10px;
+    right: 10px;
+    bottom: 20px;
+    width: auto;
+  }
+  .panel-header-cliente {
+    text-align: center;
+    padding: 20px !important;
+  }
+  
+  .input-abono-group {
+    flex-direction: column;
+    align-items: stretch !important;
+  }
+
+  .deuda-header-valor {
+    font-size: 36px !important;
+    display: block;
+    margin-top: 10px;
+  }
+  .app-container { flex-direction: column; }
+  .content-area { padding: 10px !important; height: calc(100vh - 60px); }
+  
+  /* 2. TABLAS DESLIZABLES (LA CLAVE ESTÁ AQUÍ) */
+  .table-wrapper, 
+  .table-container-pos, 
+  .ticket-table-wrapper, 
+  .table-responsive-container {
+    display: block;                /* Importante para que el overflow funcione */
+    width: 100% !important;        /* Ocupa todo el ancho del celular */
+    overflow-x: auto !important;   /* ACTIVA EL SCROLL HORIZONTAL */
+    overflow-y: hidden;            /* Evita scroll doble raro */
+    -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
+    background: white;
+    border: 1px solid #D5DBDB;
+    border-radius: 8px;
+    margin-bottom: 15px;
+  }
+
+  /* FORZAMOS A LA TABLA A SER ANCHA */
+  .modern-table {
+    min-width: 800px !important;   /* <--- ESTO OBLIGA A QUE HAYA SCROLL */
+    width: 100% !important;
+    table-layout: auto !important; /* Deja que las columnas tomen su espacio */
+  }
+
+  /* 3. COLUMNAS DE AUDITORÍA (Ajuste para que se lean bien) */
+  .modern-table th, .modern-table td {
+    padding: 12px 10px !important;
+    white-space: normal; /* Permite que el texto baje si es largo */
+    font-size: 14px;
+  }
+
+  /* 4. MODALES ADAPTADOS */
+  .modal-container-tall, .modal-container-client, .modal-container-small {
+    width: 95% !important;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 20px !important;
+  }
+
+  /* 5. SIDEBAR MÓVIL */
+  .sidebar { position: fixed; left: -100%; top: 0; z-index: 99999; width: 280px; transition: 0.3s; }
+  .sidebar.mobile-open { left: 0; }
+  .mobile-top-bar { display: flex; align-items: center; justify-content: space-between; background: #2C3E50; padding: 10px 15px; height: 60px; color: white; }
+
+  /* 6. ORDEN DE ELEMENTOS */
+  .inventory-layout, .pos-layout, .reports-grid, .clients-container, .audit-layout {
+    flex-direction: column !important;
+    height: auto !important;
+    display: flex;
+  }
+
+  .form-container, .pos-left, .pos-right, .reports-sidebar, fieldset {
+    width: 100% !important;
+    height: auto !important;
+    flex: none !important;
+  }
+  .audit-layout, .app-container {
+    width: 100% !important;
+    overflow-x: hidden; /* Evita que se mueva toda la pagina */
+  }
+
+  fieldset.group-box-pos {
+    width: 100% !important;
+    min-width: 0; /* Truco vital para flexbox */
+    padding: 10px !important;
+    box-sizing: border-box;
+  }
+
+  /* 2. EL CONTENEDOR DESLIZABLE */
+  .table-wrapper {
+    display: block !important;      /* Rompe cualquier restricción flex */
+    width: 100% !important;         /* Ocupa el ancho del celular */
+    overflow-x: scroll !important;  /* FUERZA la barra de desplazamiento */
+    -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
+    border: 1px solid #D5DBDB;
+    border-radius: 8px;
+  }
+
+  /* 3. LA TABLA RÍGIDA (ESTO ES LO QUE HACE QUE SE MUEVA) */
+  .modern-table {
+    min-width: 900px !important;    /* <--- Ancho forzado (más grande que el cel) */
+    width: 900px !important;
+    table-layout: fixed !important;
+  }
+
+  /* 4. CELDAS QUE NO SE ROMPEN */
+  .modern-table th, .modern-table td {
+    white-space: nowrap !important; /* El texto se queda en una sola línea */
+    padding: 15px 10px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  btn-close-mobile-internal {
+    display: block;
+    background: none;
+    border: none;
+    margin-left: auto;
+    cursor: pointer;
+  }
+
+  /* Ajuste de anchos específicos para Auditoría */
+  .modern-table th:nth-child(1) { width: 140px; } /* Fecha */
+  .modern-table th:nth-child(2) { width: 150px; } /* Producto */
+  .modern-table th:nth-child(3) { width: 100px; } /* Tipo */
+  .modern-table th:nth-child(4) { width: 120px; } /* Motivo */
+  .modern-table th:nth-child(5) { width: 80px; }  /* Cant */
+  .modern-table th:nth-child(6) { width: 80px; }  /* Ant */
+  .modern-table th:nth-child(7) { width: 80px; }  /* Act */
 }

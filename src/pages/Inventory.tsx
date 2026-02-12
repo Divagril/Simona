@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, Trash2, Package, PlusCircle, CheckCircle } from 'lucide-react';
+import { Search, RefreshCw, FilePenLine } from 'lucide-react';
 import { getProductos, addProducto, updateProducto, eliminarProducto } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import ConfirmModal from '../components/ConfirmModal';
@@ -9,18 +9,20 @@ const Inventory: React.FC = () => {
   const { showNotification } = useNotification();
   
   // --- ESTADOS ---
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  // Estado inicial limpio
   const estadoInicial: any = {
     codigo_barra: '',
     nombre: '',
     precio: '',
-    cantidad: '', // Representa el STOCK en la interfaz
+    cantidad: '',
     unidad: 'UNIDAD'
   };
 
-  const [productos, setProductos] = useState<Producto[]>([]);
-  const [busqueda, setBusqueda] = useState('');
   const [form, setForm] = useState<any>(estadoInicial);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // --- CARGA DE DATOS ---
   const cargarInventario = async () => {
@@ -28,7 +30,7 @@ const Inventory: React.FC = () => {
       const data = await getProductos();
       setProductos(data);
     } catch (error) {
-      showNotification("Error al cargar inventario", true);
+      showNotification("Error al conectar con el servidor", true);
     }
   };
 
@@ -44,14 +46,14 @@ const Inventory: React.FC = () => {
   };
 
   const handleGuardar = async () => {
-    if (!form.nombre) {
+    if (!form.nombre.trim()) {
       showNotification("⚠️ El nombre es obligatorio", true);
       return;
     }
 
-    // Lógica de Código Automático (Solo si es nuevo y el campo está vacío)
+    // Lógica de Código Automático
     let codigoFinal = form.codigo_barra.trim();
-    if (!form._id && !codigoFinal) {
+    if (!codigoFinal) {
       codigoFinal = "MAN-" + Date.now().toString().slice(-10);
     }
 
@@ -59,21 +61,23 @@ const Inventory: React.FC = () => {
       ...form,
       codigo_barra: codigoFinal,
       precio: Number(form.precio) || 0,
-      cantidad: Number(form.cantidad) || 0
+      cantidad: Number(form.cantidad) || 0 
     };
 
     try {
       if (form._id) {
+        // ACTUALIZAR
         await updateProducto(form._id, datosParaEnviar);
-        showNotification("✅ Producto actualizado");
+        showNotification("✅ Producto actualizado con éxito");
       } else {
+        // GUARDAR NUEVO
         await addProducto(datosParaEnviar);
         showNotification(`✅ Guardado con código: ${codigoFinal}`);
       }
       limpiarForm();
       cargarInventario();
     } catch (error) {
-      showNotification("❌ Error al guardar", true);
+      showNotification("❌ Error al procesar la solicitud", true);
     }
   };
 
@@ -81,7 +85,7 @@ const Inventory: React.FC = () => {
     if (!form._id) return;
     try {
       await eliminarProducto(form._id);
-      showNotification("🗑️ Producto eliminado");
+      showNotification(`🗑️ "${form.nombre}" eliminado`);
       limpiarForm();
       cargarInventario();
     } catch (error) {
@@ -99,15 +103,19 @@ const Inventory: React.FC = () => {
       
       {/* PANEL IZQUIERDO: FORMULARIO */}
       <div className="form-container">
+        
+        {/* CABECERA: TÍTULO + BOTÓN REFRESCAR CUADRADO */}
         <div className="header-row">
-          <h2 className="title-icon">📝 Producto</h2>
-          <button className="btn-icon-refresh" onClick={cargarInventario}>
-            <RefreshCw size={16} />
+          <h2 className="title-icon">
+            <FilePenLine size={24} strokeWidth={2.5} /> Producto
+          </h2>
+          <button className="btn-refresh-square" onClick={cargarInventario} title="Refrescar">
+            <RefreshCw size={20} />
           </button>
         </div>
 
         <div className="input-field">
-          <label>Código:</label>
+          <label className="input-label-bold">Código:</label>
           <input 
             type="text" 
             className="input-main" 
@@ -117,11 +125,11 @@ const Inventory: React.FC = () => {
           />
         </div>
 
-        <fieldset className="group-box">
+        <fieldset className="group-box" style={{ padding: '15px', margin: '15px 0' }}>
           <legend>Datos</legend>
           
           <div className="input-field">
-            <label>Nombre:</label>
+            <label className="input-label-bold">Nombre del Producto:</label>
             <input 
               type="text" 
               className="input-main" 
@@ -131,7 +139,7 @@ const Inventory: React.FC = () => {
           </div>
 
           <div className="input-field">
-            <label>Uni:</label>
+            <label className="input-label-bold">Uni:</label>
             <select 
               className="input-main" 
               value={form.unidad} 
@@ -142,27 +150,30 @@ const Inventory: React.FC = () => {
               <option value="LATA">LATA</option>
               <option value="KG">KG</option>
               <option value="LITRO">LITRO</option>
+              <option value="METRO">METRO</option>
               <option value="PAQUETE">PAQUETE</option>
             </select>
           </div>
 
           <div className="grid-row">
             <div className="input-field">
-              <label>Precio:</label>
+              <label className="input-label-bold">Precio:</label>
               <input 
                 type="text" 
                 className="input-main" 
                 value={form.precio} 
+                placeholder="0.00"
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setForm({...form, precio: e.target.value})} 
               />
             </div>
             <div className="input-field">
-              <label>Stock:</label>
+              <label className="input-label-bold">Stock:</label>
               <input 
                 type="text" 
                 className="input-main" 
                 value={form.cantidad} 
+                placeholder="0"
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setForm({...form, cantidad: e.target.value})} 
               />
@@ -170,22 +181,44 @@ const Inventory: React.FC = () => {
           </div>
         </fieldset>
 
-        <div className="action-buttons" style={{ display: 'flex', gap: '10px' }}>
-          <button className="btn-guardar" style={{flex:1}} onClick={handleGuardar}>Guardar</button>
-          <button className="btn-editar" style={{flex:1}} onClick={handleGuardar}>Editar</button>
+        {/* BOTONES ORDENADOS */}
+        <div className="form-footer">
+          <div className="buttons-row">
+            <button 
+              className="btn-guardar" 
+              onClick={handleGuardar}
+              disabled={!!form._id} 
+              style={{ opacity: form._id ? 0.5 : 1 }}
+            >
+              Guardar
+            </button>
+            <button 
+              className="btn-editar" 
+              onClick={handleGuardar}
+              disabled={!form._id}
+              style={{ opacity: !form._id ? 0.5 : 1 }}
+            >
+              Editar
+            </button>
+          </div>
+          
+          <button className="btn-limpiar" onClick={limpiarForm}>
+            Limpiar
+          </button>
         </div>
-        <button className="btn-limpiar" style={{width:'100%', marginTop:'8px'}} onClick={limpiarForm}>Limpiar</button>
       </div>
 
       {/* PANEL DERECHO: CATÁLOGO */}
       <div className="catalog-container">
         <div className="catalog-header">
-          <h2 className="title-icon">📦 Catálogo</h2>
+          <h2 className="title-icon">
+             📦 Catálogo
+          </h2>
           <div className="catalog-search-box">
-            <span className="lupa-inventario">🔍</span>
+            <Search className="lupa-inventario" size={18} color="#7F8C8D" />
             <input 
               type="text" 
-              placeholder="Buscar..." 
+              placeholder="Buscar por nombre..." 
               className="input-busqueda-inventario" 
               value={busqueda} 
               onChange={e => setBusqueda(e.target.value)} 
@@ -197,44 +230,57 @@ const Inventory: React.FC = () => {
           <table className="modern-table">
             <thead>
               <tr>
-                <th>COD</th>
-                <th>PROD</th>
-                <th>UNI</th>
-                <th style={{ textAlign: 'right' }}>PRE</th>
-                <th style={{ textAlign: 'center' }}>STK</th>
+                <th style={{ width: '25%' }}>COD</th>
+                <th style={{ width: '40%' }}>PROD</th>
+                <th style={{ width: '15%', textAlign: 'center' }}>UNI</th>
+                <th style={{ width: '10%', textAlign: 'right' }}>PRE</th>
+                <th style={{ width: '10%', textAlign: 'center' }}>STK</th>
               </tr>
             </thead>
             <tbody>
-              {filtrados.map(p => (
-                <tr 
-                  key={p._id} 
-                  onClick={() => seleccionarParaEditar(p)} 
-                  className={`row-hover ${Number(p.cantidad) < 10 ? 'low-stock' : ''} ${form._id === p._id ? 'selected-row' : ''}`}
-                >
-                  <td style={{ fontSize: '12px', color: '#7f8c8d' }}>{p.codigo_barra}</td>
-                  <td className="bold">{p.nombre}</td>
-                  <td>{p.unidad}</td>
-                  <td style={{ textAlign: 'right' }}>S/. {Number(p.precio).toFixed(2)}</td>
-                  <td className="bold" style={{ textAlign: 'center' }}>{p.cantidad}</td>
+              {filtrados.length === 0 ? (
+                <tr>
+                   <td colSpan={5} style={{textAlign:'center', padding:'30px', color:'#95a5a6'}}>
+                      No hay productos que coincidan.
+                   </td>
                 </tr>
-              ))}
+              ) : (
+                filtrados.map(p => (
+                  <tr 
+                    key={p._id} 
+                    onClick={() => seleccionarParaEditar(p)} 
+                    className={`row-hover ${Number(p.cantidad) < 10 ? 'low-stock' : ''} ${form._id === p._id ? 'selected-row' : ''}`}
+                  >
+                    <td style={{ fontSize: '12px', color: '#7f8c8d' }}>{p.codigo_barra}</td>
+                    <td style={{ fontWeight: 'bold' }}>{p.nombre}</td>
+                    <td style={{ textAlign: 'center' }}>{p.unidad}</td>
+                    <td style={{ textAlign: 'right' }}>S/. {Number(p.precio).toFixed(2)}</td>
+                    <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{p.cantidad}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         
+        {/* BOTÓN ELIMINAR FLOTANTE A LA DERECHA */}
         <div className="footer-row">
-          <button className="btn-eliminar-moderno" onClick={() => form._id ? setIsDeleteModalOpen(true) : showNotification("Seleccione un producto", true)}>
-            <span className="icon-trash">🗑️</span> Eliminar
+          <button 
+            className="btn-eliminar-moderno" 
+            onClick={() => form._id ? setIsDeleteModalOpen(true) : showNotification("⚠️ Seleccione un producto primero", true)}
+          >
+            <span>🗑️</span> Eliminar
           </button>
         </div>
       </div>
 
+      {/* MODAL DE CONFIRMACIÓN */}
       <ConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={ejecutarEliminacionReal}
         titulo="¿Eliminar Producto?"
-        mensaje={form.nombre ? "¿Estás seguro de eliminar " + form.nombre + "?" : ""}
+        mensaje={form.nombre ? "¿Estás seguro de eliminar permanentemente " + form.nombre + "?" : ""}
       />
     </div>
   );

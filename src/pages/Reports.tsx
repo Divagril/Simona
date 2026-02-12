@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BarChart3, Calendar, Filter, RefreshCw, 
-  FileText, Search, TrendingUp, PieChart 
+  BarChart3, RefreshCw, FileText, Search, TrendingUp 
 } from 'lucide-react';
-import { getVentasReporte, getStatsSemanales, getProductos } from '../services/api';
+import { getVentasReporte, getProductos } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -14,32 +13,21 @@ const Reports: React.FC = () => {
   // --- ESTADOS ---
   const [ventas, setVentas] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
-  const [statsSemanales, setStatsSemanales] = useState<any[]>([]);
-
-  // Filtros Superiores
+  
+  // Filtros
   const [fechaDesde, setFechaDesde] = useState(new Date().toISOString().split('T')[0]);
   const [fechaHasta, setFechaHasta] = useState(new Date().toISOString().split('T')[0]);
   const [catFiltro, setCatFiltro] = useState('TODAS');
-
-  // Filtros Mensuales (Derecha)
-  const [mesSeleccionado, setMesSeleccionado] = useState(new Date().getMonth() + 1);
-  const [anioSeleccionado, setAnioSeleccionado] = useState(new Date().getFullYear());
-
-  const meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-  const anios = [2024, 2025, 2026, 2027, 2028];
 
   // --- CARGA DE DATOS ---
   const cargarDatosIniciales = async () => {
     try {
       const prods = await getProductos();
-      // Corrección del error TS7006 y TS2345:
       const catsUnicas = Array.from(new Set(prods.map((p: any) => p.categoria))).filter(c => c) as string[];
       setCategorias(catsUnicas);
-      
-      await consultarVentas();
-      await consultarStatsSemanales();
-    } catch (e) { 
-      console.error("Error al inicializar:", e); 
+      consultarVentas();
+    } catch (error) {
+      console.error("Error al inicializar reportes:", error);
     }
   };
 
@@ -47,24 +35,16 @@ const Reports: React.FC = () => {
     try {
       const data = await getVentasReporte(fechaDesde, fechaHasta, catFiltro);
       setVentas(data);
-    } catch (e) { 
-      showNotification("Error al cargar ventas", true); 
+    } catch (error) {
+      showNotification("Error al cargar ventas", true);
     }
   };
 
-  const consultarStatsSemanales = async () => {
-    try {
-      const data = await getStatsSemanales(); 
-      setStatsSemanales(data);
-    } catch (e) { 
-      console.error("Error en stats:", e); 
-    }
-  };
-
-  useEffect(() => { 
-    cargarDatosIniciales(); 
+  useEffect(() => {
+    cargarDatosIniciales();
   }, []);
 
+  // Calculamos el total directamente de la lista de ventas
   const totalGeneral = ventas.reduce((acc, v) => acc + v.total, 0);
 
   // --- GENERADOR DE PDF ---
@@ -107,7 +87,6 @@ const Reports: React.FC = () => {
 
     const finalY = (doc as any).lastAutoTable.finalY || 30;
     doc.setFontSize(12);
-    // Corrección del error de fuente:
     doc.setFont("helvetica", "bold");
     doc.text(`Total General: S/. ${totalGeneral.toFixed(2)}`, 195, finalY + 10, { align: "right" });
 
@@ -117,9 +96,15 @@ const Reports: React.FC = () => {
 
   return (
     <div className="reports-layout">
+      
       {/* HEADER SUPERIOR */}
-      <div className="reports-header-main">
-        <h2 className="title-icon"><BarChart3 color="#2C3E50" /> Reportes</h2>
+      <div className="reports-top-header" style={{ 
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', 
+        alignItems: 'center', marginBottom: '15px', gap: '10px' 
+      }}>
+        <h2 className="title-icon" style={{ margin: 0 }}>
+          <BarChart3 color="#2C3E50" /> Reportes
+        </h2>
         <button className="btn-teal-refresh" onClick={cargarDatosIniciales}>
           <RefreshCw size={16} /> Refrescar
         </button>
@@ -127,104 +112,63 @@ const Reports: React.FC = () => {
 
       {/* FILTROS SUPERIORES */}
       <div className="reports-filters-bar panel-blanco">
-        <div className="filter-item">
-          <span>Desde:</span>
-          <input type="date" className="input-pos-flat" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+        <div className="filter-group">
+          <label>DESDE:</label>
+          <input type="date" className="input-main" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
         </div>
-        <div className="filter-item">
-          <span>Hasta:</span>
-          <input type="date" className="input-pos-flat" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+        <div className="filter-group">
+          <label>HASTA:</label>
+          <input type="date" className="input-main" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
         </div>
-        <select className="input-pos-flat select-cat" value={catFiltro} onChange={e => setCatFiltro(e.target.value)}>
-          <option value="TODAS">TODAS LAS CATEGORÍAS</option>
-          {categorias.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <button className="btn-search-blue" onClick={consultarVentas}>
-          <Search size={18} />
-        </button>
-        <div style={{ flex: 1 }}></div>
-        <button className="btn-pdf-red" onClick={exportarPDF}>
-          <FileText size={18} /> PDF
-        </button>
+        <div className="filter-group">
+          <label>CATEGORÍA:</label>
+          <select className="input-main" value={catFiltro} onChange={e => setCatFiltro(e.target.value)}>
+            <option value="TODAS">TODAS LAS CATEGORÍAS</option>
+            {categorias.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+        <div className="filter-actions">
+          <button className="btn-search-blue" onClick={consultarVentas} title="Buscar">
+            <Search size={20} />
+          </button>
+          <button className="btn-pdf-red" onClick={exportarPDF}>
+            <FileText size={18} /> PDF
+          </button>
+        </div>
       </div>
 
-      <div className="reports-content-grid">
-        {/* LADO IZQUIERDO: TABLA OPERACIONES */}
-        <div className="reports-left">
-          <fieldset className="group-box-reports">
+      {/* CONTENIDO PRINCIPAL */}
+      <div className="reports-grid">
+        
+        {/* LADO IZQUIERDO: TABLA DE OPERACIONES */}
+        <div className="table-responsive-container">
+          <fieldset className="group-box-reports" style={{ border: 'none', margin: 0 }}>
             <legend className="group-legend">📋 Operaciones</legend>
-            <div className="table-wrapper-reports">
-              <table className="modern-table">
-                <thead>
-                  <tr>
-                    <th>FECHA</th>
-                    <th>PROD</th>
-                    <th style={{ textAlign: 'center' }}>CANT</th>
-                    <th style={{ textAlign: 'right' }}>TOTAL</th>
-                    <th style={{ textAlign: 'center' }}>PAGO</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ventas.length === 0 ? (
-                    <tr><td colSpan={5} style={{textAlign:'center', padding:'20px', color:'#bdc3c7'}}>No hay registros</td></tr>
-                  ) : (
-                    ventas.map((v) => (
-                      <tr key={v._id} className="row-hover">
-                        <td style={{ fontSize: '11px', color: '#7f8c8d' }}>{new Date(v.fecha).toLocaleString()}</td>
-                        <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
-                        <td style={{ textAlign: 'center' }}>{v.items.reduce((a: any, b: any) => a + b.cantidadSeleccionada, 0)}</td>
-                        <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
-                        <td style={{ textAlign: 'center' }}>
-                          <span className="badge-pago">
-                            {v.metodoPago || v.metodo_pago || 'EFECTIVO'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </fieldset>
-        </div>
-
-        {/* LADO DERECHO: KPI Y MENSUAL */}
-        <div className="reports-right">
-          <div className="kpi-total-card">
-            <div className="kpi-label"><TrendingUp size={16} style={{marginRight:'5px'}}/> VENTAS TOTAL</div>
-            <div className="kpi-value">S/. {totalGeneral.toFixed(2)}</div>
-          </div>
-
-          <fieldset className="group-box-reports">
-            <legend className="group-legend"><PieChart size={16} /> Mensual</legend>
-            <div className="mensual-filters">
-              <select value={mesSeleccionado} onChange={e => setMesSeleccionado(Number(e.target.value))} className="input-pos-flat">
-                {meses.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
-              </select>
-              <select value={anioSeleccionado} onChange={e => setAnioSeleccionado(Number(e.target.value))} className="input-pos-flat">
-                {anios.map(a => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </div>
-            <div className="btn-container-center">
-              <button className="btn-ver-stats" onClick={consultarStatsSemanales}>
-                Ver Reporte Mensual
-              </button>
-            </div>
-            <table className="stats-table">
+            <table className="modern-table">
               <thead>
                 <tr>
-                  <th>SEMANA</th>
+                  <th>FECHA</th>
+                  <th>PROD</th>
+                  <th style={{ textAlign: 'center' }}>CANT</th>
                   <th style={{ textAlign: 'right' }}>TOTAL</th>
+                  <th style={{ textAlign: 'center' }}>PAGO</th>
                 </tr>
               </thead>
               <tbody>
-                {statsSemanales.length === 0 ? (
-                  <tr><td colSpan={2} style={{textAlign:'center', padding:'10px', color:'#ccc'}}>Sin datos</td></tr>
+                {ventas.length === 0 ? (
+                  <tr><td colSpan={5} style={{textAlign:'center', padding:'20px', color:'#bdc3c7'}}>No hay registros en este rango</td></tr>
                 ) : (
-                  statsSemanales.map((s, i) => (
-                    <tr key={i}>
-                      <td>{s.semana}</td>
-                      <td className="bold" style={{ textAlign: 'right' }}>S/. {s.total.toFixed(2)}</td>
+                  ventas.map((v) => (
+                    <tr key={v._id} className="row-hover">
+                      <td style={{ fontSize: '11px', color: '#7f8c8d' }}>{new Date(v.fecha).toLocaleString()}</td>
+                      <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
+                      <td align="center">{v.items.reduce((a: any, b: any) => a + (b.cantidadSeleccionada || 1), 0)}</td>
+                      <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className="badge-pago">
+                          {v.metodoPago || v.metodo_pago || 'EFECTIVO'}
+                        </span>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -232,6 +176,16 @@ const Reports: React.FC = () => {
             </table>
           </fieldset>
         </div>
+
+        {/* LADO DERECHO: SOLO KPI (TOTAL) */}
+        <div className="reports-sidebar">
+          <div className="kpi-total-card">
+            <div className="kpi-label"><TrendingUp size={16} style={{marginRight:'5px'}}/> VENTAS TOTAL</div>
+            <div className="kpi-value">S/. {totalGeneral.toFixed(2)}</div>
+          </div>
+          {/* AQUÍ ELIMINAMOS LA SECCIÓN DE REPORTE MENSUAL QUE NO QUERÍAS */}
+        </div>
+
       </div>
     </div>
   );
