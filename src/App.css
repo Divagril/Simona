@@ -3053,3 +3053,108 @@ fieldset.group-box legend {
   .modern-table th:nth-child(6) { width: 80px; }  /* Ant */
   .modern-table th:nth-child(7) { width: 80px; }  /* Act */
 }
+/* Estilos para el Sistema de Login */
+.login-overlay {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-card {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  text-align: center;
+}
+
+.login-header h2 {
+  color: #2C3E50;
+  margin-top: 15px;
+  font-weight: 800;
+}
+
+.login-header p {
+  color: #7F8C8D;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.login-logo-circle {
+  width: 80px;
+  height: 80px;
+  background: #EBF5FB;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+}
+
+.login-input-group {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.login-input-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #34495E;
+  margin-bottom: 8px;
+}
+
+.login-input-group input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #ECF0F1;
+  border-radius: 10px;
+  outline: none;
+  font-size: 16px;
+  transition: border 0.3s;
+}
+
+.login-input-group input:focus {
+  border-color: #3498DB;
+}
+
+.btn-login-submit {
+  width: 100%;
+  padding: 15px;
+  background: #27AE60;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 0 4px 0 #1E8449;
+  transition: all 0.2s;
+}
+
+.btn-login-submit:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.login-footer {
+  margin-top: 30px;
+  color: #BDC3C7;
+  font-size: 12px;
+}
+
+/* Estilo para el botón de cerrar sesión en el Sidebar */
+.btn-logout-sidebar:hover {
+  background-color: rgba(231, 76, 60, 0.1) !important; /* Rojo clarito al pasar el mouse */
+}
+
+.btn-logout-sidebar .nav-text {
+  font-weight: 800 !important;
+}

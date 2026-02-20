@@ -1,6 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react'; // Añadimos LogOut aquí
+import { useAuth } from '../context/AuthContext'; // Importamos el hook de autenticación
 
 interface SidebarProps {
   isCollapsed: boolean;
@@ -8,6 +9,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
+  const { logout } = useAuth(); // Obtenemos la función logout
   
   const menuItems = [
     { path: '/inventario', name: 'Inventario', icon: '📦' },
@@ -18,7 +20,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     { path: '/config', name: 'Configuración', icon: '⚙️' },
   ];
 
-  // Función para cerrar el menú automáticamente al hacer clic en un enlace (solo en celular)
   const handleLinkClick = () => {
     if (window.innerWidth <= 768) {
       setIsCollapsed(true);
@@ -27,10 +28,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
   return (
     <>
-      {/* 
-         HEADER MÓVIL (Barra superior) 
-         NOTA: Esta barra se oculta en PC gracias al CSS (ver abajo)
-      */}
       <div className="mobile-top-bar">
         <button className="btn-toggle-mobile" onClick={() => setIsCollapsed(false)}>
           <Menu size={24} color="white" />
@@ -38,33 +35,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         <span className="mobile-logo">Tienda Simona</span>
       </div>
 
-      {/* OVERLAY MÓVIL (Fondo oscuro al abrir menú en celular) */}
       {!isCollapsed && (
         <div className="mobile-overlay-shadow" onClick={() => setIsCollapsed(true)}></div>
       )}
 
-      {/* SIDEBAR PRINCIPAL */}
       <div className={`sidebar ${isCollapsed ? 'collapsed' : 'mobile-open'}`}>
         
-        {/* CABECERA DEL SIDEBAR */}
         <div className="sidebar-header">
-          {/* Botón para colapsar/expandir en PC */}
           <button className="toggle-btn-box" onClick={() => setIsCollapsed(!isCollapsed)}>
             <Menu size={20} color="#2C3E50" />
           </button>
           
-          {/* Título que se oculta al colapsar */}
           <div className={`app-title-container ${isCollapsed ? 'hide' : ''}`}>
             <span className="app-title-text">Tienda Simona</span>
           </div>
           
-          {/* Botón cerrar (X) solo visible en menú móvil abierto */}
           <button className="btn-close-mobile-internal" onClick={() => setIsCollapsed(true)}>
             <X size={24} color="white" />
           </button>
         </div>
 
-        {/* NAVEGACIÓN */}
         <nav className="nav-menu">
           {menuItems.map((item) => (
             <NavLink 
@@ -77,9 +67,28 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
               <span className={`nav-text ${isCollapsed ? 'hide' : ''}`}>{item.name}</span>
             </NavLink>
           ))}
+
+          {/* --- BOTÓN DE CERRAR SESIÓN --- */}
+          <button 
+            onClick={logout} 
+            className="nav-item btn-logout-sidebar"
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              width: '100%', 
+              cursor: 'pointer',
+              marginTop: 'auto' // Esto lo empuja hacia abajo si hay espacio
+            }}
+          >
+            <span className="nav-icon">
+                <LogOut size={22} color="#E74C3C" />
+            </span>
+            <span className={`nav-text ${isCollapsed ? 'hide' : ''}`} style={{ color: '#E74C3C' }}>
+                Cerrar Sesión
+            </span>
+          </button>
         </nav>
 
-        {/* FOOTER */}
         <div className={`sidebar-status-footer ${isCollapsed ? 'hide' : ''}`}>
           <div className="status-admin">Admin</div>
           <div className="status-connected">Conectado</div>
