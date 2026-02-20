@@ -3158,3 +3158,83 @@ fieldset.group-box legend {
 .btn-logout-sidebar .nav-text {
   font-weight: 800 !important;
 }
+
+@media print {
+  /* Ocultar TODO menos el ticket */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar solo el contenido del ticket y posicionarlo al inicio */
+  .thermal-paper-sheet, .thermal-paper-sheet * {
+    visibility: visible;
+  }
+  
+  .thermal-paper-sheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 58mm; /* Ajustar a 80mm si tu impresora es grande */
+    margin: 0;
+    padding: 5px;
+    box-shadow: none;
+    border: none;
+  }
+  #root, 
+  .sidebar, 
+  .app-container, 
+  .mobile-top-bar, 
+  .modal-close-x, 
+  .btn-thermal-print {
+    display: none !important;
+  }
+
+  /* 2. Forzamos que el fondo del modal sea invisible pero que el modal en sí exista */
+  .modal-overlay {
+    background: none !important;
+    position: absolute !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  /* 3. El contenedor del ticket: lo movemos al inicio de la página */
+  .ticket-modal-wrapper {
+    background: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    display: block !important;
+  }
+
+  /* 4. El papel térmico: el único con contenido visible */
+  .thermal-paper-sheet {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 58mm !important; /* Cambia a 80mm si tu papel es ancho */
+    margin: 0 !important;
+    padding: 2mm !important;
+    border: none !important;
+    font-size: 12px !important;
+    color: black !important;
+  }
+
+  /* Aseguramos que los textos internos se vean */
+  .thermal-paper-sheet * {
+    color: black !important;
+    background: white !important;
+  }
+
+  /* Quitar encabezados de página (URL, Fecha) que pone Chrome */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  /* Ocultar el modal y botones durante la impresión */
+  .modal-overlay, .btn-thermal-print, .modal-close-x {
+    display: none !important;
+  }
+}

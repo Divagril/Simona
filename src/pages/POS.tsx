@@ -19,11 +19,13 @@ const POS: React.FC = () => {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [carrito, setCarrito] = useState<CartItem[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  const [barcode, setBarcode] = useState('');
   const [selectedProd, setSelectedProd] = useState<Producto | null>(null);
   const [qty, setQty] = useState<any>('1'); 
   const [indexSeleccionadoCarrito, setIndexSeleccionadoCarrito] = useState<number | null>(null);
   const [parkedSales, setParkedSales] = useState<any[]>([]);
+  
+  // Estado crucial para el Ticket
+  const [lastSaleData, setLastSaleData] = useState<any>(null);
 
   // --- ESTADOS DE MODALES ---
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -66,22 +68,15 @@ const POS: React.FC = () => {
 
   // --- FUNCIONES LÓGICAS ---
 
-  // 1. AGREGAR AL CARRITO (Con Fusión y Validación de Stock Acumulado)
+  const total = carrito.reduce((acc, item) => acc + item.subtotal, 0);
+
+  // 1. AGREGAR AL CARRITO
   const addToCart = () => {
     if (!selectedProd) return;
     const cantidadAAgregar = Number(qty);
 
     if (cantidadAAgregar <= 0 || isNaN(cantidadAAgregar)) {
       showNotification("⚠️ Ingrese una cantidad válida", true);
-      return;
-    }
-
-    const cantidadYaEnCarrito = carrito
-      .filter(item => item._id === selectedProd._id)
-      .reduce((total, item) => total + item.cantidadSeleccionada, 0);
-
-    if (cantidadYaEnCarrito + cantidadAAgregar > selectedProd.cantidad) {
-      showNotification(`⚠️ Stock insuficiente. Máximo: ${selectedProd.cantidad}`, true);
       return;
     }
 
@@ -105,16 +100,14 @@ const POS: React.FC = () => {
     showNotification(`✅ ${selectedProd.nombre} agregado`);
   };
 
-  // 2. AGREGAR MANUAL
+  // 2. VENTA MANUAL
   const addManualItem = () => {
     const nombre = manualDesc.trim();
-    const precio = manualPrice.toString().trim();
-    if (!nombre || !precio) {
-      showNotification("⚠️ Escriba descripción y precio", true);
+    const precioNum = Number(manualPrice);
+    if (!nombre || isNaN(precioNum) || precioNum <= 0) {
+      showNotification("⚠️ Escriba descripción y precio válido", true);
       return;
     }
-    const precioNum = Number(precio);
-    if (isNaN(precioNum) || precioNum <= 0) return;
 
     const newItem: any = {
       _id: `MANUAL-${Date.now()}`, 
@@ -126,7 +119,7 @@ const POS: React.FC = () => {
     setManualDesc(''); setManualPrice('');
   };
 
-  // 3. QUITAR DEL TICKET (SACAR SELECCIONADO)
+  // 3. QUITAR DEL TICKET
   const handleQuitarDelCarrito = () => {
     if (indexSeleccionadoCarrito === null) {
        showNotification("⚠️ Seleccione un producto del ticket", true);
@@ -142,25 +135,32 @@ const POS: React.FC = () => {
   // 4. VENTAS EN ESPERA
   const holdSale = () => {
     if (carrito.length === 0) return;
-    setParkedSales([...parkedSales, { id: Date.now(), items: [...carrito], time: new Date().toLocaleTimeString() }]);
+    setParkedSales([...parkedSales, { id: Date.now(), items: [...carrito], total, time: new Date().toLocaleTimeString() }]);
     setCarrito([]);
-    setIndexSeleccionadoCarrito(null);
-    showNotification("⏸️ Venta enviada a espera (F6)");
+    showNotification("⏸️ Venta en espera (F6)");
   };
 
   const restoreLastSale = () => {
-    if (parkedSales.length === 0) {
-      showNotification("⚠️ No hay ventas en espera", true);
-      return;
-    }
+    if (parkedSales.length === 0) return;
     const last = parkedSales[parkedSales.length - 1];
     setCarrito(last.items);
     setParkedSales(parkedSales.slice(0, -1));
     showNotification("📂 Venta recuperada (F7)");
   };
 
-  // 5. FINALIZAR PROCESOS
+  // --- 5. FINALIZAR VENTA (COBRAR) CON CORRECCIÓN DE DATOS ---
   const handleFinalizeVenta = async (datosPago: any) => {
+    if (carrito.length === 0) return;
+
+    // CAPTURAMOS SNAPSHOT DE LOS DATOS PARA EL TICKET
+    const snapshotVenta = {
+      items: [...carrito],
+      total: total,
+      metodoPago: datosPago.metodo,
+      pagoCon: datosPago.pagoCon,
+      vuelto: datosPago.vuelto
+    };
+
     try {
       const res = await registrarVenta({ 
         items: carrito, 
@@ -169,33 +169,65 @@ const POS: React.FC = () => {
         pagoCon: datosPago.pagoCon, 
         vuelto: datosPago.vuelto 
       });
+
       if (res.success) {
-        showNotification(`✅ Venta OK. Vuelto: S/. ${datosPago.vuelto.toFixed(2)}`);
-        setCarrito([]); setIsModalOpen(false); cargarDatos();
+        showNotification(`✅ Venta realizada`);
+        setLastSaleData(snapshotVenta); // Guardamos la copia
+        setCarrito([]); 
+        setIsModalOpen(false); 
+        setIsTicketModalOpen(true); // Abrir ticket automáticamente
+        cargarDatos();
       }
     } catch (e) { showNotification("Error al cobrar", true); }
   };
 
+  // --- 6. FIADO ---
   const handleConfirmarFiado = async (cliente: any) => {
+    const snapshotFiado = {
+        items: [...carrito],
+        total: total,
+        metodoPago: 'FIADO',
+        pagoCon: 0,
+        vuelto: 0
+    };
+
     try {
       const res = await registrarFiadoMasivo({ cliente_id: cliente._id, items: carrito, total });
       if (res.success) {
-        showNotification(`📝 Fiado guardado para ${cliente.nombre}`);
-        setCarrito([]); setIsClientModalOpen(false); cargarDatos();
+        showNotification(`📝 Fiado para ${cliente.nombre}`);
+        setLastSaleData(snapshotFiado);
+        setCarrito([]); 
+        setIsClientModalOpen(false); 
+        setIsTicketModalOpen(true);
+        cargarDatos();
       }
     } catch (e) { showNotification("Error al registrar fiado", true); }
   };
 
-  const total = carrito.reduce((acc, item) => acc + item.subtotal, 0);
+  // --- 7. VER TICKET MANUAL ---
+  const abrirTicketManual = () => {
+    if (carrito.length > 0) {
+        setLastSaleData({
+            items: [...carrito],
+            total: total,
+            metodoPago: 'VISTA PREVIA',
+            pagoCon: 0,
+            vuelto: 0
+        });
+        setIsTicketModalOpen(true);
+    } else if (lastSaleData) {
+        setIsTicketModalOpen(true);
+    } else {
+        showNotification("⚠️ No hay productos en el ticket", true);
+    }
+  };
 
   return (
     <div className="pos-layout">
-      {/* --- COLUMNA IZQUIERDA --- */}
+      {/* COLUMNA IZQUIERDA */}
       <div className="pos-left">
         <fieldset className="pos-group-box">
-          <legend className="pos-legend">
-            <span className="search-icon-emoji" style={{fontSize: '22px'}}>🔍</span> Buscar
-          </legend>
+          <legend className="pos-legend">🔍 Buscar Producto</legend>
           <div style={{display:'flex', justifyContent:'flex-end', marginBottom:'5px'}}>
             <button className="btn-recargar-verde" onClick={cargarDatos}>
                <div className="icon-refresh">🔄</div> Recargar Lista
@@ -205,7 +237,7 @@ const POS: React.FC = () => {
             ref={barcodeRef} 
             type="text" 
             className="input-pos-flat" 
-            placeholder="Buscar por nombre..." 
+            placeholder="Escriba nombre del producto..." 
             value={busqueda} 
             onChange={e => setBusqueda(e.target.value)} 
           />
@@ -233,11 +265,10 @@ const POS: React.FC = () => {
           </table>
         </div>
 
-        {/* BARRA DE SELECCIÓN (Estilo Profesional) */}
         <div className={`selection-bar-modern-final ${selectedProd ? 'active' : ''}`}>
           <div className="sel-left-info">
             <span className="sel-badge-blue">SELECCIONADO</span>
-            <div className="sel-prod-name">{selectedProd ? selectedProd.nombre : 'Ningún producto'}</div>
+            <div className="sel-prod-name">{selectedProd ? selectedProd.nombre : 'Ninguno'}</div>
             <div className="sel-prod-price">S/. {selectedProd ? (Number(selectedProd.precio) * Number(qty)).toFixed(2) : '0.00'}</div>
           </div>
           <div className="sel-right-controls">
@@ -252,20 +283,16 @@ const POS: React.FC = () => {
         </div>
 
         <fieldset className="group-box-manual">
-          <legend className="legend-manual">
-            <span>⚡</span> Manual
-         </legend>
-         <div className="manual-inputs-row">
-           <input type="text"  placeholder="Descripción" className="input-flat-modern" value={manualDesc} onChange={e => setManualDesc(e.target.value)} />
-           <input type="text" placeholder="S/." className="input-flat-modern" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
-           <button className="btn-manual-dark" onClick={addManualItem}>
-             Agregar
-           </button>
-         </div>
-       </fieldset>
+          <legend className="legend-manual"><span>⚡</span> Venta Manual</legend>
+          <div className="manual-inputs-row">
+            <input type="text" placeholder="Descripción" className="input-flat-modern" value={manualDesc} onChange={e => setManualDesc(e.target.value)} />
+            <input type="text" placeholder="S/." className="input-flat-modern" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
+            <button className="btn-manual-dark" onClick={addManualItem}>Agregar</button>
+          </div>
+        </fieldset>
       </div>
 
-      {/* --- COLUMNA DERECHA (TICKET) --- */}
+      {/* COLUMNA DERECHA (TICKET) */}
       <div className="pos-right">
         <div className="panel-ticket-blue">
           <h2 className="ticket-title">🧾 TICKET</h2>
@@ -274,7 +301,7 @@ const POS: React.FC = () => {
               <thead><tr style={{background:'#f8f9f9'}}><th>Producto</th><th style={{textAlign:'center'}}>Cant</th><th style={{textAlign:'right'}}>Total</th></tr></thead>
               <tbody>
                 {carrito.map((it, i) => (
-                  <tr key={i} onClick={() => setIndexSeleccionadoCarrito(i)} className={indexSeleccionadoCarrito === i ? 'selected-row-cart' : ''} style={{cursor:'pointer'}}>
+                  <tr key={i} onClick={() => setIndexSeleccionadoCarrito(i)} className={indexSeleccionadoCarrito === i ? 'selected-row-cart' : ''}>
                     <td>{it.nombre}</td>
                     <td style={{textAlign:'center'}}>{it.cantidadSeleccionada}</td>
                     <td style={{textAlign:'right'}}>{it.subtotal.toFixed(2)}</td>
@@ -289,11 +316,11 @@ const POS: React.FC = () => {
           </div>
           <div className="pos-actions-grid">
             <button className="btn-cobrar-big" onClick={() => carrito.length > 0 && setIsModalOpen(true)}>
-              <span className="icon-bg-white">✅</span> COBRAR (F5)
+              <span>✅</span> COBRAR (F5)
             </button>
             <div className="btn-row">
               <button className="btn-purple" onClick={() => carrito.length > 0 && setIsClientModalOpen(true)}><span>📝</span> Fiado (F8)</button>
-              <button className="btn-dark-blue" onClick={() => carrito.length > 0 && setIsTicketModalOpen(true)}><span>👁️</span> Ver Ticket</button>
+              <button className="btn-dark-blue" onClick={abrirTicketManual}><span>👁️</span> Ver Ticket</button>
             </div>
             <div className="btn-row">
               <button className="btn-orange" onClick={holdSale}><span>⌛</span> Espera (F6)</button>
@@ -307,11 +334,20 @@ const POS: React.FC = () => {
         </div>
       </div>
 
-      {/* --- MODALES --- */}
+      {/* MODALES */}
       <PaymentModal isOpen={isModalOpen} total={total} onClose={() => setIsModalOpen(false)} onConfirm={handleFinalizeVenta} />
       <ClientSelectModal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} onConfirm={handleConfirmarFiado} />
-      <ConfirmModal isOpen={isClearModalOpen} onClose={() => setIsClearModalOpen(false)} onConfirm={() => setCarrito([])} titulo="¿Vaciar Carrito?" mensaje="Se eliminarán todos los productos seleccionados." colorBoton="#95A5A6" />
-      <TicketPreviewModal isOpen={isTicketModalOpen} onClose={() => setIsTicketModalOpen(false)} items={carrito} total={total} />
+      <ConfirmModal isOpen={isClearModalOpen} onClose={() => setIsClearModalOpen(false)} onConfirm={() => setCarrito([])} titulo="¿Vaciar Carrito?" mensaje="Se eliminarán todos los productos." colorBoton="#95A5A6" />
+      
+      <TicketPreviewModal 
+        isOpen={isTicketModalOpen} 
+        onClose={() => setIsTicketModalOpen(false)} 
+        items={lastSaleData?.items || []} 
+        total={lastSaleData?.total || 0}
+        metodoPago={lastSaleData?.metodoPago}
+        pagoCon={lastSaleData?.pagoCon}
+        vuelto={lastSaleData?.vuelto}
+      />
     </div>
   );
 };
