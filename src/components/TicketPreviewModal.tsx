@@ -29,25 +29,22 @@ const TicketPreviewModal: React.FC<Props> = ({
     return `SON ${soles} Y ${centimos.toString().padStart(2, '0')}/100 SOLES`;
   };
 
-  // --- FUNCIÓN DE IMPRESIÓN DEFINITIVA (SIN PESTAÑAS NUEVAS) ---
+  // --- FUNCIÓN DE IMPRESIÓN DEFINITIVA (SIN PESTAÑAS Y SIN BLANCO) ---
   const ejecutarImpresion = () => {
-    // 1. Creamos un Iframe (marco invisible)
+    // 1. Creamos un marco invisible
     const iframe = document.createElement('iframe');
-    
-    // Lo hacemos invisible para que no afecte la vista
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
     iframe.style.bottom = '0';
     iframe.style.width = '0';
     iframe.style.height = '0';
     iframe.style.border = 'none';
-    
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
     if (!doc) return;
 
-    // 2. Escribimos el contenido del ticket (Tus medidas originales)
+    // 2. Escribimos el ticket con TUS MEDIDAS ORIGINALES
     doc.write(`
       <html>
         <head>
@@ -65,7 +62,7 @@ const TicketPreviewModal: React.FC<Props> = ({
             .bold { font-weight: bold; }
             .biz-name { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
             .info-text { font-size: 10pt; margin: 2pt 0; line-height: 1.2; }
-            .doc-title { font-size: 11pt; font-weight: bold; margin: 8pt 0; }
+            .doc-title { font-size: 11pt; font-weight: bold; margin: 6pt 0; }
             .divider { border-top: 1pt dashed #000; margin: 8pt 0; width: 100%; }
             .table { width: 100%; font-size: 10pt; border-collapse: collapse; }
             .table td { padding: 4pt 0; vertical-align: top; }
@@ -82,10 +79,7 @@ const TicketPreviewModal: React.FC<Props> = ({
             <div class="divider"></div>
             <div class="doc-title">BOLETA DE VENTA</div>
             <div class="info-text">${fechaParaMostrar}</div>
-          </div>
-
-          <div style="margin: 5pt 0; padding: 4pt; border: 0.5pt solid #000; font-size: 9pt; text-align: center; font-style: italic;">
-            "Gracias por su preferencia. ¡Vuelva pronto!"
+            <div class="divider"></div>
           </div>
 
           <table class="table">
@@ -114,18 +108,15 @@ const TicketPreviewModal: React.FC<Props> = ({
         </body>
       </html>
     `);
+
     doc.close();
 
-    // 3. Lanzamos la impresión desde el Iframe
-    // Esperamos 500ms para que el navegador procese el estilo
+    // 3. Mandamos a imprimir solo el marco invisible
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      
-      // 4. Borramos el Iframe después de imprimir para no llenar la memoria
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 1000);
+      // Borramos el marco del sistema después de imprimir
+      setTimeout(() => document.body.removeChild(iframe), 1000);
     }, 500);
   };
 
@@ -141,10 +132,6 @@ const TicketPreviewModal: React.FC<Props> = ({
             <h2 style={{margin: 0, fontSize: '16px', fontWeight: 900}}>TIENDA SIMONA</h2>
             <p style={{fontSize: '9px', color: '#666', margin: 0}}>{fechaParaMostrar}</p>
             <hr style={{border: '0.5px dashed #ccc', margin: '8px 0'}}/>
-          </div>
-
-          <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center', fontSize: '10px', fontStyle: 'italic', marginBottom: '10px' }}>
-            "Gracias por su preferencia. <br/> ¡Vuelva pronto!"
           </div>
 
           <table style={{width: '100%', fontSize: '11px', borderCollapse: 'collapse'}}>
