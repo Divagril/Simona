@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, RefreshCw, UserPlus, 
-  Trash2, DollarSign, History, X 
+  Trash2, DollarSign, History, X, Printer 
 } from 'lucide-react';
 import { 
   getClientesConDeuda, 
@@ -12,6 +12,7 @@ import {
 } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import ConfirmModal from '../components/ConfirmModal'; 
+import TicketPreviewModal from '../components/TicketPreviewModal'; 
 import type { Cliente, Movimiento } from '../types';
 
 const Clients: React.FC = () => {
@@ -26,6 +27,10 @@ const Clients: React.FC = () => {
   const [montoAbono, setMontoAbono] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
+  // Estados para el Ticket
+  const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [datosTicket, setDatosTicket] = useState<any>(null);
+
   // Estado para la notificación de VUELTO (Lado Izquierdo)
   const [vueltoAlert, setVueltoAlert] = useState<number | null>(null);
 
@@ -55,7 +60,6 @@ const Clients: React.FC = () => {
     }
   };
 
-  // Crear cliente con validación anti-duplicados
   const handleCrearCliente = async () => {
     const nombreLimpio = nuevoNombre.trim();
     if (!nombreLimpio) {
@@ -79,7 +83,39 @@ const Clients: React.FC = () => {
     }
   };
 
-  // Registrar pago con lógica de vuelto
+  // FUNCIÓN PARA REIMPRIMIR TICKET DESDE EL HISTORIAL
+  const handleImprimirMovimiento = (mov: Movimiento) => {
+    if (!selectedClient) return;
+
+    const dataBase = {
+        total: mov.monto,
+        saldoPendiente: selectedClient.deudaTotal, // Enviamos deuda actual
+        items: [{
+            nombre: mov.tipo === 'PAGO' ? "ABONO A CUENTA" : (mov.descripcion || "COMPRA AL FIADO"),
+            cantidadSeleccionada: 1,
+            precio: mov.monto,
+            subtotal: mov.monto
+        }]
+    };
+
+    if (mov.tipo === 'PAGO') {
+        setDatosTicket({
+            ...dataBase,
+            metodoPago: "EFECTIVO",
+            pagoCon: mov.monto,
+            vuelto: 0
+        });
+    } else {
+        setDatosTicket({
+            ...dataBase,
+            metodoPago: "FIADO",
+            pagoCon: 0,
+            vuelto: 0
+        });
+    }
+    setIsTicketModalOpen(true);
+  };
+
   const handleAbonar = async () => {
     if (!selectedClient || !montoAbono) return;
     const montoPago = Number(montoAbono);
@@ -89,7 +125,7 @@ const Clients: React.FC = () => {
       if (montoPago > deudaActual) {
         const vueltoCalculado = montoPago - deudaActual;
         setVueltoAlert(vueltoCalculado); 
-        setTimeout(() => setVueltoAlert(null), 60000); // Se cierra en 1 min
+        setTimeout(() => setVueltoAlert(null), 60000); 
 
         await registrarAbono(selectedClient._id, deudaActual);
       } else {
@@ -99,6 +135,7 @@ const Clients: React.FC = () => {
       
       setMontoAbono('');
       
+      // Actualizar datos
       const res = await getClientesConDeuda();
       setClientes(res);
       const actualizado = res.find((c: any) => c._id === selectedClient._id);
@@ -182,7 +219,7 @@ const Clients: React.FC = () => {
         
         <div className="panel-blanco panel-header-cliente" style={{ padding: '20px' }}>
           {selectedClient ? (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h1 style={{ margin: 0, fontSize: '28px' }}>{selectedClient.nombre}</h1>
                 <button onClick={() => setIsDeleteModalOpen(true)} className="btn-delete-link">
@@ -203,10 +240,9 @@ const Clients: React.FC = () => {
 
         {selectedClient && (
           <>
-            {/* PANEL DE ABONO CON $ ALINEADO */}
             <div className="panel-blanco input-abono-group">
               <div className="abono-input-container">
-                <DollarSign size={24} color="#27AE60" style={{ flexShrink: 0 }} />
+                <DollarSign size={24} color="#27AE60" />
                 <input 
                   type="number" 
                   placeholder={selectedClient.deudaTotal <= 0.1 ? "Sin deuda" : "Monto abono..."} 
@@ -223,11 +259,10 @@ const Clients: React.FC = () => {
                 onClick={handleAbonar} 
                 disabled={selectedClient.deudaTotal <= 0.1}
               >
-                <span className="icon-pago">💵</span> REGISTRAR PAGO
+                💵 REGISTRAR PAGO
               </button>
             </div>
 
-            {/* TABLA DE REGISTROS */}
             <div className="table-history-wrapper">
               <table className="modern-table">
                 <thead style={{ background: '#F8F9F9', position: 'sticky', top: 0 }}>
@@ -235,6 +270,7 @@ const Clients: React.FC = () => {
                     <th style={{ padding: '15px' }}>FECHA</th>
                     <th>CONCEPTO</th>
                     <th style={{ textAlign: 'right', paddingRight: '20px' }}>MONTO (S/.)</th>
+                    <th style={{ textAlign: 'center' }}>TICKET</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -248,6 +284,11 @@ const Clients: React.FC = () => {
                         <div style={{fontSize: '11px', color: '#7F8C8D'}}>{mov.descripcion}</div>
                       </td>
                       <td style={{ textAlign: 'right', paddingRight: '20px', fontWeight: 'bold' }}>S/. {mov.monto.toFixed(2)}</td>
+                      <td style={{ textAlign: 'center' }}>
+                         <button className="btn-reprint-table" onClick={() => handleImprimirMovimiento(mov)}>
+                            <Printer size={16} />
+                         </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -257,7 +298,7 @@ const Clients: React.FC = () => {
         )}
       </div>
 
-      {/* NOTIFICACIÓN LATERAL IZQUIERDA (VUELTO) */}
+      {/* NOTIFICACIÓN LATERAL (VUELTO) */}
       {vueltoAlert !== null && (
         <div className="vuelto-left-alert">
           <div className="left-alert-content">
@@ -278,9 +319,22 @@ const Clients: React.FC = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={ejecutarEliminacionReal}
         titulo="¿Eliminar Cliente?"
-        mensaje={selectedClient ? "¿Deseas borrar permanentemente a " + selectedClient.nombre + "?" : ""}
-        colorBoton="#E74C3C" 
+        mensaje={selectedClient ? "¿Deseas borrar a " + selectedClient.nombre + "?" : ""}
       />
+
+      {/* MODAL TICKET REIMPRESIÓN */}
+      {datosTicket && (
+        <TicketPreviewModal 
+            isOpen={isTicketModalOpen} 
+            onClose={() => setIsTicketModalOpen(false)} 
+            items={datosTicket.items} 
+            total={datosTicket.total}
+            metodoPago={datosTicket.metodoPago}
+            pagoCon={datosTicket.pagoCon}
+            vuelto={datosTicket.vuelto}
+            saldoPendiente={datosTicket.saldoPendiente}
+        />
+      )}
     </div>
   );
 };

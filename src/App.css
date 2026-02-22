@@ -473,10 +473,35 @@ button:disabled {
 .btn-red-solid { background-color: #e74c3c !important; }
 .btn-gray-solid { background-color: #95a5a6 !important; }
 
+.btn-reprint-table {
+  background-color: #34495E !important; /* Color oscuro profesional */
+  color: white !important;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  transition: background 0.2s;
+}
+
+.btn-reprint-table:hover {
+  background-color: #1ABC9C !important; /* Se vuelve teal al pasar el mouse */
+}
+
 /* =========================================
    RESPONSIVE PARA CELULARES
    ========================================= */
 @media (max-width: 1024px) {
+  .reports-visual-section {
+    grid-template-columns: 1fr;
+  }
+  
+  .chart-container {
+    height: 350px;
+  }
   .pos-layout {
     flex-direction: column;
     height: auto;
@@ -3238,3 +3263,44 @@ fieldset.group-box legend {
     display: none !important;
   }
 }
+
+.reports-visual-section {
+  display: grid;
+  grid-template-columns: 1fr 300px; /* Gráfico grande a la izq, KPI a la der */
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.chart-container {
+  padding: 20px;
+  height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #2C3E50;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kpi-subtext {
+  font-size: 14px;
+  color: #7F8C8D;
+  margin-top: 5px;
+}
+
+.badge-pago {
+  background: #EBF5FB;
+  color: #3498DB;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
