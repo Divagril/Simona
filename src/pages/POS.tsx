@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Plus, Trash2, CreditCard, 
   History, Eye, Pause, PackageSearch, 
-  Keyboard, RefreshCw, Zap
+  Keyboard, RefreshCw, Zap, AlertTriangle
 } from 'lucide-react';
 import type { Producto, CartItem } from '../types';
 import PaymentModal from '../components/PaymentModal';
@@ -23,7 +23,6 @@ const POS: React.FC = () => {
   const [qty, setQty] = useState<any>('1'); 
   const [indexSeleccionadoCarrito, setIndexSeleccionadoCarrito] = useState<number | null>(null);
   const [parkedSales, setParkedSales] = useState<any[]>([]);
-  
   const [lastSaleData, setLastSaleData] = useState<any>(null);
 
   // --- MODALES ---
@@ -52,24 +51,33 @@ const POS: React.FC = () => {
     barcodeRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'F5') { e.preventDefault(); if(carrito.length > 0) setIsModalOpen(true); }
-      if (e.key === 'F6') { e.preventDefault(); holdSale(); }
-      if (e.key === 'F7') { e.preventDefault(); restoreLastSale(); }
-      if (e.key === 'F8') { e.preventDefault(); if(carrito.length > 0) setIsClientModalOpen(true); }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [carrito, parkedSales]);
-
   const total = carrito.reduce((acc, item) => acc + item.subtotal, 0);
 
+  // --- REGLA DE SEGURIDAD: AGREGAR AL CARRITO ---
   const addToCart = () => {
     if (!selectedProd) return;
     const cantidadAAgregar = Number(qty);
-    if (cantidadAAgregar <= 0 || isNaN(cantidadAAgregar)) return;
 
+    if (isNaN(cantidadAAgregar) || cantidadAAgregar <= 0) {
+      showNotification("⚠️ Ingrese una cantidad válida", true);
+      return;
+    }
+
+    // 1. Calcular cuánto de este producto YA hay en el ticket actual
+    const cantidadEnTicket = carrito
+      .filter(item => item._id === selectedProd._id)
+      .reduce((acc, item) => acc + item.cantidadSeleccionada, 0);
+
+    // 2. Comparar (Lo que hay en ticket + Lo que quiero agregar) vs Stock Real
+    if ((cantidadEnTicket + cantidadAAgregar) > selectedProd.cantidad) {
+      showNotification(
+        `❌ STOCK INSUFICIENTE. Solo quedan ${selectedProd.cantidad} unidades de ${selectedProd.nombre}.`, 
+        true
+      );
+      return;
+    }
+
+    // 3. Si pasa la validación, procedemos a agregar o sumar
     const indexExistente = carrito.findIndex(item => item._id === selectedProd._id);
     if (indexExistente !== -1) {
       const nuevoCarrito = [...carrito];
@@ -84,88 +92,39 @@ const POS: React.FC = () => {
       };
       setCarrito([...carrito, newItem]);
     }
+    
     setQty('1'); 
     showNotification(`✅ ${selectedProd.nombre} agregado`);
   };
 
-  const addManualItem = () => {
-    const nombre = manualDesc.trim();
-    const precioNum = Number(manualPrice);
-    if (!nombre || isNaN(precioNum) || precioNum <= 0) return;
-    const newItem: any = {
-      _id: `MANUAL-${Date.now()}`, nombre, precio: precioNum, cantidadSeleccionada: 1,
-      subtotal: precioNum, categoria: 'MANUAL', esManual: true,
-      cantidad: 999, unidad: 'UNIDAD'
-    };
-    setCarrito([...carrito, newItem]);
-    setManualDesc(''); setManualPrice('');
-  };
-
-  const handleQuitarDelCarrito = () => {
-    if (indexSeleccionadoCarrito === null) return;
-    const nuevoCarrito = [...carrito];
-    nuevoCarrito.splice(indexSeleccionadoCarrito, 1);
-    setCarrito(nuevoCarrito);
-    setIndexSeleccionadoCarrito(null);
-  };
-
-  const holdSale = () => {
-    if (carrito.length === 0) return;
-    setParkedSales([...parkedSales, { id: Date.now(), items: [...carrito], total, time: new Date().toLocaleTimeString() }]);
-    setCarrito([]);
-  };
-
-  const restoreLastSale = () => {
-    if (parkedSales.length === 0) return;
-    const last = parkedSales[parkedSales.length - 1];
-    setCarrito(last.items);
-    setParkedSales(parkedSales.slice(0, -1));
-  };
-
-  // --- FINALIZAR VENTA NORMAL ---
   const handleFinalizeVenta = async (datosPago: any) => {
     if (carrito.length === 0) return;
     const snapshotVenta = {
-      items: [...carrito],
-      total: total,
-      metodoPago: datosPago.metodo,
-      pagoCon: datosPago.pagoCon,
-      vuelto: datosPago.vuelto
+      items: [...carrito], total, metodoPago: datosPago.metodo,
+      pagoCon: datosPago.pagoCon, vuelto: datosPago.vuelto
     };
     try {
       const res = await registrarVenta({ items: carrito, total, metodoPago: datosPago.metodo, pagoCon: datosPago.pagoCon, vuelto: datosPago.vuelto });
       if (res.success) {
         setLastSaleData(snapshotVenta);
         setCarrito([]); setIsModalOpen(false); setIsTicketModalOpen(true);
-        cargarDatos();
+        cargarDatos(); // Recargamos para ver el stock actualizado
       }
     } catch (e) { showNotification("Error al cobrar", true); }
   };
 
-  // --- CONFIRMAR FIADO (AQUÍ ESTÁ LA NUEVA REGLA) ---
   const handleConfirmarFiado = async (cliente: any) => {
     if (carrito.length === 0) return;
-
-    // CAPTURAMOS LA NUEVA DEUDA (Anterior + Actual)
     const nuevaDeudaTotal = (cliente.deudaTotal || 0) + total;
-
     const snapshotFiado = {
-        items: [...carrito],
-        total: total,
-        metodoPago: 'FIADO',
-        pagoCon: 0,
-        vuelto: 0,
-        saldoPendiente: nuevaDeudaTotal // <--- ENVIAMOS EL SALDO ACTUALIZADO AL TICKET
+        items: [...carrito], total, metodoPago: 'FIADO',
+        pagoCon: 0, vuelto: 0, saldoPendiente: nuevaDeudaTotal
     };
-
     try {
       const res = await registrarFiadoMasivo({ cliente_id: cliente._id, items: carrito, total });
       if (res.success) {
-        showNotification(`📝 Fiado registrado para ${cliente.nombre}`);
         setLastSaleData(snapshotFiado);
-        setCarrito([]); 
-        setIsClientModalOpen(false); 
-        setIsTicketModalOpen(true); // Abrimos ticket con la deuda
+        setCarrito([]); setIsClientModalOpen(false); setIsTicketModalOpen(true);
         cargarDatos();
       }
     } catch (e) { showNotification("Error al registrar fiado", true); }
@@ -182,13 +141,18 @@ const POS: React.FC = () => {
 
   return (
     <div className="pos-layout">
+      {/* PANEL IZQUIERDO */}
       <div className="pos-left">
         <fieldset className="pos-group-box">
-          <legend className="pos-legend">🔍 Buscar Producto</legend>
+          <legend className="pos-legend">🔍 Buscador de Productos</legend>
           <div style={{display:'flex', justifyContent:'flex-end', marginBottom:'5px'}}>
-            <button className="btn-recargar-verde" onClick={cargarDatos}><div className="icon-refresh">🔄</div> Recargar</button>
+            <button className="btn-recargar-verde" onClick={cargarDatos}><RefreshCw size={14}/> Recargar</button>
           </div>
-          <input ref={barcodeRef} type="text" className="input-pos-flat" placeholder="Escriba nombre..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
+          <input 
+            ref={barcodeRef} type="text" className="input-pos-flat" 
+            placeholder="Buscar por nombre..." value={busqueda} 
+            onChange={e => setBusqueda(e.target.value)} 
+          />
         </fieldset>
 
         <div className="table-container-pos panel-blanco">
@@ -198,9 +162,13 @@ const POS: React.FC = () => {
             </thead>
             <tbody>
               {productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase())).map(p => (
-                <tr key={p._id} onClick={() => { setSelectedProd(p); setQty('1'); }} className={`row-hover ${selectedProd?._id === p._id ? 'selected-row' : ''}`}>
-                  <td>{p.nombre}</td>
-                  <td style={{textAlign:'center'}}>{p.cantidad}</td>
+                <tr 
+                  key={p._id} 
+                  onClick={() => { setSelectedProd(p); setQty('1'); }} 
+                  className={`row-hover ${p.cantidad <= 0 ? 'out-of-stock' : ''} ${selectedProd?._id === p._id ? 'selected-row' : ''}`}
+                >
+                  <td className="bold">{p.nombre} {p.cantidad <= 0 ? '(SIN STOCK)' : ''}</td>
+                  <td style={{textAlign:'center'}} className={p.cantidad < 5 ? 'text-rojo bold' : ''}>{p.cantidad}</td>
                   <td style={{textAlign:'right'}}>S/. {Number(p.precio).toFixed(2)}</td>
                 </tr>
               ))}
@@ -208,7 +176,8 @@ const POS: React.FC = () => {
           </table>
         </div>
 
-        <div className={`selection-bar-modern-final ${selectedProd ? 'active' : ''}`}>
+        {/* BARRA DE SELECCIÓN CON BLOQUEO */}
+        <div className={`selection-bar-modern-final ${selectedProd ? 'active' : ''} ${selectedProd && selectedProd.cantidad <= 0 ? 'blocked' : ''}`}>
           <div className="sel-left-info">
             <span className="sel-badge-blue">SELECCIONADO</span>
             <div className="sel-prod-name">{selectedProd ? selectedProd.nombre : 'Ninguno'}</div>
@@ -217,22 +186,39 @@ const POS: React.FC = () => {
           <div className="sel-right-controls">
             <div className="qty-group">
               <label>CANTIDAD</label>
-              <input type="text" className="qty-input-big" value={qty} onFocus={(e) => e.target.select()} onChange={e => setQty(e.target.value)} />
+              <input 
+                type="number" className="qty-input-big" value={qty} 
+                disabled={!selectedProd || selectedProd.cantidad <= 0}
+                onChange={e => setQty(e.target.value)} 
+              />
             </div>
-            <button className="btn-agregar-orange" onClick={addToCart} disabled={!selectedProd}>+ AGREGAR</button>
+            <button 
+              className="btn-agregar-orange" 
+              onClick={addToCart} 
+              disabled={!selectedProd || selectedProd.cantidad <= 0}
+            >
+              {selectedProd && selectedProd.cantidad <= 0 ? 'SIN STOCK' : '+ AGREGAR'}
+            </button>
           </div>
         </div>
 
         <fieldset className="group-box-manual">
-          <legend className="legend-manual"><span>⚡</span> Manual</legend>
+          <legend className="legend-manual">⚡ Venta Libre / Manual</legend>
           <div className="manual-inputs-row">
             <input type="text" placeholder="Descripción" className="input-flat-modern" value={manualDesc} onChange={e => setManualDesc(e.target.value)} />
-            <input type="text" placeholder="S/." className="input-flat-modern" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
-            <button className="btn-manual-dark" onClick={addManualItem}>Agregar</button>
+            <input type="number" placeholder="S/." className="input-flat-modern" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
+            <button className="btn-manual-dark" onClick={() => {
+                 const precioNum = Number(manualPrice);
+                 if (manualDesc && precioNum > 0) {
+                     const newItem: any = { _id: `MANUAL-${Date.now()}`, nombre: manualDesc, precio: precioNum, cantidadSeleccionada: 1, subtotal: precioNum, esManual: true, cantidad: 999 };
+                     setCarrito([...carrito, newItem]); setManualDesc(''); setManualPrice('');
+                 }
+            }}>Agregar</button>
           </div>
         </fieldset>
       </div>
 
+      {/* TICKET (Derecha) */}
       <div className="pos-right">
         <div className="panel-ticket-blue">
           <h2 className="ticket-title">🧾 TICKET</h2>
@@ -258,14 +244,12 @@ const POS: React.FC = () => {
               <button className="btn-purple" onClick={() => carrito.length > 0 && setIsClientModalOpen(true)}>📝 Fiado (F8)</button>
               <button className="btn-dark-blue" onClick={abrirTicketManual}>👁️ Ver Ticket</button>
             </div>
-            <div className="btn-row">
-              <button className="btn-orange" onClick={holdSale}>⌛ Espera (F6)</button>
-              <button className="btn-blue" onClick={restoreLastSale}>📁 Traer ({parkedSales.length})</button>
-            </div>
-            <div className="btn-row">
-              <button className="btn-red-solid" onClick={handleQuitarDelCarrito}>❌ Sacar</button>
-              <button className="btn-gray-solid" onClick={() => setIsClearModalOpen(true)}>🗑️ Limpiar</button>
-            </div>
+            <button className="btn-red-solid" onClick={() => {
+                if (indexSeleccionadoCarrito !== null) {
+                    const n = [...carrito]; n.splice(indexSeleccionadoCarrito, 1); setCarrito(n); setIndexSeleccionadoCarrito(null);
+                }
+            }}>❌ Quitar Producto</button>
+            <button className="btn-gray-solid" onClick={() => setIsClearModalOpen(true)}>🗑️ Limpiar Todo</button>
           </div>
         </div>
       </div>
@@ -273,17 +257,7 @@ const POS: React.FC = () => {
       <PaymentModal isOpen={isModalOpen} total={total} onClose={() => setIsModalOpen(false)} onConfirm={handleFinalizeVenta} />
       <ClientSelectModal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} onConfirm={handleConfirmarFiado} />
       <ConfirmModal isOpen={isClearModalOpen} onClose={() => setIsClearModalOpen(false)} onConfirm={() => setCarrito([])} titulo="¿Vaciar?" mensaje="Se borrarán los productos." colorBoton="#95A5A6" />
-      
-      <TicketPreviewModal 
-        isOpen={isTicketModalOpen} 
-        onClose={() => setIsTicketModalOpen(false)} 
-        items={lastSaleData?.items || []} 
-        total={lastSaleData?.total || 0}
-        metodoPago={lastSaleData?.metodoPago}
-        pagoCon={lastSaleData?.pagoCon}
-        vuelto={lastSaleData?.vuelto}
-        saldoPendiente={lastSaleData?.saldoPendiente} // <--- PROPIEDAD CLAVE
-      />
+      <TicketPreviewModal isOpen={isTicketModalOpen} onClose={() => setIsTicketModalOpen(false)} items={lastSaleData?.items || []} total={lastSaleData?.total || 0} metodoPago={lastSaleData?.metodoPago} saldoPendiente={lastSaleData?.saldoPendiente} />
     </div>
   );
 };

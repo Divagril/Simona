@@ -2677,6 +2677,20 @@ fieldset.group-box legend {
   z-index: 1000;
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
 }
+/* Fila de producto sin stock */
+.out-of-stock {
+  background-color: #F2F3F4 !important;
+  color: #BDC3C7 !important;
+  cursor: not-allowed !important;
+}
+
+/* Barra de selección bloqueada */
+.selection-bar-modern-final.blocked {
+  border-color: #E74C3C !important;
+  background-color: #FDEDEC !important;
+}
+
+.text-rojo { color: #E74C3C !important; }
 
 .modal-close-x:hover {
   transform: scale(1.1);
