@@ -26,9 +26,11 @@ const TicketPreviewModal: React.FC<Props> = ({
     return `SON ${soles} Y ${centimos.toString().padStart(2, '0')}/100 SOLES`;
   };
 
-  // --- FUNCIÓN DE IMPRESIÓN CON CIERRE AUTOMÁTICO ---
   const ejecutarImpresion = () => {
-    const ventanaPrint = window.open('', '_blank');
+    const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    // 1. Abrimos ventana (Técnica compatible con Celular y PC)
+    const ventanaPrint = window.open('', '_blank', 'width=400,height=600');
     if (!ventanaPrint) {
       alert("Por favor, permite las ventanas emergentes");
       return;
@@ -42,39 +44,28 @@ const TicketPreviewModal: React.FC<Props> = ({
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page { margin: 0; size: 58mm auto; }
 
-            /* Mensaje para que no se vea blanco total mientras carga */
+            /* ESTO QUITA EL FONDO BLANCO DOBLE EN PC */
             @media screen {
-              body { 
-                display: flex; 
-                justify-content: center; 
-                align-items: center; 
-                height: 100vh; 
-                font-family: Arial; 
-                color: #888;
-                background: #fff;
-              }
-              .no-print { display: block; }
-              .ticket { display: none; }
+              body { display: none !important; }
             }
 
-            /* Estilo real de la boleta */
+            /* ESTO ES LO QUE VE LA IMPRESORA */
             @media print {
-              .no-print { display: none; }
               body { 
-                display: block;
+                display: block !important;
+                background: #fff; 
                 width: 52mm; 
                 font-family: Arial, sans-serif;
                 padding: 2mm;
                 color: #000;
               }
-              .ticket { display: block; }
             }
 
             .text-center { text-align: center; }
             .bold { font-weight: bold; }
             .biz-name { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
             .info-text { font-size: 10pt; margin: 2pt 0; line-height: 1.2; }
-            .doc-title { font-size: 11pt; font-weight: bold; margin: 8pt 0; }
+            .doc-title { font-size: 11pt; font-weight: bold; margin: 6pt 0; }
             .divider { border-top: 1pt dashed #000; margin: 8pt 0; width: 100%; }
             .table { width: 100%; font-size: 10pt; border-collapse: collapse; }
             .table td { padding: 4pt 0; vertical-align: top; }
@@ -84,55 +75,49 @@ const TicketPreviewModal: React.FC<Props> = ({
           </style>
         </head>
         <body>
-          <div class="no-print">Procesando ticket...</div>
-
-          <div class="ticket">
-            <div class="text-center">
-              <div class="biz-name">TIENDA SIMONA</div>
-              <div class="info-text bold">RUC: 10XXXXXXXXX</div>
-              <div class="info-text">CALLE PRINCIPAL #123 - LIMA</div>
-              <div class="divider"></div>
-              <div class="doc-title">BOLETA DE VENTA</div>
-              <div class="info-text">${fecha}</div>
-            </div>
-
-            <table class="table">
-              <tbody>
-                ${items.map(it => `
-                  <tr>
-                    <td style="width:70%">${it.nombre} ${it.cantidadSeleccionada > 1 ? `x${it.cantidadSeleccionada}` : ''}</td>
-                    <td align="right">S/ ${it.subtotal.toFixed(2)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-
+          <div class="text-center">
+            <div class="biz-name">TIENDA SIMONA</div>
+            <div class="info-text bold">RUC: 10XXXXXXXXX</div>
+            <div class="info-text">CALLE PRINCIPAL #123 - LIMA</div>
             <div class="divider"></div>
-            <div class="grand-total"><span>TOTAL:</span><span>S/ ${total.toFixed(2)}</span></div>
-            <div class="letras">${montoALetras(total)}</div>
-
-            ${saldoPendiente !== undefined ? `
-              <div class="saldo-box">
-                ${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}
-              </div>
-            ` : ''}
-
-            <div class="divider" style="margin-top:10pt;"></div>
-            <div class="text-center info-text" style="font-size: 8pt;">¡Gracias por su compra!</div>
+            <div class="doc-title">BOLETA DE VENTA</div>
+            <div class="info-text">${fecha}</div>
+            <div class="divider"></div>
           </div>
+
+          <table class="table">
+            <tbody>
+              ${items.map(it => `
+                <tr>
+                  <td style="width:70%">${it.nombre} ${it.cantidadSeleccionada > 1 ? `x${it.cantidadSeleccionada}` : ''}</td>
+                  <td align="right">S/ ${it.subtotal.toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="divider"></div>
+          <div class="grand-total"><span>TOTAL:</span><span>S/ ${total.toFixed(2)}</span></div>
+          <div class="letras">${montoALetras(total)}</div>
+
+          ${saldoPendiente !== undefined ? `
+            <div class="saldo-box">
+              ${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}
+            </div>
+          ` : ''}
+
+          <div class="divider" style="margin-top:15pt;"></div>
+          <div class="text-center info-text" style="font-size: 8pt;">¡Gracias por su compra!</div>
           
           <script>
             window.onload = function() {
               window.print();
+              // Solo cerramos pestaña en PC para no interrumpir al celular
+              if (!${esMovil}) {
+                window.onafterprint = function() { window.close(); };
+                setTimeout(function() { window.close(); }, 1000);
+              }
             };
-            // --- ESTO CIERRA LA PANTALLA BLANCA AL TERMINAR ---
-            window.onafterprint = function() {
-              window.close();
-            };
-            // Fallback por si el celular no detecta onafterprint
-            setTimeout(function() {
-              window.close();
-            }, 3000);
           </script>
         </body>
       </html>

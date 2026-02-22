@@ -3305,53 +3305,75 @@ fieldset.group-box legend {
 
 
 @media print {
-  /* Ocultar TODO menos el ticket */
-  body * {
-    visibility: hidden;
+   /* 1. Escondemos la App, el menú y fondos */
+  #root, .sidebar, .mobile-top-bar, .content-area, .modal-close-x, .btn-thermal-print {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
   }
-  
-  /* Mostrar solo el contenido del ticket y posicionarlo al inicio */
-  .thermal-paper-sheet, .thermal-paper-sheet * {
-    visibility: visible;
+
+  /* 2. El cuerpo de la página debe ser blanco */
+  body {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
   }
-  
+
+  /* 3. Forzamos que el ticket se vea y sea negro */
+  .modal-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    background: white !important;
+    width: 100% !important;
+    display: block !important;
+    padding: 0 !important;
+    visibility: visible !important;
+  }
+
+  .ticket-modal-wrapper {
+    background: white !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 52mm !important;
+    display: block !important;
+    visibility: visible !important;
+  }
+
   .thermal-paper-sheet {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 58mm; /* Ajustar a 80mm si tu impresora es grande */
-    margin: 0;
-    padding: 5px;
-    box-shadow: none;
-    border: none;
+    display: block !important;
+    visibility: visible !important;
+    width: 52mm !important;
+    padding: 1mm !important;
+    background: white !important;
+    color: black !important;
+    border: none !important;
   }
-  #root, 
-  .sidebar, 
-  .app-container, 
-  .mobile-top-bar, 
-  .modal-close-x, 
-  .btn-thermal-print {
+
+  /* 4. ASEGURAMOS QUE CADA LETRA SEA NEGRA */
+  .thermal-paper-sheet * {
+    visibility: visible !important;
+    color: black !important;
+    background: transparent !important;
+  }
+  
+  /* 2. Hacemos que el modal y su contenido sean lo único visible */
+  .modal-overlay, 
+  .modal-overlay *, 
+  .ticket-modal-wrapper, 
+  .ticket-modal-wrapper *, 
+  .thermal-paper-sheet, 
+  .thermal-paper-sheet * {
+    visibility: visible !important;
+  }
+  /* 5. Escondemos los botones que no deben salir en el papel */
+  .modal-close-x, .btn-thermal-print {
     display: none !important;
   }
 
-  /* 4. El papel térmico: el único con contenido visible */
-  .thermal-paper-sheet {
-    display: block !important;
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 58mm !important; /* Cambia a 80mm si tu papel es ancho */
-    margin: 0 !important;
-    padding: 2mm !important;
-    border: none !important;
-    font-size: 12px !important;
-    color: black !important;
-  }
-
-  /* Aseguramos que los textos internos se vean */
-  .thermal-paper-sheet * {
-    color: black !important;
-    background: white !important;
+  .thermal-paper-sheet, .thermal-paper-sheet * {
+    visibility: visible;
   }
 
   /* Quitar encabezados de página (URL, Fecha) que pone Chrome */
