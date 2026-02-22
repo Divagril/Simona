@@ -31,7 +31,7 @@ const Clients: React.FC = () => {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [datosTicket, setDatosTicket] = useState<any>(null);
 
-  // Estado para la notificación de VUELTO (Lado Izquierdo)
+  // Estado para la notificación de VUELTO
   const [vueltoAlert, setVueltoAlert] = useState<number | null>(null);
 
   // --- CARGA DE DATOS ---
@@ -63,33 +63,28 @@ const Clients: React.FC = () => {
   const handleCrearCliente = async () => {
     const nombreLimpio = nuevoNombre.trim();
     if (!nombreLimpio) {
-       showNotification("⚠️ Escriba un nombre para el cliente", true);
+       showNotification("⚠️ Escriba un nombre", true);
        return;
     }
-
-    const existe = clientes.some((c) => c.nombre.toLowerCase() === nombreLimpio.toLowerCase());
-    if (existe) {
-      showNotification(`⚠️ El cliente "${nombreLimpio}" ya existe`, true);
-      return;
-    }
-
     try {
        await crearCliente(nombreLimpio);
        setNuevoNombre(''); 
        showNotification(`✅ Cliente registrado`);
        cargarClientes();
     } catch (error) {
-       showNotification("❌ Error al guardar cliente", true);
+       showNotification("❌ Error al guardar", true);
     }
   };
 
-  // FUNCIÓN PARA REIMPRIMIR TICKET DESDE EL HISTORIAL
+  // --- FUNCIÓN CORREGIDA: TRAE FECHA Y HORA REAL ---
   const handleImprimirMovimiento = (mov: Movimiento) => {
     if (!selectedClient) return;
 
-    const dataBase = {
+    // CAPTURAMOS LA FECHA EXACTA DEL MOVIMIENTO
+    const dataParaTicket = {
         total: mov.monto,
-        saldoPendiente: selectedClient.deudaTotal, // Enviamos deuda actual
+        saldoPendiente: selectedClient.deudaTotal,
+        fechaOriginal: mov.fecha, // <--- AQUÍ CAPTURAMOS LA FECHA DE LA TABLA
         items: [{
             nombre: mov.tipo === 'PAGO' ? "ABONO A CUENTA" : (mov.descripcion || "COMPRA AL FIADO"),
             cantidadSeleccionada: 1,
@@ -99,19 +94,9 @@ const Clients: React.FC = () => {
     };
 
     if (mov.tipo === 'PAGO') {
-        setDatosTicket({
-            ...dataBase,
-            metodoPago: "EFECTIVO",
-            pagoCon: mov.monto,
-            vuelto: 0
-        });
+        setDatosTicket({ ...dataParaTicket, metodoPago: "EFECTIVO" });
     } else {
-        setDatosTicket({
-            ...dataBase,
-            metodoPago: "FIADO",
-            pagoCon: 0,
-            vuelto: 0
-        });
+        setDatosTicket({ ...dataParaTicket, metodoPago: "FIADO" });
     }
     setIsTicketModalOpen(true);
   };
@@ -126,26 +111,24 @@ const Clients: React.FC = () => {
         const vueltoCalculado = montoPago - deudaActual;
         setVueltoAlert(vueltoCalculado); 
         setTimeout(() => setVueltoAlert(null), 60000); 
-
         await registrarAbono(selectedClient._id, deudaActual);
       } else {
         await registrarAbono(selectedClient._id, montoPago);
-        showNotification("✅ Pago registrado correctamente");
+        showNotification("✅ Pago registrado");
       }
       
       setMontoAbono('');
-      
-      // Actualizar datos
+      cargarClientes();
+      // Refrescar historial
+      const movs = await getMovimientosCliente(selectedClient._id);
+      setMovimientos(movs);
+      // Actualizar deuda en pantalla
       const res = await getClientesConDeuda();
-      setClientes(res);
-      const actualizado = res.find((c: any) => c._id === selectedClient._id);
-      if (actualizado) {
-        setSelectedClient(actualizado);
-        const movs = await getMovimientosCliente(actualizado._id);
-        setMovimientos(movs);
-      }
+      const actualizado = res.find((c:any) => c._id === selectedClient._id);
+      if(actualizado) setSelectedClient(actualizado);
+
     } catch (error) {
-      showNotification("❌ Error al procesar el abono", true);
+      showNotification("❌ Error al procesar pago", true);
     }
   };
 
@@ -157,39 +140,28 @@ const Clients: React.FC = () => {
       setSelectedClient(null);
       cargarClientes();
     } catch (error) {
-      showNotification("No se pudo eliminar el cliente", true);
+      showNotification("Error al eliminar", true);
     }
   };
-
-  const clientesFiltrados = clientes.filter(c => 
-    c.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
 
   return (
     <div className="clients-container">
       
-      {/* PANEL IZQUIERDO: LISTA */}
+      {/* PANEL IZQUIERDO */}
       <div className="panel-blanco" style={{ width: '350px', display: 'flex', flexDirection: 'column', padding: '15px' }}>
         <div className="clients-header-row">
           <h3 style={{margin: 0}}><Users size={20} /> Clientes</h3>
-          <button className="btn-icon-refresh-teal" onClick={cargarClientes}>
-            <RefreshCw size={16} />
-          </button>
+          <button className="btn-icon-refresh-teal" onClick={cargarClientes}><RefreshCw size={16} /></button>
         </div>
-
         <input 
           type="text" placeholder="🔍 Buscar cliente..." 
           className="input-main" style={{ width: '100%', marginBottom: '10px' }}
           value={busqueda} onChange={e => setBusqueda(e.target.value)}
         />
-
         <div style={{ flexGrow: 1, overflowY: 'auto', backgroundColor: '#F0F3F4', borderRadius: '8px', padding: '10px' }}>
-          {clientesFiltrados.map(cliente => (
-            <div 
-              key={cliente._id}
-              onClick={() => seleccionarCliente(cliente)}
-              className={`modal-client-card ${selectedClient?._id === cliente._id ? 'selected-row' : ''}`}
-            >
+          {clientes.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase())).map(cliente => (
+            <div key={cliente._id} onClick={() => seleccionarCliente(cliente)}
+              className={`modal-client-card ${selectedClient?._id === cliente._id ? 'selected-row' : ''}`}>
               <div className="modal-client-info">
                 <span className="modal-client-name">{cliente.nombre}</span>
                 <div className={`status-badge ${cliente.deudaTotal > 0.1 ? 'debt' : 'clean'}`}>
@@ -199,32 +171,24 @@ const Clients: React.FC = () => {
             </div>
           ))}
         </div>
-
         <div className="create-client-footer">
           <div className="input-with-btn">
-            <input 
-               type="text" placeholder="Nuevo cliente..." className="input-main"
+            <input type="text" placeholder="Nuevo cliente..." className="input-main"
                value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
-               onKeyDown={(e) => e.key === 'Enter' && handleCrearCliente()}
-            />
-            <button className="btn-add-client-green" onClick={handleCrearCliente}>
-              <UserPlus size={20} />
-            </button>
-         </div>
+               onKeyDown={(e) => e.key === 'Enter' && handleCrearCliente()} />
+            <button className="btn-add-client-green" onClick={handleCrearCliente}><UserPlus size={20} /></button>
+          </div>
         </div>
       </div>
 
-      {/* PANEL DERECHO: DETALLES */}
+      {/* PANEL DERECHO */}
       <div className="pos-right" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        
         <div className="panel-blanco panel-header-cliente" style={{ padding: '20px' }}>
           {selectedClient ? (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <h1 style={{ margin: 0, fontSize: '28px' }}>{selectedClient.nombre}</h1>
-                <button onClick={() => setIsDeleteModalOpen(true)} className="btn-delete-link">
-                   <Trash2 size={14} /> Eliminar Cliente
-                </button>
+                <h1 style={{ margin: 0 }}>{selectedClient.nombre}</h1>
+                <button onClick={() => setIsDeleteModalOpen(true)} className="btn-delete-link"><Trash2 size={14} /> Eliminar Cliente</button>
               </div>
               <div style={{ textAlign: 'right' }}>
                    <div style={{ fontWeight: 'bold', color: '#7F8C8D', fontSize: '12px' }}>DEUDA TOTAL</div>
@@ -234,7 +198,7 @@ const Clients: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div style={{ color: '#BDC3C7', textAlign: 'center', width: '100%' }}>Seleccione un cliente</div>
+            <div style={{ color: '#BDC3C7', textAlign: 'center', width: '100%', padding: '40px' }}>Seleccione un cliente de la lista</div>
           )}
         </div>
 
@@ -243,22 +207,10 @@ const Clients: React.FC = () => {
             <div className="panel-blanco input-abono-group">
               <div className="abono-input-container">
                 <DollarSign size={24} color="#27AE60" />
-                <input 
-                  type="number" 
-                  placeholder={selectedClient.deudaTotal <= 0.1 ? "Sin deuda" : "Monto abono..."} 
-                  className="input-main" 
-                  style={{ flex: 1, fontSize: '18px' }}
-                  value={montoAbono} 
-                  onChange={e => setMontoAbono(e.target.value)}
-                  disabled={selectedClient.deudaTotal <= 0.1} 
-                />
+                <input type="number" placeholder="Monto abono..." className="input-main" style={{ flex: 1, fontSize: '18px' }}
+                  value={montoAbono} onChange={e => setMontoAbono(e.target.value)} disabled={selectedClient.deudaTotal <= 0.1} />
               </div>
-
-              <button 
-                className="btn-registrar-pago-pro" 
-                onClick={handleAbonar} 
-                disabled={selectedClient.deudaTotal <= 0.1}
-              >
+              <button className="btn-registrar-pago-pro" onClick={handleAbonar} disabled={selectedClient.deudaTotal <= 0.1}>
                 💵 REGISTRAR PAGO
               </button>
             </div>
@@ -298,7 +250,7 @@ const Clients: React.FC = () => {
         )}
       </div>
 
-      {/* NOTIFICACIÓN LATERAL (VUELTO) */}
+      {/* NOTIFICACIÓN VUELTO */}
       {vueltoAlert !== null && (
         <div className="vuelto-left-alert">
           <div className="left-alert-content">
@@ -313,16 +265,9 @@ const Clients: React.FC = () => {
         </div>
       )}
 
-      {/* MODAL ELIMINAR */}
-      <ConfirmModal 
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={ejecutarEliminacionReal}
-        titulo="¿Eliminar Cliente?"
-        mensaje={selectedClient ? "¿Deseas borrar a " + selectedClient.nombre + "?" : ""}
-      />
-
-      {/* MODAL TICKET REIMPRESIÓN */}
+      {/* MODALES */}
+      <ConfirmModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={ejecutarEliminacionReal} titulo="¿Eliminar?" mensaje="¿Borrar cliente?" />
+      
       {datosTicket && (
         <TicketPreviewModal 
             isOpen={isTicketModalOpen} 
@@ -330,9 +275,8 @@ const Clients: React.FC = () => {
             items={datosTicket.items} 
             total={datosTicket.total}
             metodoPago={datosTicket.metodoPago}
-            pagoCon={datosTicket.pagoCon}
-            vuelto={datosTicket.vuelto}
             saldoPendiente={datosTicket.saldoPendiente}
+            fechaManual={datosTicket.fechaOriginal} // <--- PASAMOS LA FECHA REAL AL TICKET
         />
       )}
     </div>

@@ -11,14 +11,17 @@ interface Props {
   pagoCon?: number;
   vuelto?: number;
   saldoPendiente?: number; 
+  fechaManual?: string;
 }
 
 const TicketPreviewModal: React.FC<Props> = ({ 
-  isOpen, onClose, items, total, metodoPago = "EFECTIVO", pagoCon = 0, vuelto = 0, saldoPendiente 
+  isOpen, onClose, items, total, metodoPago = "EFECTIVO", pagoCon = 0, vuelto = 0, saldoPendiente, fechaManual 
 }) => {
   if (!isOpen) return null;
 
-  const fecha = new Date().toLocaleString('es-PE');
+  const fechaParaMostrar = fechaManual 
+    ? new Date(fechaManual).toLocaleString('es-PE') 
+    : new Date().toLocaleString('es-PE');
   
   const montoALetras = (num: number) => {
     const soles = Math.floor(num);
@@ -26,29 +29,25 @@ const TicketPreviewModal: React.FC<Props> = ({
     return `SON ${soles} Y ${centimos.toString().padStart(2, '0')}/100 SOLES`;
   };
 
-  // --- FUNCIÓN DE IMPRESIÓN SIN ABRIR PESTAÑAS ---
+  // --- FUNCIÓN DE IMPRESIÓN DEFINITIVA (SIN PESTAÑAS NUEVAS) ---
   const ejecutarImpresion = () => {
-    // 1. Creamos o buscamos un marco invisible en la página actual
-    let iframe = document.getElementById('print-iframe') as HTMLIFrameElement;
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'print-iframe';
-      // Lo hacemos invisible pero presente para que el celular no lo bloquee
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = 'none';
-      iframe.style.opacity = '0';
-      document.body.appendChild(iframe);
-    }
+    // 1. Creamos un Iframe (marco invisible)
+    const iframe = document.createElement('iframe');
+    
+    // Lo hacemos invisible para que no afecte la vista
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = 'none';
+    
+    document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
     if (!doc) return;
 
-    // 2. Escribimos el ticket con tus medidas originales
-    doc.open();
+    // 2. Escribimos el contenido del ticket (Tus medidas originales)
     doc.write(`
       <html>
         <head>
@@ -56,7 +55,7 @@ const TicketPreviewModal: React.FC<Props> = ({
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page { margin: 0; size: 58mm auto; }
             body { 
-              background: #fff; 
+              background: #ffffff; 
               width: 52mm; 
               font-family: Arial, sans-serif;
               padding: 2mm;
@@ -66,7 +65,7 @@ const TicketPreviewModal: React.FC<Props> = ({
             .bold { font-weight: bold; }
             .biz-name { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
             .info-text { font-size: 10pt; margin: 2pt 0; line-height: 1.2; }
-            .doc-title { font-size: 11pt; font-weight: bold; margin: 6pt 0; }
+            .doc-title { font-size: 11pt; font-weight: bold; margin: 8pt 0; }
             .divider { border-top: 1pt dashed #000; margin: 8pt 0; width: 100%; }
             .table { width: 100%; font-size: 10pt; border-collapse: collapse; }
             .table td { padding: 4pt 0; vertical-align: top; }
@@ -82,9 +81,13 @@ const TicketPreviewModal: React.FC<Props> = ({
             <div class="info-text">CALLE PRINCIPAL #123 - LIMA</div>
             <div class="divider"></div>
             <div class="doc-title">BOLETA DE VENTA</div>
-            <div class="info-text">${fecha}</div>
-            <div class="divider"></div>
+            <div class="info-text">${fechaParaMostrar}</div>
           </div>
+
+          <div style="margin: 5pt 0; padding: 4pt; border: 0.5pt solid #000; font-size: 9pt; text-align: center; font-style: italic;">
+            "Gracias por su preferencia. ¡Vuelva pronto!"
+          </div>
+
           <table class="table">
             <tbody>
               ${items.map(it => `
@@ -95,14 +98,17 @@ const TicketPreviewModal: React.FC<Props> = ({
               `).join('')}
             </tbody>
           </table>
+
           <div class="divider"></div>
           <div class="grand-total"><span>TOTAL:</span><span>S/ ${total.toFixed(2)}</span></div>
           <div class="letras">${montoALetras(total)}</div>
+
           ${saldoPendiente !== undefined ? `
             <div class="saldo-box">
               ${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}
             </div>
           ` : ''}
+
           <div class="divider" style="margin-top:15pt;"></div>
           <div class="text-center info-text" style="font-size: 8pt;">¡Gracias por su compra!</div>
         </body>
@@ -110,10 +116,16 @@ const TicketPreviewModal: React.FC<Props> = ({
     `);
     doc.close();
 
-    // 3. Lanzamos la impresión desde el marco invisible
+    // 3. Lanzamos la impresión desde el Iframe
+    // Esperamos 500ms para que el navegador procese el estilo
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
+      
+      // 4. Borramos el Iframe después de imprimir para no llenar la memoria
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 1000);
     }, 500);
   };
 
@@ -127,8 +139,12 @@ const TicketPreviewModal: React.FC<Props> = ({
         <div className="thermal-paper-sheet">
           <div style={{textAlign: 'center'}}>
             <h2 style={{margin: 0, fontSize: '16px', fontWeight: 900}}>TIENDA SIMONA</h2>
-            <p style={{fontSize: '9px', color: '#666', margin: 0}}>{fecha}</p>
+            <p style={{fontSize: '9px', color: '#666', margin: 0}}>{fechaParaMostrar}</p>
             <hr style={{border: '0.5px dashed #ccc', margin: '8px 0'}}/>
+          </div>
+
+          <div style={{ border: '1px solid #eee', padding: '5px', textAlign: 'center', fontSize: '10px', fontStyle: 'italic', marginBottom: '10px' }}>
+            "Gracias por su preferencia. <br/> ¡Vuelva pronto!"
           </div>
 
           <table style={{width: '100%', fontSize: '11px', borderCollapse: 'collapse'}}>
