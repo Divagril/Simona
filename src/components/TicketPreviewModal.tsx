@@ -26,41 +26,42 @@ const TicketPreviewModal: React.FC<Props> = ({
     return `SON ${soles} Y ${centimos.toString().padStart(2, '0')}/100 SOLES`;
   };
 
+  // --- FUNCIÓN DE IMPRESIÓN SIN ABRIR PESTAÑAS ---
   const ejecutarImpresion = () => {
-    const esMovil = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-    
-    // 1. Abrimos ventana (Técnica compatible con Celular y PC)
-    const ventanaPrint = window.open('', '_blank', 'width=400,height=600');
-    if (!ventanaPrint) {
-      alert("Por favor, permite las ventanas emergentes");
-      return;
+    // 1. Creamos o buscamos un marco invisible en la página actual
+    let iframe = document.getElementById('print-iframe') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'print-iframe';
+      // Lo hacemos invisible pero presente para que el celular no lo bloquee
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.style.opacity = '0';
+      document.body.appendChild(iframe);
     }
 
-    ventanaPrint.document.write(`
+    const doc = iframe.contentWindow?.document;
+    if (!doc) return;
+
+    // 2. Escribimos el ticket con tus medidas originales
+    doc.open();
+    doc.write(`
       <html>
         <head>
-          <title>Imprimiendo...</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page { margin: 0; size: 58mm auto; }
-
-            /* ESTO QUITA EL FONDO BLANCO DOBLE EN PC */
-            @media screen {
-              body { display: none !important; }
+            body { 
+              background: #fff; 
+              width: 52mm; 
+              font-family: Arial, sans-serif;
+              padding: 2mm;
+              color: #000;
             }
-
-            /* ESTO ES LO QUE VE LA IMPRESORA */
-            @media print {
-              body { 
-                display: block !important;
-                background: #fff; 
-                width: 52mm; 
-                font-family: Arial, sans-serif;
-                padding: 2mm;
-                color: #000;
-              }
-            }
-
             .text-center { text-align: center; }
             .bold { font-weight: bold; }
             .biz-name { font-size: 14pt; font-weight: bold; text-transform: uppercase; }
@@ -84,7 +85,6 @@ const TicketPreviewModal: React.FC<Props> = ({
             <div class="info-text">${fecha}</div>
             <div class="divider"></div>
           </div>
-
           <table class="table">
             <tbody>
               ${items.map(it => `
@@ -95,35 +95,26 @@ const TicketPreviewModal: React.FC<Props> = ({
               `).join('')}
             </tbody>
           </table>
-
           <div class="divider"></div>
           <div class="grand-total"><span>TOTAL:</span><span>S/ ${total.toFixed(2)}</span></div>
           <div class="letras">${montoALetras(total)}</div>
-
           ${saldoPendiente !== undefined ? `
             <div class="saldo-box">
               ${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}
             </div>
           ` : ''}
-
           <div class="divider" style="margin-top:15pt;"></div>
           <div class="text-center info-text" style="font-size: 8pt;">¡Gracias por su compra!</div>
-          
-          <script>
-            window.onload = function() {
-              window.print();
-              // Solo cerramos pestaña en PC para no interrumpir al celular
-              if (!${esMovil}) {
-                window.onafterprint = function() { window.close(); };
-                setTimeout(function() { window.close(); }, 1000);
-              }
-            };
-          </script>
         </body>
       </html>
     `);
+    doc.close();
 
-    ventanaPrint.document.close();
+    // 3. Lanzamos la impresión desde el marco invisible
+    setTimeout(() => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+    }, 500);
   };
 
   return (
