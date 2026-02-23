@@ -29,22 +29,25 @@ const TicketPreviewModal: React.FC<Props> = ({
     return `SON ${soles} Y ${centimos.toString().padStart(2, '0')}/100 SOLES`;
   };
 
-  // --- FUNCIÓN DE IMPRESIÓN DEFINITIVA (SIN PESTAÑAS Y SIN BLANCO) ---
+  // --- FUNCIÓN DE IMPRESIÓN MAESTRA (SIN PESTAÑAS NUEVAS) ---
   const ejecutarImpresion = () => {
-    // 1. Creamos un marco invisible
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.right = '0';
-    iframe.style.bottom = '0';
-    iframe.style.width = '0';
-    iframe.style.height = '0';
-    iframe.style.border = 'none';
-    document.body.appendChild(iframe);
+    // 1. Buscamos si ya existe un iframe de impresión, si no, lo creamos
+    let iframe = document.getElementById('iframe-impresion-simona') as HTMLIFrameElement;
+    if (!iframe) {
+      iframe = document.createElement('iframe');
+      iframe.id = 'iframe-impresion-simona';
+      iframe.style.position = 'fixed';
+      iframe.style.width = '0px';
+      iframe.style.height = '0px';
+      iframe.style.border = 'none';
+      document.body.appendChild(iframe);
+    }
 
     const doc = iframe.contentWindow?.document;
     if (!doc) return;
 
-    // 2. Escribimos el ticket con TUS MEDIDAS ORIGINALES
+    // 2. Escribimos el contenido (Tus medidas originales de 52mm)
+    doc.open();
     doc.write(`
       <html>
         <head>
@@ -52,11 +55,8 @@ const TicketPreviewModal: React.FC<Props> = ({
             * { margin: 0; padding: 0; box-sizing: border-box; }
             @page { margin: 0; size: 58mm auto; }
             body { 
-              background: #ffffff; 
-              width: 52mm; 
-              font-family: Arial, sans-serif;
-              padding: 2mm;
-              color: #000;
+              background: #fff; width: 52mm; 
+              font-family: Arial, sans-serif; padding: 2mm; color: #000;
             }
             .text-center { text-align: center; }
             .bold { font-weight: bold; }
@@ -81,7 +81,6 @@ const TicketPreviewModal: React.FC<Props> = ({
             <div class="info-text">${fechaParaMostrar}</div>
             <div class="divider"></div>
           </div>
-
           <table class="table">
             <tbody>
               ${items.map(it => `
@@ -92,38 +91,28 @@ const TicketPreviewModal: React.FC<Props> = ({
               `).join('')}
             </tbody>
           </table>
-
           <div class="divider"></div>
           <div class="grand-total"><span>TOTAL:</span><span>S/ ${total.toFixed(2)}</span></div>
           <div class="letras">${montoALetras(total)}</div>
-
-          ${saldoPendiente !== undefined ? `
-            <div class="saldo-box">
-              ${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}
-            </div>
-          ` : ''}
-
+          ${saldoPendiente !== undefined ? `<div class="saldo-box">${saldoPendiente > 0.1 ? `DEUDA PENDIENTE: S/ ${saldoPendiente.toFixed(2)}` : `¡ESTADO: AL DÍA!`}</div>` : ''}
           <div class="divider" style="margin-top:15pt;"></div>
           <div class="text-center info-text" style="font-size: 8pt;">¡Gracias por su compra!</div>
         </body>
       </html>
     `);
-
     doc.close();
 
-    // 3. Mandamos a imprimir solo el marco invisible
+    // 3. Lanzamos impresión directamente desde la App
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
-      // Borramos el marco del sistema después de imprimir
-      setTimeout(() => document.body.removeChild(iframe), 1000);
     }, 500);
   };
 
   return (
     <div className="modal-overlay">
       <div className="ticket-modal-wrapper">
-        <button onClick={onClose} className="modal-close-x" title="Cerrar">
+        <button onClick={onClose} className="modal-close-x">
           <X size={24} strokeWidth={3} />
         </button>
 
