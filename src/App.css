@@ -2732,6 +2732,55 @@ fieldset.group-box legend {
    BLOQUE RESPONSIVE ÚNICO (SOLO PARA CELULARES Y TABLETS)
    ========================================================================== */
 @media (max-width: 768px) {
+  .mobile-overlay-shadow {
+    position: fixed !important;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    z-index: 9999 !important; /* Capa alta, pero menor al sidebar */
+    display: block !important;
+    backdrop-filter: none !important; /* QUITAMOS EL BLUR QUE DAÑA LA VISTA */
+  }
+
+  /* 2. El Sidebar (Encima de la sombra) */
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: -280px !important; /* Escondido por la izquierda */
+    width: 280px !important;
+    height: 100vh !important;
+    background-color: #2C3E50 !important; /* COLOR SÓLIDO */
+    z-index: 10000 !important; /* LA CAPA MÁS ALTA DEL MUNDO */
+    transition: left 0.3s ease !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 10px 0 20px rgba(0,0,0,0.5) !important;
+  }
+
+  /* Cuando la clase 'mobile-open' está activa (lo que muestra tu inspector) */
+  .sidebar.mobile-open {
+    left: 0 !important; /* Se mueve al frente */
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  /* 3. Forzar visibilidad de textos e iconos */
+  .sidebar.mobile-open .nav-text, 
+  .sidebar.mobile-open .app-title-text,
+  .sidebar.mobile-open .nav-icon {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    color: white !important;
+  }
+  .btn-toggle-mobile svg {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+  }
+  /* 5. Evitar que la página se mueva horizontalmente */
+  body, #root, .app-container {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
   .chart-container {
     width: 100% !important;
     height: 380px !important; /* Altura fija obligatoria para el móvil */
@@ -2746,59 +2795,8 @@ fieldset.group-box legend {
     min-height: 300px !important; /* Forzar que el área del gráfico exista */
     width: 100%;
   }
-  
-  .mobile-top-bar {
-    display: flex !important;
-    position: fixed !important;
-    top: 0; left: 0; width: 100%;
-    height: 60px;
-    background-color: #2C3E50 !important;
-    z-index: 5000 !important; /* Capa media */
-    padding: 0 15px;
-    align-items: center;
-    justify-content: space-between;
-  }
 
-  /* 2. Sombra del fondo (Negro sólido suave, SIN BLUR) */
-  .mobile-overlay-shadow {
-    position: fixed !important;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0, 0, 0, 0.6) !important; /* Fondo oscuro simple */
-    z-index: 8000 !important; /* Por debajo del menú */
-    display: block !important;
-    backdrop-filter: none !important; /* ELIMINADO EL EFECTO QUE DAÑABA LA VISTA */
-  }
 
-  /* 3. El Menú Lateral (Cajón sólido) */
-  .sidebar {
-    position: fixed !important;
-    top: 0 !important;
-    left: -100% !important; /* Escondido a la izquierda */
-    width: 280px !important;
-    height: 100vh !important;
-    background-color: #2C3E50 !important; /* COLOR AZUL SÓLIDO */
-    z-index: 9999 !important; /* LA CAPA MÁS ALTA DEL SISTEMA */
-    transition: left 0.3s ease-in-out !important;
-    display: flex !important;
-    flex-direction: column !important;
-    box-shadow: 10px 0 20px rgba(0,0,0,0.5) !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-  }
-
-  /* Cuando el menú se abre */
-  .sidebar.mobile-open {
-    left: 0 !important;
-  }
-
-  /* Asegurar que el contenido interno del menú se vea */
-  .sidebar.mobile-open .nav-text, 
-  .sidebar.mobile-open .app-title-text {
-    display: inline-block !important;
-    opacity: 1 !important;
-    color: white !important;
-  }
 
   /* 4. Área de contenido (Para que no se esconda bajo la barra) */
   .content-area {
@@ -2836,17 +2834,6 @@ fieldset.group-box legend {
     flex-direction: column !important; /* Apilar barra arriba y contenido abajo */
     overflow-x: hidden !important;
     height: 100vh !important;
-  }
-  /* Botón de hamburguesa: asegurar que reciba el clic */
-  .btn-toggle-mobile {
-    background: transparent !important;
-    border: none !important;
-    cursor: pointer !important;
-    padding: 10px !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    pointer-events: auto !important; /* Forzar que detecte el dedo */
   }
 
   /* 3. Asegurar que los textos NO se escondan en el móvil */
@@ -3014,13 +3001,41 @@ fieldset.group-box legend {
     width: 100% !important;
     height: auto !important;
   }
-
   .mobile-logo {
+    color: white !important;
     font-weight: 800;
+    margin-left: 10px;
     font-size: 18px;
-    color: white;
   }
 
+  .mobile-top-bar {
+    display: flex !important;
+    position: fixed !important;
+    top: 0; left: 0; width: 100%;
+    height: 60px;
+    background-color: #2C3E50 !important; /* Azul sólido */
+    z-index: 5000 !important;
+    padding: 0 15px;
+    align-items: center;
+    border: none !important;
+  }
+
+  /* EL BOTÓN: Totalmente transparente y sin bordes */
+  .btn-toggle-mobile {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+    padding: 8px !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    -webkit-tap-highlight-color: transparent; /* Quita el cuadro azul al tocarlo en Android */
+  }
+  
   /* Forzar ancho completo en paneles izquierdo/derecho */
   .form-container, .pos-left, .pos-right, .reports-sidebar, 
   .table-responsive-container, .clients-container > div {
