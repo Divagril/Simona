@@ -41,7 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
       <div className={`sidebar ${isCollapsed ? 'collapsed' : 'mobile-open'}`}>
         
-        <div className="sidebar-header">
+        <div className="sidebar-header" style={{ backgroundColor: '#1A252F' }}>
           <button className="toggle-btn-box" onClick={() => setIsCollapsed(!isCollapsed)}>
             <Menu size={20} color="#2C3E50" />
           </button>

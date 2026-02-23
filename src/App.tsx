@@ -17,7 +17,7 @@ import { ProtectedRoute } from './components/ProtectedRoute'; // Un solo punto
 import './App.css';
 
 function AppContent() {
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(true);
   const { isAuthenticated } = useAuth();
 
   return (

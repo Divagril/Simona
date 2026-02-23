@@ -2759,43 +2759,66 @@ fieldset.group-box legend {
     overflow-x: hidden !important;
     height: 100vh !important;
   }
-
-  /* 2. Barra Superior Móvil */
   .mobile-top-bar {
-    display: flex !important; /* Mostrar solo en móvil */
-    background: #2C3E50;
-    height: 60px;
-    align-items: center;
-    padding: 0 15px;
-    position: fixed;
+    display: flex !important;
+    position: fixed !important;
     top: 0;
+    left: 0;
     width: 100%;
-    z-index: 1000;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    height: 60px;
+    background-color: #2C3E50 !important;
+    z-index: 9999 !important; /* Capa muy alta */
+    padding: 0 15px;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  /* 3. Área de Contenido Principal */
-  .content-area {
-    padding: 70px 10px 20px 10px !important; /* Margen superior por la barra */
-    height: 100vh !important;
-    overflow-y: auto !important; /* PERMITE SCROLL NATURAL */
-    width: 100vw !important;
+  /* Botón de hamburguesa: asegurar que reciba el clic */
+  .btn-toggle-mobile {
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 10px !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto !important; /* Forzar que detecte el dedo */
   }
 
-  /* 4. MENÚ LATERAL (SIDEBAR) MÓVIL - Estilo Cajón */
+  /* El menú lateral (Sidebar) */
   .sidebar {
     position: fixed !important;
-    left: -100% !important; /* Escondido a la izquierda */
     top: 0 !important;
+    left: -100% !important; /* Escondido por defecto */
     width: 280px !important;
     height: 100vh !important;
-    z-index: 999999 !important;
-    transition: 0.3s ease-all !important;
-    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+    background-color: #2C3E50 !important; /* Color sólido para que no sea transparente */
+    z-index: 100000 !important; /* LA CAPA MÁS ALTA DE TODAS */
+    transition: left 0.3s ease-in-out !important;
+    display: flex !important;
+    flex-direction: column !important;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.5);
   }
 
+  /* Clase que activa la apertura */
   .sidebar.mobile-open {
-    left: 0 !important; /* Se desliza hacia adentro */
+    left: 0 !important; /* Aparece desde la izquierda */
+  }
+
+  /* Área de contenido: bajarla para que la barra no la tape */
+  .content-area {
+    padding-top: 70px !important;
+    z-index: 1 !important;
+    position: relative !important;
+  }
+
+  /* Overlay oscuro: para cerrar el menú tocando fuera */
+  .mobile-overlay-shadow {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(0,0,0,0.6) !important;
+    backdrop-filter: blur(3px);
+    z-index: 99999 !important; /* Debajo del sidebar pero encima del contenido */
   }
 
   /* 5. DISEÑO DE MÓDULOS (En columna para todos) */
@@ -2848,12 +2871,6 @@ fieldset.group-box legend {
     height: auto !important;
     min-height: 100vh;
     overflow-y: auto !important;
-  }
-
-  .content-area {
-    height: auto !important;
-    overflow-y: visible !important;
-    padding-bottom: 80px !important; /* Espacio para que el último botón no se tape */
   }
 
   /* 2. El layout de reportes debe ser elástico */
@@ -2952,15 +2969,6 @@ fieldset.group-box legend {
   .mobile-app-name { color: white; font-weight: 800; font-size: 18px; }
   .btn-open-menu { background: rgba(255,255,255,0.1); border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
 
-  /* Fondo oscuro cuando el menú está abierto */
-  .mobile-overlay-shadow {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.5);
-    z-index: 9500;
-  }
-
   /* 3. Evitar que desaparezcan los textos en móvil */
   .sidebar.mobile-open .nav-text {
     display: inline !important;
@@ -2976,32 +2984,10 @@ fieldset.group-box legend {
     height: auto !important;
   }
 
-  .mobile-top-bar {
-    display: flex !important; /* <--- IMPORTANTE: Aquí sí se muestra */
-    align-items: center;
-    justify-content: space-between;
-    background: #2C3E50;
-    padding: 0 15px;
-    height: 60px;
-    color: white;
-    position: sticky;
-    top: 0;
-    z-index: 9000;
-    width: 100%;
-
-  }
   .mobile-logo {
     font-weight: 800;
     font-size: 18px;
     color: white;
-  }
-
-  .btn-toggle-mobile {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
   }
 
   /* Forzar ancho completo en paneles izquierdo/derecho */
