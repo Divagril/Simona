@@ -487,17 +487,6 @@ button:disabled {
    RESPONSIVE PARA CELULARES
    ========================================= */
 @media (max-width: 1024px) {
-  .chart-container {
-    width: 100% !important;
-    /* IMPORTANTE: El gráfico necesita una altura real en píxeles para aparecer en el cel */
-    height: 350px !important; 
-    min-height: 350px !important;
-    padding: 15px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    background: white;
-    border-radius: 12px;
-  }
 
   /* Aseguramos que el div que contiene al ResponsiveContainer también tenga altura */
   .chart-container > div {
@@ -2743,6 +2732,21 @@ fieldset.group-box legend {
    BLOQUE RESPONSIVE ÚNICO (SOLO PARA CELULARES Y TABLETS)
    ========================================================================== */
 @media (max-width: 768px) {
+  .chart-container {
+    width: 100% !important;
+    height: 380px !important; /* Altura fija obligatoria para el móvil */
+    min-height: 380px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: white;
+  }
+
+  .responsive-chart-wrapper {
+    flex-grow: 1;
+    min-height: 300px !important; /* Forzar que el área del gráfico exista */
+    width: 100%;
+  }
+  
   .mobile-top-bar {
     display: flex !important;
     position: fixed !important;
@@ -2816,7 +2820,7 @@ fieldset.group-box legend {
     width: 100% !important;
     flex: none !important;
   }
-  
+
   .filter-actions {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important; /* Botón Lupa y PDF lado a lado */
