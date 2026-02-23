@@ -119,21 +119,21 @@ const Reports: React.FC = () => {
         </div>
         <div className="filter-actions">
           <button className="btn-search-blue" onClick={consultarVentas} title="Refrescar Filtro"><Search size={20} /></button>
-          <button className="btn-pdf-red" onClick={exportarPDF} title="Exportar a PDF"><FileText size={18} /></button>
+          <button className="btn-pdf-red" onClick={exportarPDF} title="Exportar a PDF"><FileText size={18} /> PDF</button>
         </div>
       </div>
 
       <div className="reports-visual-section">
         <div className="chart-container panel-blanco">
           <h3 className="chart-title"><Calendar size={18} /> Ventas Diarias (S/.)</h3>
-          <div style={{ width: '100%', height: '100%', minHeight: '250px' }}>
+          <div style={{ width: '100%', height: '300'}}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={datosGrafico}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{fill: '#f9f9f9'}} />
-                <Bar dataKey="total" radius={[4, 4, 0, 0]}>
+                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
+                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `S/${v}`}  />
+                <Tooltip cursor={{fill: '#f9f9f9'}} contentStyle={{borderRadius:'10px', border:'none', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}} />
+                <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                   {datosGrafico.map((_entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3498DB' : '#2ecc71'} />
                   ))}
@@ -151,7 +151,7 @@ const Reports: React.FC = () => {
       </div>
 
       <div className="table-responsive-container">
-        <fieldset className="group-box-reports" style={{border:'none'}}>
+        <fieldset className="group-box-reports" style={{border:'none' , margin: 0}}>
           <legend className="group-legend">📋 Detalle de Operaciones</legend>
           <table className="modern-table">
             <thead>

@@ -487,6 +487,24 @@ button:disabled {
    RESPONSIVE PARA CELULARES
    ========================================= */
 @media (max-width: 1024px) {
+  .chart-container {
+    width: 100% !important;
+    /* IMPORTANTE: El gráfico necesita una altura real en píxeles para aparecer en el cel */
+    height: 350px !important; 
+    min-height: 350px !important;
+    padding: 15px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: white;
+    border-radius: 12px;
+  }
+
+  /* Aseguramos que el div que contiene al ResponsiveContainer también tenga altura */
+  .chart-container > div {
+    flex-grow: 1;
+    width: 100%;
+    height: 300px !important; /* Altura para el gráfico en sí */
+  }
   
   .reports-visual-section {
     display: flex;
@@ -505,35 +523,15 @@ button:disabled {
     font-size: 36px !important; /* Ajustar tamaño de letra para que no se salga */
   }
 
-  .chart-container {
-    width: 100% !important;
-    height: 320px !important; /* Altura fija adecuada para móvil */
-    padding: 10px !important;
-    overflow: hidden; /* Evitar que el gráfico cree scroll lateral */
-  }
-
   .chart-title {
     font-size: 14px;
     margin-bottom: 10px;
-  }
-
-  /* Ajuste de filtros para que no se amontonen */
-  .reports-filters-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 15px;
   }
 
   .filter-group {
     width: 100%;
   }
 
-  .filter-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Botones Buscar y PDF lado a lado */
-    gap: 10px;
-  }
   .chart-container {
     height: 350px;
   }
@@ -2028,19 +2026,27 @@ fieldset.group-box legend {
   align-items: center;
   justify-content: center;
 }
-
 .btn-pdf-red {
-  background-color: #E74C3C;
-  color: white;
-  border: none;
-  padding: 0 20px;
-  height: 42px;
+  background-color: #E74C3C !important;
+  color: white !important;
+  border: none !important;
+  padding: 0 15px;
+  height: 42px; /* Altura igual a los otros inputs */
   border-radius: 8px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  font-weight: 800;
   cursor: pointer;
+  
+  /* ESTO ES LO QUE CENTRA EL ICONO Y EL TEXTO */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px; /* Espacio entre el icono y la palabra PDF */
+  
+  transition: background 0.2s;
+}
+
+.btn-pdf-red:hover {
+  background-color: #C0392B !important;
 }
 
 /* --- GRID DE CONTENIDO (Tabla + Stats) --- */
@@ -2725,10 +2731,173 @@ fieldset.group-box legend {
   }
 }
 
+.mobile-overlay-shadow {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 99998; /* Justo debajo del sidebar */
+  backdrop-filter: blur(3px);
+}
+
 /* ==========================================================================
    BLOQUE RESPONSIVE ÚNICO (SOLO PARA CELULARES Y TABLETS)
    ========================================================================== */
 @media (max-width: 768px) {
+  .filter-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important; /* Botón Lupa y PDF lado a lado */
+    gap: 10px;
+    width: 100%;
+  }
+
+  .btn-pdf-red {
+    width: 100% !important; /* Que ocupe su mitad del espacio */
+    font-size: 14px;
+  }
+  .app-container {
+    flex-direction: column !important; /* Apilar barra arriba y contenido abajo */
+    overflow-x: hidden !important;
+    height: 100vh !important;
+  }
+
+  /* 2. Barra Superior Móvil */
+  .mobile-top-bar {
+    display: flex !important; /* Mostrar solo en móvil */
+    background: #2C3E50;
+    height: 60px;
+    align-items: center;
+    padding: 0 15px;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  }
+
+  /* 3. Área de Contenido Principal */
+  .content-area {
+    padding: 70px 10px 20px 10px !important; /* Margen superior por la barra */
+    height: 100vh !important;
+    overflow-y: auto !important; /* PERMITE SCROLL NATURAL */
+    width: 100vw !important;
+  }
+
+  /* 4. MENÚ LATERAL (SIDEBAR) MÓVIL - Estilo Cajón */
+  .sidebar {
+    position: fixed !important;
+    left: -100% !important; /* Escondido a la izquierda */
+    top: 0 !important;
+    width: 280px !important;
+    height: 100vh !important;
+    z-index: 999999 !important;
+    transition: 0.3s ease-all !important;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+  }
+
+  .sidebar.mobile-open {
+    left: 0 !important; /* Se desliza hacia adentro */
+  }
+
+  /* 5. DISEÑO DE MÓDULOS (En columna para todos) */
+  .inventory-layout, 
+  .pos-layout, 
+  .clients-container, 
+  .reports-layout, 
+  .audit-layout {
+    flex-direction: column !important; /* Todo uno debajo de otro */
+    height: auto !important;
+    gap: 20px !important;
+    display: flex !important;
+  }
+
+  /* Forzar que los paneles ocupen todo el ancho */
+  .form-container, .catalog-container, 
+  .pos-left, .pos-right, 
+  .reports-sidebar, .table-responsive-container,
+  .panel-blanco {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    height: auto !important;
+  }
+
+  /* 6. TABLAS DESLIZABLES (Para que no rompan el diseño) */
+  .table-wrapper, 
+  .table-container-pos, 
+  .ticket-table-wrapper, 
+  .table-responsive-container {
+    overflow-x: auto !important;
+    display: block !important;
+    background: white;
+    border-radius: 10px;
+    border: 1px solid #D5DBDB;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modern-table {
+    min-width: 600px !important; /* Ancho mínimo para poder deslizar de lado */
+  }
+
+  /* 7. AJUSTES ESPECÍFICOS */
+  .total-amount { font-size: 40px !important; text-align: center; }
+  .kpi-total-card { order: -1; } /* KPI arriba en reportes */
+  .selection-bar-modern-final { flex-direction: column !important; gap: 15px; }
+  .btn-agregar-orange { width: 100% !important; }
+
+  .app-container {
+    height: auto !important;
+    min-height: 100vh;
+    overflow-y: auto !important;
+  }
+
+  .content-area {
+    height: auto !important;
+    overflow-y: visible !important;
+    padding-bottom: 80px !important; /* Espacio para que el último botón no se tape */
+  }
+
+  /* 2. El layout de reportes debe ser elástico */
+  .reports-layout {
+    height: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: visible !important;
+  }
+
+  /* 3. ¡ESTO ES LO MÁS IMPORTANTE! Quitamos el límite de la tabla */
+  .table-responsive-container {
+    max-height: none !important; /* Quitamos el límite de altura */
+    height: auto !important;
+    overflow-y: visible !important; /* El scroll lo hará la pantalla, no el cuadrito */
+    overflow-x: auto !important;  /* Mantenemos el scroll a los lados para ver precios */
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 30px;
+  }
+
+  .modern-table {
+    min-width: 700px !important; /* Forzamos ancho para que no se amontone el texto */
+  }
+
+  /* 4. Ajustamos los filtros para que no ocupen espacio fijo */
+  .reports-filters-bar {
+    height: auto !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* 5. Aseguramos que el Sidebar móvil no bloquee el fondo */
+  .sidebar.mobile-open {
+    height: 100vh !important;
+    position: fixed !important;
+  }
+
+  /* 4. Aseguramos que el fieldset y la tabla no corten el contenido */
+  .group-box-reports {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .input-abono-group {
     flex-direction: column !important; /* El botón se va abajo */
     gap: 15px !important;
@@ -2783,11 +2952,6 @@ fieldset.group-box legend {
   .mobile-app-name { color: white; font-weight: 800; font-size: 18px; }
   .btn-open-menu { background: rgba(255,255,255,0.1); border: none; padding: 8px; border-radius: 6px; cursor: pointer; }
 
-  .sidebar.mobile-open {
-    left: 0 !important; /* Se muestra */
-    width: 260px !important;
-  }
-
   /* Fondo oscuro cuando el menú está abierto */
   .mobile-overlay-shadow {
     position: fixed;
@@ -2801,10 +2965,6 @@ fieldset.group-box legend {
   .sidebar.mobile-open .nav-text {
     display: inline !important;
   }
-
-  /* 4. Contenedor de contenido se ajusta */
-  .app-container { flex-direction: column; }
-  .content-area { height: calc(100vh - 60px); padding: 10px; }
 
   /* 5. Ajustes de los módulos para que bajen en cascada */
   .inventory-layout, .pos-layout, .reports-grid, .clients-container {
@@ -2871,11 +3031,6 @@ fieldset.group-box legend {
   .btn-agregar-orange { width: 100%; justify-content: center; }
   .btn-row { grid-template-columns: 1fr; } /* Botones uno debajo de otro */
 
-  /* --- 6. REPORTES (ORDEN ESTRATÉGICO) --- */
-  .reports-filters-bar {
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
   .kpi-total-card { order: -1; } /* El total verde sale primero */
   .filter-actions {
     display: grid !important;
@@ -2997,11 +3152,6 @@ fieldset.group-box legend {
     -webkit-overflow-scrolling: touch; /* Scroll suave en iPhone */
   }
 
-  .modern-table {
-    /* Forzamos a que la tabla sea más ancha que el celular */
-    min-width: 600px !important; 
-    table-layout: fixed; /* Columnas firmes */
-  }
 
   /* Ajuste de anchos para que no se vea deformado al deslizar */
   .modern-table th:nth-child(1), .modern-table td:nth-child(1) { width: 120px; } /* COD */
@@ -3019,22 +3169,12 @@ fieldset.group-box legend {
     display: flex !important;
     flex-direction: column !important;
   }
-  
-  .table-responsive-container {
-    max-height: 400px; /* Evita que la tabla sea infinita hacia abajo */
-  }
 
   /* 3. El resumen mensual lo mandamos al final */
   .reports-sidebar {
     order: 3 !important;
     width: 100% !important;
   }
-
-  /* Ajuste de la tabla para que no se apriete */
-  .modern-table {
-    min-width: 550px !important; /* Fuerza a que haya algo de scroll lateral para que se vea bien */
-  }
-
   /* --- BOTÓN "VER REPORTE MENSUAL" --- */
   .btn-ver-stats {
     background-color: #34495E !important;
@@ -3054,11 +3194,6 @@ fieldset.group-box legend {
   .catalog-header { flex-direction: column; gap: 10px; align-items: stretch; }
   .catalog-search-box { width: 100%; }
 
-  /* Quitamos márgenes que empujan el contenido fuera de la pantalla */
-  .reports-filters-bar {
-    height: auto !important;
-    padding: 15px !important;
-  }
   .vuelto-left-alert {
     left: 10px;
     right: 10px;
@@ -3080,32 +3215,11 @@ fieldset.group-box legend {
     display: block;
     margin-top: 10px;
   }
-  .app-container { flex-direction: column; }
-  .content-area { padding: 10px !important; height: calc(100vh - 60px); }
   
   /* 2. TABLAS DESLIZABLES (LA CLAVE ESTÁ AQUÍ) */
   .table-wrapper, 
   .table-container-pos, 
   .ticket-table-wrapper, 
-  .table-responsive-container {
-    display: block;                /* Importante para que el overflow funcione */
-    width: 100% !important;        /* Ocupa todo el ancho del celular */
-    overflow-x: auto !important;   /* ACTIVA EL SCROLL HORIZONTAL */
-    overflow-y: hidden;            /* Evita scroll doble raro */
-    -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
-    background: white;
-    border: 1px solid #D5DBDB;
-    border-radius: 8px;
-    margin-bottom: 15px;
-  }
-
-  /* FORZAMOS A LA TABLA A SER ANCHA */
-  .modern-table {
-    min-width: 800px !important;   /* <--- ESTO OBLIGA A QUE HAYA SCROLL */
-    width: 100% !important;
-    table-layout: auto !important; /* Deja que las columnas tomen su espacio */
-  }
-
   /* 3. COLUMNAS DE AUDITORÍA (Ajuste para que se lean bien) */
   .modern-table th, .modern-table td {
     padding: 12px 10px !important;
@@ -3158,13 +3272,6 @@ fieldset.group-box legend {
     -webkit-overflow-scrolling: touch; /* Suavidad en iPhone */
     border: 1px solid #D5DBDB;
     border-radius: 8px;
-  }
-
-  /* 3. LA TABLA RÍGIDA (ESTO ES LO QUE HACE QUE SE MUEVA) */
-  .modern-table {
-    min-width: 900px !important;    /* <--- Ancho forzado (más grande que el cel) */
-    width: 900px !important;
-    table-layout: fixed !important;
   }
 
   /* 4. CELDAS QUE NO SE ROMPEN */
