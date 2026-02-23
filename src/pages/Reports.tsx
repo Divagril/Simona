@@ -14,14 +14,14 @@ import autoTable from 'jspdf-autotable';
 const Reports: React.FC = () => {
   const { showNotification } = useNotification();
   
-  // --- CONFIGURACIÓN DE FECHAS POR DEFECTO (Inicia desde el 1ero del mes) ---
+  // Fecha por defecto: desde el 1ero de este mes
   const hoy = new Date();
   const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
   const hoyString = hoy.toISOString().split('T')[0];
 
   const [ventas, setVentas] = useState<any[]>([]);
   const [categorias, setCategorias] = useState<string[]>([]);
-  const [fechaDesde, setFechaDesde] = useState(primerDiaMes); // Cambiado para ver mas data
+  const [fechaDesde, setFechaDesde] = useState(primerDiaMes);
   const [fechaHasta, setFechaHasta] = useState(hoyString);
   const [catFiltro, setCatFiltro] = useState('TODAS');
 
@@ -43,11 +43,8 @@ const Reports: React.FC = () => {
     try {
       const data = await getVentasReporte(fechaDesde, fechaHasta, catFiltro);
       setVentas(data);
-      if (data.length === 0) {
-        showNotification("No hay ventas en este rango de fechas", true);
-      }
     } catch (error) {
-      showNotification("Error al conectar con el servidor", true);
+      showNotification("Error al cargar datos", true);
     }
   };
 
@@ -90,49 +87,45 @@ const Reports: React.FC = () => {
     autoTable(doc, {
       startY: 25,
       head: [['Fecha', 'Productos', 'Total', 'Pago']],
-      body: ventas.map(v => [
-        new Date(v.fecha).toLocaleString(),
-        v.items.map((it: any) => it.nombre).join(', '),
-        `S/. ${v.total.toFixed(2)}`,
-        v.metodoPago || 'EFECTIVO'
-      ]),
+      body: ventas.map(v => [new Date(v.fecha).toLocaleString(), v.items.map((it: any) => it.nombre).join(', '), v.total.toFixed(2), v.metodoPago]),
     });
-    doc.save(`Reporte_Simona.pdf`);
+    doc.save(`Reporte_Tienda_Simona.pdf`);
   };
 
   return (
     <div className="reports-layout">
       
-      <div className="reports-top-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-        <h2 className="title-icon"><BarChart3 color="#2C3E50" size={28} /> Reportes de Ventas</h2>
-        <button className="btn-teal-refresh" onClick={consultarVentas}><RefreshCw size={16} /> Actualizar Datos</button>
+      <div className="reports-top-header">
+        <h2 className="title-icon"><BarChart3 color="#2C3E50" size={28} /> Reportes</h2>
+        <button className="btn-teal-refresh" onClick={consultarVentas}><RefreshCw size={16} /> Actualizar</button>
       </div>
 
       <div className="reports-filters-bar panel-blanco">
         <div className="filter-group">
-          <label>DESDE EL:</label>
+          <label>DESDE:</label>
           <input type="date" className="input-main" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
         </div>
         <div className="filter-group">
-          <label>HASTA EL:</label>
+          <label>HASTA:</label>
           <input type="date" className="input-main" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
         </div>
         <div className="filter-actions">
-          <button className="btn-search-blue" onClick={consultarVentas} title="Refrescar Filtro"><Search size={20} /></button>
-          <button className="btn-pdf-red" onClick={exportarPDF} title="Exportar a PDF"><FileText size={18} /> PDF</button>
+          <button className="btn-search-blue" onClick={consultarVentas}><Search size={20} /></button>
+          <button className="btn-pdf-red" onClick={exportarPDF}><FileText size={18} /> PDF</button>
         </div>
       </div>
 
       <div className="reports-visual-section">
         <div className="chart-container panel-blanco">
           <h3 className="chart-title"><Calendar size={18} /> Ventas Diarias (S/.)</h3>
-          <div style={{ width: '100%', height: '300'}}>
+          {/* ALTURA FIJA PARA QUE NO SE VEA BLANCO EN EL CELULAR */}
+          <div className="responsive-chart-wrapper" style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={datosGrafico}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis dataKey="name" fontSize={10} tickLine={false} axisLine={false} />
-                <YAxis fontSize={10} tickLine={false} axisLine={false} tickFormatter={(v) => `S/${v}`}  />
-                <Tooltip cursor={{fill: '#f9f9f9'}} contentStyle={{borderRadius:'10px', border:'none', boxShadow:'0 4px 12px rgba(0,0,0,0.1)'}} />
+                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
+                <YAxis fontSize={11} tickLine={false} axisLine={false} />
+                <Tooltip cursor={{fill: '#f9f9f9'}} />
                 <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                   {datosGrafico.map((_entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3498DB' : '#2ecc71'} />
@@ -146,17 +139,17 @@ const Reports: React.FC = () => {
         <div className="kpi-total-card">
           <div className="kpi-label">TOTAL PERIODO</div>
           <div className="kpi-value">S/. {totalGeneral.toFixed(2)}</div>
-          <div className="kpi-subtext">{ventas.length} transacciones registradas</div>
+          <div className="kpi-subtext">{ventas.length} ventas procesadas</div>
         </div>
       </div>
 
       <div className="table-responsive-container">
-        <fieldset className="group-box-reports" style={{border:'none' , margin: 0}}>
-          <legend className="group-legend">📋 Detalle de Operaciones</legend>
+        <fieldset className="group-box-reports" style={{border:'none', margin: 0}}>
+          <legend className="group-legend">📋 Operaciones</legend>
           <table className="modern-table">
             <thead>
               <tr>
-                <th>FECHA / HORA</th>
+                <th>FECHA</th>
                 <th>PRODUCTOS</th>
                 <th style={{ textAlign: 'right' }}>TOTAL</th>
                 <th style={{ textAlign: 'center' }}>PAGO</th>
@@ -164,25 +157,19 @@ const Reports: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {ventas.length === 0 ? (
-                <tr><td colSpan={5} style={{textAlign:'center', padding:'30px', color:'#999'}}>No hay ventas para este rango de fechas. Prueba ampliando el filtro "Desde".</td></tr>
-              ) : (
-                ventas.map((v) => (
-                  <tr key={v._id} className="row-hover">
-                    <td style={{ fontSize: '11px' }}>{new Date(v.fecha).toLocaleString('es-PE')}</td>
-                    <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
-                    <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="badge-pago">{v.metodoPago || 'EFECTIVO'}</span>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <button className="btn-reprint-table" onClick={() => handleReimprimir(v)}>
-                        <Printer size={16} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
+              {ventas.map((v) => (
+                <tr key={v._id} className="row-hover">
+                  <td style={{ fontSize: '11px', color: '#7f8c8d' }}>{new Date(v.fecha).toLocaleString()}</td>
+                  <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
+                  <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span className="badge-pago">{v.metodoPago || 'EFECTIVO'}</span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <button className="btn-reprint-table" onClick={() => handleReimprimir(v)}><Printer size={16} /></button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </fieldset>
@@ -195,8 +182,6 @@ const Reports: React.FC = () => {
             items={datosTicket.items} 
             total={datosTicket.total}
             metodoPago={datosTicket.metodoPago}
-            pagoCon={datosTicket.pagoCon}
-            vuelto={datosTicket.vuelto}
             fechaManual={datosTicket.fecha} 
         />
       )}
