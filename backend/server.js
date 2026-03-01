@@ -63,35 +63,33 @@ const LogAuditoria = mongoose.model('LogAuditoria', new mongoose.Schema({
 const Inversion = mongoose.model('Inversion', new mongoose.Schema({
     nombre: String, costo_total: Number, cantidad_comprada: Number, costo_unitario: Number, fecha: { type: Date, default: Date.now }
 }));
-
-// --- RUTAS DEL SISTEMA ---
-
-// 1. REPORTES: Ventas por fecha (CORREGIDA Y REFORZADA)
 app.get('/api/reportes/ventas', async (req, res) => {
     try {
-        const { desde, hasta } = req.query;
-        if (!desde || !hasta) return res.json([]);
+        const { desde, hasta, categoria } = req.query; // <--- Recibimos categoria
+        
+        const fInicio = new Date(desde); fInicio.setHours(0,0,0,0);
+        const fFin = new Date(hasta); fFin.setHours(23,59,59,999);
 
-        // Ajuste de rango de fechas para cubrir el día completo
-        const fInicio = new Date(desde);
-        fInicio.setHours(0, 0, 0, 0);
-
-        const fFin = new Date(hasta);
-        fFin.setHours(23, 59, 59, 999);
-
-        const ventas = await Venta.find({
+        // Creamos el filtro básico de fechas
+        let filtro = {
             fecha: { $gte: fInicio, $lte: fFin }
-        }).sort({ fecha: -1 });
+        };
 
-        // IMPORTANTE: El frontend espera que cada venta tenga una propiedad "items"
-        const respuestaFormateada = ventas.map(v => ({
+        // Si el usuario eligió una categoría específica (y no "TODAS")
+        // Nota: Esto asume que tus productos tienen el campo categoria
+        if (categoria && categoria !== 'TODAS') {
+            filtro["productos.categoria"] = categoria;
+        }
+
+        const ventas = await Venta.find(filtro).sort({ fecha: -1 });
+
+        const respuesta = ventas.map(v => ({
             ...v._doc,
-            items: v.productos || [] // Mapeamos productos a items
+            items: v.productos || []
         }));
 
-        res.json(respuestaFormateada);
+        res.json(respuesta);
     } catch (e) {
-        console.error("Error en reporte:", e);
         res.status(500).json([]);
     }
 });

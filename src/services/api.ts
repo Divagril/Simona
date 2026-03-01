@@ -55,10 +55,10 @@ export const registrarFiadoMasivo = async (datos: any) => {
     const res = await axios.post(`${API_URL}/fiados/masivo`, datos);
     return res.data;
 };
-export const getVentasReporte = async (desde: string, hasta: string) => {
-    // Enviamos las fechas como parámetros de consulta (?desde=...&hasta=...)
+export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
+    // Ahora enviamos 3 parámetros al servidor
     const res = await axios.get(`${API_URL}/reportes/ventas`, { 
-        params: { desde, hasta } 
+        params: { desde, hasta, categoria } 
     });
     return res.data;
 };
