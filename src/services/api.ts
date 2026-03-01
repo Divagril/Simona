@@ -55,11 +55,14 @@ export const registrarFiadoMasivo = async (datos: any) => {
     const res = await axios.post(`${API_URL}/fiados/masivo`, datos);
     return res.data;
 };
-
-export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
-    const res = await axios.get(`${API_URL}/reportes/ventas`, { params: { desde, hasta, categoria } });
+export const getVentasReporte = async (desde: string, hasta: string) => {
+    // Enviamos las fechas como parámetros de consulta (?desde=...&hasta=...)
+    const res = await axios.get(`${API_URL}/reportes/ventas`, { 
+        params: { desde, hasta } 
+    });
     return res.data;
 };
+
 
 export const getStatsSemanales = async () => {
     const res = await axios.get(`${API_URL}/reportes/stats`);
