@@ -157,33 +157,72 @@ app.post('/api/fiados/abono', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
-
-// 6. CLIENTES: Registrar Fiado (Desde POS)
+// --- RUTA SINCRONIZADA: REGISTRAR FIADO Y VENTA ---
 app.post('/api/fiados/masivo', async (req, res) => {
     try {
         const { cliente_id, items, total } = req.body;
         const cliente = await Cliente.findById(cliente_id);
+        
+        if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
+
         const nuevoSaldo = cliente.deudaTotal + total;
 
-        await new MovimientoFiado({ cliente_id: new mongoose.Types.ObjectId(cliente_id), tipo: 'DEUDA', monto: total, descripcion: 'Compra al fiado', saldo_al_momento: nuevoSaldo }).save();
+        // 1. REGISTRAR EN LA COLECCIÓN "VENTAS" (Para el Dashboard y Reportes)
+        const ventaSincronizada = new Venta({
+            productos: items,
+            total: total,
+            metodoPago: 'FIADO', // Lo marcamos como fiado para diferenciarlo de efectivo
+            fecha: new Date()
+        });
+        await ventaSincronizada.save();
+
+        // 2. REGISTRAR EN EL HISTORIAL DEL CLIENTE (Para su cuenta personal)
+        const mov = new MovimientoFiado({ 
+            cliente_id: new mongoose.Types.ObjectId(cliente_id), 
+            tipo: 'DEUDA', 
+            monto: total, 
+            descripcion: 'Compra al fiado',
+            saldo_al_momento: nuevoSaldo 
+        });
+        await mov.save();
+
+        // 3. AUMENTAR DEUDA EN EL PERFIL DEL CLIENTE
         await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
 
+        // 4. DESCONTAR STOCK Y REGISTRAR KARDEX
         for (const it of items) {
             if (it._id && !it._id.toString().startsWith('MANUAL')) {
                 const prod = await Producto.findById(it._id);
                 if (prod) {
                     const sAnt = prod.cantidad;
                     const sAct = sAnt - Number(it.cantidadSeleccionada);
+                    
                     await Producto.findByIdAndUpdate(it._id, { cantidad: sAct });
-                    await new Kardex({ nombre_producto: prod.nombre, cantidad: it.cantidadSeleccionada, motivo: 'FIADO', stock_anterior: sAnt, stock_actual: sAct }).save();
+
+                    // Guardar en Kardex para Auditoría
+                    await new Kardex({ 
+                        nombre_producto: prod.nombre, 
+                        cantidad: it.cantidadSeleccionada, 
+                        motivo: 'FIADO', 
+                        stock_anterior: sAnt, 
+                        stock_actual: sAct 
+                    }).save();
                 }
             }
         }
-        await new LogAuditoria({ accion: 'FIADO', detalle: `S/. ${total} fiados a ${cliente.nombre}` }).save();
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
 
+        // 5. REGISTRAR EN LOG DE AUDITORÍA
+        await new LogAuditoria({ 
+            accion: 'VENTA AL FIADO', 
+            detalle: `S/. ${total.toFixed(2)} fiados a ${cliente.nombre} (Venta sincronizada)` 
+        }).save();
+
+        res.json({ success: true, message: "Venta y Fiado registrados correctamente" });
+    } catch (e) { 
+        console.error("Error en fiado masivo:", e);
+        res.status(500).json({ success: false }); 
+    }
+});
 // 7. AUDITORÍA Y KARDEX: Listar
 app.get('/api/auditoria', async (req, res) => {
     const logs = await LogAuditoria.find().sort({ fecha: -1 }).limit(100);
