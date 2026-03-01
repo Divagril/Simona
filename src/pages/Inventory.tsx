@@ -14,14 +14,14 @@ const Inventory: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  // --- DIRECCIÓN DEL SERVIDOR (IMPORTANTE: Volvemos a localhost) ---
-  const API_URL = 'http://localhost:5000/api';
+  // --- DIRECCIÓN DEL SERVIDOR EN RENDER (IMPORTANTE) ---
+  const API_URL = 'https://simona-backend.onrender.com/api';
 
   // --- CARGA DE DATOS ---
   const cargarTodo = async () => {
     try {
       setCargando(true);
-      // Traemos productos y nombres de inversiones
+      // Traemos productos y nombres de inversiones desde Render
       const resProds = await axios.get(`${API_URL}/productos`);
       const resSugerencias = await axios.get(`${API_URL}/nombres-inversiones`);
       
@@ -29,7 +29,8 @@ const Inventory: React.FC = () => {
       setSugerencias(resSugerencias.data);
     } catch (error) {
       console.error("Error cargando inventario:", error);
-      alert("❌ No se pudo conectar con el servidor en el puerto 5000. Asegúrate de que el backend esté encendido.");
+      // Nota: Si el backend de Render está "dormido", puede tardar 30 segundos en despertar.
+      alert("⚠️ El servidor en la nube está despertando o no responde. Por favor, espera un momento y presiona el botón de recargar.");
     } finally {
       setCargando(false);
     }
@@ -56,8 +57,6 @@ const Inventory: React.FC = () => {
     if (!form.nombre) return alert("❌ Seleccione un producto de la lista");
     
     try {
-      // Enviamos los datos al backend
-      // El backend en server.js espera: nombre, precio, cantidad, unidad
       await axios.post(`${API_URL}/productos`, { 
           nombre: form.nombre, 
           precio: Number(form.precio) || 0, 
@@ -65,7 +64,7 @@ const Inventory: React.FC = () => {
           unidad: form.unidad
       });
       
-      alert("✅ Producto guardado correctamente");
+      alert("✅ Producto guardado en la nube");
       setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' });
       cargarTodo();
     } catch (error) {
@@ -94,7 +93,7 @@ const Inventory: React.FC = () => {
   return (
     <div className="inventory-page-container">
       
-      {/* PANEL IZQUIERDO: FORMULARIO (RESPONSIVE) */}
+      {/* PANEL IZQUIERDO: FORMULARIO */}
       <aside className="inventory-form-aside">
         <div className="inventory-card">
           <h3 className="inventory-title">
@@ -116,9 +115,9 @@ const Inventory: React.FC = () => {
               </select>
               <ChevronDown className="select-icon" size={18} />
             </div>
-            {sugerencias.length === 0 && (
+            {sugerencias.length === 0 && !cargando && (
               <p style={{ color: '#E74C3C', fontSize: '11px', marginTop: '5px', fontWeight: 'bold' }}>
-                ⚠️ No hay compras registradas en inversiones
+                ⚠️ No hay compras en la base de datos de la nube
               </p>
             )}
           </div>
@@ -159,7 +158,7 @@ const Inventory: React.FC = () => {
         </div>
       </aside>
 
-      {/* PANEL DERECHO: TABLA (CATÁLOGO) */}
+      {/* PANEL DERECHO: CATÁLOGO */}
       <section className="inventory-table-section">
         <div className="inventory-card">
           <div className="inventory-table-header">
@@ -201,9 +200,9 @@ const Inventory: React.FC = () => {
               </thead>
               <tbody>
                 {cargando ? (
-                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>Cargando info...</td></tr>
+                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>Cargando desde Render... (Esto puede tardar si el servidor estaba dormido)</td></tr>
                 ) : prodsFiltrados.length === 0 ? (
-                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>No hay productos en el inventario</td></tr>
+                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>No hay productos en la base de datos.</td></tr>
                 ) : (
                     prodsFiltrados.map((p) => (
                         <tr key={p._id} className={seleccionados.includes(p._id) ? 'row-selected' : ''}>
