@@ -99,18 +99,28 @@ const POS: React.FC = () => {
 
   const handleFinalizeVenta = async (datosPago: any) => {
     if (carrito.length === 0) return;
-    const snapshotVenta = {
-      items: [...carrito], total, metodoPago: datosPago.metodo,
-      pagoCon: datosPago.pagoCon, vuelto: datosPago.vuelto
-    };
+
     try {
-      const res = await registrarVenta({ items: carrito, total, metodoPago: datosPago.metodo, pagoCon: datosPago.pagoCon, vuelto: datosPago.vuelto });
+      // Enviamos los datos al backend
+      const res = await registrarVenta({ 
+        items: carrito, 
+        total: total, 
+        metodoPago: datosPago.metodo 
+      });
+
+      // SI EL BACKEND RESPONDE OK (success: true)
       if (res.success) {
-        setLastSaleData(snapshotVenta);
-        setCarrito([]); setIsModalOpen(false); setIsTicketModalOpen(true);
-        cargarDatos(); // Recargamos para ver el stock actualizado
+        setLastSaleData({ items: [...carrito], total, metodoPago: datosPago.metodo });
+        setCarrito([]); // Vaciamos el carrito
+        setIsModalOpen(false); // Cerramos el modal de pago
+        setIsTicketModalOpen(true); // Abrimos el ticket
+        cargarDatos(); // Recargamos productos para ver el stock actualizado
+        showNotification("✅ Venta realizada con éxito");
       }
-    } catch (e) { showNotification("Error al cobrar", true); }
+    } catch (e) { 
+      console.error(e);
+      showNotification("❌ Error al conectar con el servidor", true); 
+    }
   };
 
   const handleConfirmarFiado = async (cliente: any) => {

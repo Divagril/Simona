@@ -142,6 +142,35 @@ app.get('/api/dashboard/rentabilidad', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
+// 8. RUTA PARA REGISTRAR UNA VENTA (Esta es la que faltaba)
+app.post('/api/ventas', async (req, res) => {
+    try {
+        const { items, total } = req.body;
+
+        // 1. Guardamos la venta en la base de datos
+        const nuevaVenta = new Venta({
+            productos: items, // Aquí guardamos el array de productos del carrito
+            total: total,
+            fecha: new Date()
+        });
+        await nuevaVenta.save();
+
+        // 2. DESCONTAR EL STOCK (Importante para que el inventario baje)
+        for (const item of items) {
+            // Buscamos por ID y restamos la cantidad vendida
+            await Producto.findByIdAndUpdate(item._id, {
+                $inc: { cantidad: -Number(item.cantidadSeleccionada) }
+            });
+        }
+
+        res.json({ success: true, message: "Venta cobrada con éxito" });
+    } catch (e) {
+        console.error("❌ Error al cobrar:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+
 // --- INICIO DEL SERVIDOR ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

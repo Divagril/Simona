@@ -26,6 +26,7 @@ export const eliminarProducto = async (id: string) => {
 };
 
 export const registrarVenta = async (datos: any) => {
+    // Esta función llama a la ruta que acabamos de crear en el server
     const res = await axios.post(`${API_URL}/ventas`, datos);
     return res.data;
 };

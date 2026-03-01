@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, CheckCircle } from 'lucide-react';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -10,12 +10,28 @@ interface PaymentModalProps {
 
 const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onConfirm }) => {
   const [metodo, setMetodo] = useState('EFECTIVO');
-  // Usamos string para que el campo empiece vacío y sea fácil de escribir
   const [pagoCon, setPagoCon] = useState<string>(''); 
   const [vuelto, setVuelto] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Calcular el vuelto automáticamente
+  // --- LÓGICA DE CÁLCULO AUTOMÁTICO ---
+  useEffect(() => {
+    if (isOpen) {
+      if (metodo === 'EFECTIVO') {
+        // En efectivo empezamos vacío para que el cajero escriba
+        setPagoCon('');
+        setVuelto(0);
+        // Auto-foco para escribir rápido
+        setTimeout(() => inputRef.current?.focus(), 150);
+      } else {
+        // Si es YAPE/PLIN/TARJETA, asume pago exacto automáticamente
+        setPagoCon(total.toFixed(2));
+        setVuelto(0);
+      }
+    }
+  }, [metodo, isOpen, total]);
+
+  // Calcular el vuelto cada vez que cambia lo que el cliente entrega
   useEffect(() => {
     const montoPagado = pagoCon === '' ? 0 : Number(pagoCon);
     if (metodo === 'EFECTIVO') {
@@ -25,36 +41,36 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
     }
   }, [pagoCon, total, metodo]);
 
-  // Resetear estados al abrir el modal
-  useEffect(() => {
-    if (isOpen) {
-      setMetodo('EFECTIVO');
-      setPagoCon('');
-      // Auto-foco en el input de pago
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
-  // Validar si el pago es suficiente
-  const esValido = vuelto >= -0.01 || metodo !== 'EFECTIVO';
+  // --- VALIDACIÓN PARA HABILITAR EL BOTÓN ---
+  // Se habilita si: es efectivo y el vuelto es >= 0, O si es otro método (ya está auto-rellenado)
+  const esValido = (metodo === 'EFECTIVO' && Number(pagoCon) >= total - 0.01) || (metodo !== 'EFECTIVO');
+
+  const handleConfirmar = () => {
+    if (esValido) {
+      onConfirm({ 
+        metodo, 
+        pagoCon: Number(pagoCon), 
+        vuelto: Math.max(0, vuelto) 
+      });
+    }
+  };
 
   return (
     <div className="modal-overlay">
       <div className="modal-container-tall">
-        {/* BOTÓN CERRAR SUPERIOR */}
+        {/* BOTÓN CERRAR X (Borde Rojo) */}
         <button onClick={onClose} className="modal-close-x">
-          <X size={20} />
+          <X size={22} strokeWidth={3} />
         </button>
 
-        {/* ETIQUETA TOTAL A PAGAR (Icono bolsa + Texto azul oscuro) */}
+        {/* HEADER: TOTAL */}
         <div className="total-pagar-container">
           <span className="money-bag-emoji">💰</span>
           <span className="total-pagar-text">Total a Pagar:</span>
         </div>
         
-        {/* CUADRO BLANCO CON MONTO GRANDE VERDE */}
         <div className="total-card-display">
           <div className="total-amount-big">S/. {total.toFixed(2)}</div>
         </div>
@@ -70,45 +86,42 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
               onChange={(e) => setMetodo(e.target.value)}
               className="modal-select-modern"
             >
-              <option value="EFECTIVO">EFECTIVO</option>
-              <option value="YAPE">YAPE</option>
-              <option value="PLIN">PLIN</option>
-              <option value="TARJETA">TARJETA</option>
-              <option value="TRANSFERENCIA">TRANSFERENCIA</option>
+              <option value="EFECTIVO">💵 EFECTIVO</option>
+              <option value="YAPE">🟣 YAPE</option>
+              <option value="PLIN">🔵 PLIN</option>
+              <option value="TARJETA">💳 TARJETA</option>
+              <option value="TRANSFERENCIA">🏦 TRANSFERENCIA</option>
             </select>
           </div>
 
-          {/* INPUT PAGA CON (Subrayado y Negrita) */}
+          {/* INPUT PAGA CON */}
           <div className="input-group-modal">
             <label className="modal-label-bold underline">
-              <span className="modal-icon-emoji">💵</span> Paga con:
+              <span className="modal-icon-emoji">💸</span> Paga con:
             </label>
             <input 
               ref={inputRef}
-              type="text" 
+              type="number" 
               placeholder="0.00"
+              step="0.10"
               disabled={metodo !== 'EFECTIVO'}
               value={pagoCon}
               onFocus={(e) => e.target.select()}
-              onChange={(e) => {
-                const val = e.target.value;
-                // Validar que solo entren números y un punto
-                if (val === '' || /^[0-9.]*$/.test(val)) setPagoCon(val);
-              }}
+              onChange={(e) => setPagoCon(e.target.value)}
               onKeyDown={(e) => { 
-                if(e.key === 'Enter' && esValido) onConfirm({ metodo, pagoCon: Number(pagoCon), vuelto }); 
+                if(e.key === 'Enter') handleConfirmar(); 
               }}
               className="modal-input-large"
             />
           </div>
         </div>
 
-        {/* TEXTO VUELTO NARANJA A LA DERECHA */}
+        {/* TEXTO VUELTO NARANJA */}
         <div className="vuelto-naranja-pos">
-          Vuelto: S/. {Math.max(0, vuelto).toFixed(2)}
+          Vuelto: S/. {vuelto > 0 ? vuelto.toFixed(2) : "0.00"}
         </div>
 
-        {/* BOTONES DE ACCIÓN (Rojo y Verde) */}
+        {/* BOTONES DE ACCIÓN */}
         <div className="modal-footer-flex">
           <button onClick={onClose} className="btn-cancelar-modal">
             Cancelar
@@ -116,10 +129,12 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
           
           <button 
             disabled={!esValido}
-            onClick={() => onConfirm({ metodo, pagoCon: Number(pagoCon), vuelto })}
+            onClick={handleConfirmar}
             className="btn-cobrar-modal"
           >
-            <div className="check-box-icon">✓</div> 
+            <div className="check-box-icon">
+                <CheckCircle size={16} />
+            </div> 
             COBRAR
           </button>
         </div>
