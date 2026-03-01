@@ -71,17 +71,28 @@ const Inventory: React.FC = () => {
       alert("❌ Error al guardar el producto");
     }
   };
-
-  // --- ELIMINACIÓN MASIVA ---
   const handleEliminarMasivo = async () => {
     if (seleccionados.length === 0) return;
-    if (window.confirm(`¿Seguro que quieres eliminar ${seleccionados.length} productos?`)) {
+    
+    if (window.confirm(`¿Estás seguro de eliminar los ${seleccionados.length} productos seleccionados?`)) {
       try {
-        await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
-        setSeleccionados([]);
-        cargarTodo();
+        // IMPORTANTE: Esta URL debe ser la de tu backend en Render
+        const API_URL = 'https://simona-backend.onrender.com/api';
+        
+        const res = await axios.post(`${API_URL}/productos/eliminar-masivo`, { 
+            ids: seleccionados 
+        });
+
+        if (res.data.success) {
+          setSeleccionados([]);
+          cargarTodo(); // Recargar la lista
+          alert("✅ Productos eliminados correctamente");
+        } else {
+          alert("❌ Error: " + res.data.message);
+        }
       } catch (error) {
-        alert("❌ Error al eliminar");
+        console.error("Error al eliminar:", error);
+        alert("❌ Error al conectar con el servidor para eliminar");
       }
     }
   };
