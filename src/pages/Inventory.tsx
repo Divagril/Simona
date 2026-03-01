@@ -1,17 +1,16 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { 
   Trash2, CheckSquare, Square, Box, Save, 
   Eraser, Search, PackageCheck, ChevronDown, 
-  RefreshCw, AlertTriangle 
+  RefreshCw, AlertCircle 
 } from 'lucide-react';
 
 const Inventory: React.FC = () => {
-  // --- ESTADOS ---
   const [productos, setProductos] = useState<any[]>([]);
   const [sugerencias, setSugerencias] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState('');
-  const [cargando, setCargando] = useState(true);
+  const [cargando, setCargando] = useState(false);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   
   const [form, setForm] = useState({
@@ -23,8 +22,8 @@ const Inventory: React.FC = () => {
 
   const API_URL = 'https://simona-backend.onrender.com/api';
 
-  // --- CARGA DE DATOS ---
-  const cargarTodo = async () => {
+  // --- CARGA DE DATOS (Memorizada para evitar bucles) ---
+  const cargarTodo = useCallback(async () => {
     try {
       setCargando(true);
       const [resProds, resSugerencias] = await Promise.all([
@@ -32,33 +31,26 @@ const Inventory: React.FC = () => {
         axios.get(`${API_URL}/nombres-inversiones`)
       ]);
 
-      // Validar que sean arrays para evitar errores de .map
-      const listaProds = Array.isArray(resProds.data) ? resProds.data : [];
-      const listaSugs = Array.isArray(resSugerencias.data) ? resSugerencias.data : [];
-
-      setProductos(listaProds);
-      setSugerencias(listaSugs);
+      if (resProds.data) setProductos(resProds.data);
+      if (resSugerencias.data) setSugerencias(resSugerencias.data);
     } catch (error) {
-      console.error("Error al conectar:", error);
+      console.error("Error al cargar:", error);
     } finally {
       setCargando(false);
     }
-  };
+  }, [API_URL]);
 
   useEffect(() => {
     cargarTodo();
-  }, []);
+  }, [cargarTodo]);
 
-  // --- LÓGICA DEL FORMULARIO ---
+  // --- FORMULARIO ---
   const handleSelectNombre = (val: string) => {
     if (!val) {
       setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' });
       return;
     }
-    
-    // Buscar si ya existe en catálogo para autocompletar
     const existe = productos.find(p => p.nombre && p.nombre.toLowerCase() === val.toLowerCase());
-    
     if (existe) {
       setForm({
         nombre: existe.nombre,
@@ -71,45 +63,48 @@ const Inventory: React.FC = () => {
     }
   };
 
+  // --- GUARDAR (Corregido para actualización instantánea) ---
   const handleGuardar = async () => {
-    if (!form.nombre) return alert("⚠️ Seleccione un producto de inversión.");
+    if (!form.nombre) return alert("⚠️ Seleccione un producto.");
     
     try {
-      await axios.post(`${API_URL}/productos`, {
+      const response = await axios.post(`${API_URL}/productos`, {
         nombre: form.nombre.trim(),
         unidad: form.unidad,
         precio: Number(form.precio) || 0
-        // NO enviamos cantidad (PROHIBIDO STOCK MANUAL)
       });
-      alert("✅ Producto actualizado.");
-      setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' });
-      cargarTodo();
+
+      if (response.data) {
+        alert("✅ Producto actualizado en el catálogo.");
+        setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' });
+        // Recarga completa para asegurar que el catálogo refleje la realidad
+        await cargarTodo(); 
+      }
     } catch (error) {
       alert("❌ Error al guardar.");
     }
   };
 
-  // --- ELIMINACIÓN ---
+  // --- ELIMINAR ---
   const handleEliminarMasivo = async () => {
     if (seleccionados.length === 0) return;
-    if (!window.confirm(`¿Eliminar ${seleccionados.length} productos?`)) return;
+    if (!window.confirm(`¿Borrar ${seleccionados.length} productos?`)) return;
     
     try {
       await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
       setSeleccionados([]);
-      cargarTodo();
+      await cargarTodo();
     } catch (error) {
       alert("❌ Error al eliminar.");
     }
   };
 
-  // --- FILTRO ---
-  const filtrados = useMemo(() => {
-    return productos.filter(p => {
-      const nom = (p.nombre || 'SIN NOMBRE').toLowerCase();
-      return nom.includes(busqueda.toLowerCase());
-    });
-  }, [productos, busqueda]);
+  // --- FILTRO DINÁMICO ---
+  const filtrados = productos.filter(p => {
+    const busq = busqueda.toLowerCase();
+    const nom = (p.nombre || '').toLowerCase();
+    return nom.includes(busq);
+  });
 
   return (
     <div className="inventory-page-container">
@@ -121,7 +116,7 @@ const Inventory: React.FC = () => {
           
           <div className="inventory-form-body">
             <div className="inventory-form-group">
-              <label className="inventory-label">PRODUCTO PROVENIENTE DE INVERSIÓN</label>
+              <label className="inventory-label">PRODUCTO DE INVERSIÓN</label>
               <div className="select-wrapper">
                 <select 
                   className="inventory-select-main"
@@ -135,9 +130,6 @@ const Inventory: React.FC = () => {
                 </select>
                 <ChevronDown className="select-icon" size={18} />
               </div>
-              {sugerencias.length === 0 && !cargando && (
-                <div className="error-small">⚠️ No hay datos en Inversiones.</div>
-              )}
             </div>
 
             <div className="inventory-form-group">
@@ -156,14 +148,14 @@ const Inventory: React.FC = () => {
 
             <div className="inventory-grid-inputs">
               <div className="inventory-form-group">
-                <label className="inventory-label">PRECIO VENTA (S/.)</label>
+                <label className="inventory-label">PRECIO VENTA</label>
                 <input 
                   type="number" className="inventory-input" placeholder="0.00"
                   value={form.precio} onChange={(e) => setForm({...form, precio: e.target.value})}
                 />
               </div>
               <div className="inventory-form-group">
-                <label className="inventory-label">STOCK (Solo Lectura)</label>
+                <label className="inventory-label">STOCK (Lectura)</label>
                 <input 
                   type="text" className="inventory-input input-readonly"
                   value={form.stock} readOnly
@@ -172,14 +164,18 @@ const Inventory: React.FC = () => {
             </div>
             
             <div className="info-box-blue">
-               <AlertTriangle size={14} />
-               <span>El stock se sincroniza solo desde Inversiones.</span>
+               <AlertCircle size={14} />
+               <span>El stock aumenta solo desde Inversiones.</span>
             </div>
           </div>
 
           <div className="inventory-form-actions">
-            <button onClick={handleGuardar} className="btn-inventory-save"><Save size={18} /> ACTUALIZAR</button>
-            <button onClick={() => setForm({nombre:'', unidad:'UNIDAD', precio:'', stock:'0'})} className="btn-inventory-clear"><Eraser size={18} /> LIMPIAR</button>
+            <button onClick={handleGuardar} className="btn-inventory-save">
+                <Save size={18} /> ACTUALIZAR PRODUCTO
+            </button>
+            <button onClick={() => setForm({nombre:'', unidad:'UNIDAD', precio:'', stock:'0'})} className="btn-inventory-clear">
+                <Eraser size={18} /> LIMPIAR
+            </button>
           </div>
         </div>
       </aside>
@@ -190,7 +186,9 @@ const Inventory: React.FC = () => {
           <div className="inventory-table-header">
             <h3 className="inventory-title">Catálogo ({filtrados.length})</h3>
             <div className="inventory-controls">
-              <button onClick={cargarTodo} className="btn-refresh-circle"><RefreshCw size={20} className={cargando ? 'spin' : ''} /></button>
+              <button onClick={cargarTodo} className="btn-refresh-circle">
+                <RefreshCw size={20} className={cargando ? 'spin' : ''} />
+              </button>
               <div className="inventory-search-wrapper">
                 <Search size={18} className="search-icon" />
                 <input 
@@ -220,26 +218,24 @@ const Inventory: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {cargando ? (
-                  <tr><td colSpan={5} className="table-status-msg">Cargando...</td></tr>
-                ) : filtrados.length === 0 ? (
-                  <tr><td colSpan={5} className="table-status-msg">Inventario vacío.</td></tr>
+                {cargando && productos.length === 0 ? (
+                  <tr><td colSpan={5} className="table-status-msg">Cargando datos...</td></tr>
                 ) : (
                   filtrados.map((p) => (
                     <tr 
-                      key={p._id} 
+                      key={p._id || Math.random()} 
                       className={seleccionados.includes(p._id) ? 'row-selected' : ''}
-                      onClick={() => setSeleccionados(prev => prev.includes(p._id) ? prev.filter(i => i !== p._id) : [...prev, p._id])}
                     >
                       <td className="cell-center">
-                        <button className="btn-check-invisible">
+                        <button 
+                          onClick={() => setSeleccionados(prev => prev.includes(p._id) ? prev.filter(i => i !== p._id) : [...prev, p._id])}
+                          className="btn-check-invisible"
+                        >
                           {seleccionados.includes(p._id) ? <CheckSquare size={20} color="#3498db" /> : <Square size={20} color="#dfe6e9" />}
                         </button>
                       </td>
-                      <td className="font-bold">
-                        {p.nombre ? p.nombre.toUpperCase() : <span style={{color: 'red'}}>⚠️ SIN NOMBRE</span>}
-                      </td>
-                      <td>{p.unidad || '---'}</td>
+                      <td className="font-bold">{(p.nombre || 'SIN NOMBRE').toUpperCase()}</td>
+                      <td>{p.unidad || 'UNIDAD'}</td>
                       <td className="cell-right font-bold">S/. {(Number(p.precio) || 0).toFixed(2)}</td>
                       <td className="cell-center">
                         <span className={`stock-badge ${(p.cantidad || 0) <= 0 ? 'empty' : 'fine'}`}>
@@ -255,11 +251,11 @@ const Inventory: React.FC = () => {
 
           <div className="inventory-table-footer">
             <button 
-              onClick={(e) => { e.stopPropagation(); handleEliminarMasivo(); }}
+              onClick={handleEliminarMasivo}
               disabled={seleccionados.length === 0}
               className="btn-inventory-delete"
             >
-              <Trash2 size={18} /> ELIMINAR ({seleccionados.length})
+              <Trash2 size={18} /> ELIMINAR SELECCIONADOS ({seleccionados.length})
             </button>
           </div>
         </div>
