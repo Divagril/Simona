@@ -8,39 +8,70 @@ import {
 const Inventory: React.FC = () => {
   // --- ESTADOS ---
   const [productos, setProductos] = useState<any[]>([]);
-  const [sugerencias, setSugerencias] = useState<string[]>([]); 
-  const [form, setForm] = useState({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' });
+  const [sugerencias, setSugerencias] = useState<string[]>([]); // Nombres desde la colección Inversiones
+  const [form, setForm] = useState({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' });
   const [seleccionados, setSeleccionados] = useState<string[]>([]); 
   const [busqueda, setBusqueda] = useState('');
   const [cargando, setCargando] = useState(false);
 
-  // --- DIRECCIÓN DEL SERVIDOR EN RENDER (IMPORTANTE) ---
+  // URL de producción en Render
   const API_URL = 'https://simona-backend.onrender.com/api';
 
   // --- CARGA DE DATOS ---
   const cargarTodo = async () => {
     try {
       setCargando(true);
-      // Traemos productos y nombres de inversiones desde Render
-      const resProds = await axios.get(`${API_URL}/productos`);
-      const resSugerencias = await axios.get(`${API_URL}/nombres-inversiones`);
-      
+      const [resProds, resSugerencias] = await Promise.all([
+        axios.get(`${API_URL}/productos`),
+        axios.get(`${API_URL}/nombres-inversiones`) 
+      ]);
       setProductos(resProds.data);
       setSugerencias(resSugerencias.data);
     } catch (error) {
-      console.error("Error cargando inventario:", error);
-      // Nota: Si el backend de Render está "dormido", puede tardar 30 segundos en despertar.
-      alert("⚠️ El servidor en la nube está despertando o no responde. Por favor, espera un momento y presiona el botón de recargar.");
+      console.error("Error al cargar inventario:", error);
     } finally {
       setCargando(false);
     }
   };
 
-  useEffect(() => { 
-    cargarTodo(); 
-  }, []);
+  useEffect(() => { cargarTodo(); }, []);
 
-  // --- LÓGICA DE SELECCIÓN ---
+  // --- LÓGICA DE FORMULARIO INTELIGENTE ---
+  // Al seleccionar un nombre, buscamos si ya existe en el catálogo para traer su stock real
+  const handleSelectNombre = (nombre: string) => {
+    const existe = productos.find(p => p.nombre.toLowerCase() === nombre.toLowerCase());
+    if (existe) {
+      setForm({
+        nombre: existe.nombre,
+        unidad: existe.unidad || 'UNIDAD',
+        precio: existe.precio.toString(),
+        stock: existe.cantidad.toString()
+      });
+    } else {
+      setForm({ ...form, nombre: nombre, stock: '0' });
+    }
+  };
+
+  // --- ACCIONES ---
+  const handleGuardar = async () => {
+    if (!form.nombre) return alert("❌ Debe seleccionar un producto de la lista de inversiones");
+    
+    try {
+      // ENVIAMOS SOLO PRECIO Y UNIDAD. El stock se mantiene intacto en el backend.
+      await axios.post(`${API_URL}/productos`, { 
+          nombre: form.nombre, 
+          unidad: form.unidad, 
+          precio: Number(form.precio) || 0
+          // No enviamos cantidad aquí para prohibir el stock manual
+      });
+      alert("✅ Precio y medida actualizados correctamente");
+      setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' });
+      cargarTodo();
+    } catch (error) {
+      alert("❌ Error al actualizar el producto");
+    }
+  };
+
   const toggleSeleccion = (id: string) => {
     setSeleccionados(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -52,48 +83,15 @@ const Inventory: React.FC = () => {
     else setSeleccionados(productos.map(p => p._id));
   };
 
-  // --- GUARDAR O ACTUALIZAR ---
-  const handleGuardar = async () => {
-    if (!form.nombre) return alert("❌ Seleccione un producto de la lista");
-    
-    try {
-      await axios.post(`${API_URL}/productos`, { 
-          nombre: form.nombre, 
-          precio: Number(form.precio) || 0, 
-          cantidad: Number(form.stock) || 0,
-          unidad: form.unidad
-      });
-      
-      alert("✅ Producto guardado en la nube");
-      setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' });
-      cargarTodo();
-    } catch (error) {
-      alert("❌ Error al guardar el producto");
-    }
-  };
   const handleEliminarMasivo = async () => {
     if (seleccionados.length === 0) return;
-    
-    if (window.confirm(`¿Estás seguro de eliminar los ${seleccionados.length} productos seleccionados?`)) {
+    const confirmar = window.confirm(`¿Seguro que quieres eliminar ${seleccionados.length} productos?`);
+    if (confirmar) {
       try {
-        // IMPORTANTE: Esta URL debe ser la de tu backend en Render
-        const API_URL = 'https://simona-backend.onrender.com/api';
-        
-        const res = await axios.post(`${API_URL}/productos/eliminar-masivo`, { 
-            ids: seleccionados 
-        });
-
-        if (res.data.success) {
-          setSeleccionados([]);
-          cargarTodo(); // Recargar la lista
-          alert("✅ Productos eliminados correctamente");
-        } else {
-          alert("❌ Error: " + res.data.message);
-        }
-      } catch (error) {
-        console.error("Error al eliminar:", error);
-        alert("❌ Error al conectar con el servidor para eliminar");
-      }
+        await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
+        setSeleccionados([]);
+        cargarTodo();
+      } catch (error) { alert("❌ Error al eliminar"); }
     }
   };
 
@@ -104,7 +102,7 @@ const Inventory: React.FC = () => {
   return (
     <div className="inventory-page-container">
       
-      {/* PANEL IZQUIERDO: FORMULARIO */}
+      {/* PANEL IZQUIERDO: GESTIÓN (FORMULARIO) */}
       <aside className="inventory-form-aside">
         <div className="inventory-card">
           <h3 className="inventory-title">
@@ -112,12 +110,12 @@ const Inventory: React.FC = () => {
           </h3>
 
           <div className="inventory-form-group">
-            <label className="inventory-label">SELECCIONAR PRODUCTO DE INVERSIÓN</label>
+            <label className="inventory-label">PRODUCTO DE COMPRA (INVERSIÓN)</label>
             <div className="select-wrapper">
               <select 
                 className="inventory-select-main"
                 value={form.nombre} 
-                onChange={e => setForm({...form, nombre: e.target.value})}
+                onChange={e => handleSelectNombre(e.target.value)}
               >
                 <option value="">-- ELIGE UN PRODUCTO --</option>
                 {sugerencias.map((nom, i) => (
@@ -126,11 +124,7 @@ const Inventory: React.FC = () => {
               </select>
               <ChevronDown className="select-icon" size={18} />
             </div>
-            {sugerencias.length === 0 && !cargando && (
-              <p style={{ color: '#E74C3C', fontSize: '11px', marginTop: '5px', fontWeight: 'bold' }}>
-                ⚠️ No hay compras en la base de datos de la nube
-              </p>
-            )}
+            {sugerencias.length === 0 && <small style={{color: 'red'}}>No hay mercadería en Inversiones</small>}
           </div>
 
           <div className="inventory-form-group">
@@ -149,48 +143,51 @@ const Inventory: React.FC = () => {
 
           <div className="inventory-grid-inputs">
               <div className="inventory-form-group">
-                  <label className="inventory-label">PRECIO VENTA</label>
+                  <label className="inventory-label">PRECIO VENTA (S/.)</label>
                   <input type="number" className="inventory-input" placeholder="0.00" value={form.precio} onChange={e => setForm({...form, precio: e.target.value})} />
               </div>
               <div className="inventory-form-group">
-                  <label className="inventory-label">STOCK</label>
-                  <input type="number" className="inventory-input" placeholder="0" value={form.stock} onChange={e => setForm({...form, stock: e.target.value})} />
+                  <label className="inventory-label">STOCK ACTUAL</label>
+                  <input 
+                    type="text" 
+                    className="inventory-input" 
+                    style={{ backgroundColor: '#f4f6f7', color: '#7f8c8d', fontWeight: 'bold', cursor: 'not-allowed' }}
+                    value={form.stock} 
+                    readOnly 
+                  />
               </div>
           </div>
+          <p style={{ fontSize: '10px', color: '#3498db', marginTop: '-10px', marginBottom: '15px' }}>
+            ℹ️ El stock solo se puede aumentar desde el módulo Inversiones.
+          </p>
 
           <div className="inventory-form-actions">
               <button onClick={handleGuardar} className="btn-inventory-save">
-                <Save size={18}/> Actualizar Inventario
+                <Save size={18}/> Actualizar Producto
               </button>
-              <button onClick={() => setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' })} className="btn-inventory-clear">
-                <Eraser size={18}/> Limpiar
+              <button onClick={() => setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '0' })} className="btn-inventory-clear">
+                <Eraser size={18}/> Limpiar Campos
               </button>
           </div>
         </div>
       </aside>
 
-      {/* PANEL DERECHO: CATÁLOGO */}
+      {/* PANEL DERECHO: CATÁLOGO (TABLA) */}
       <section className="inventory-table-section">
         <div className="inventory-card">
           <div className="inventory-table-header">
             <h3 className="inventory-title">
-              <PackageCheck size={24} color="#3498db" /> Catálogo ({prodsFiltrados.length})
+              <PackageCheck size={24} color="#3498db" /> Catálogo Real
             </h3>
-            
             <div style={{ display: 'flex', gap: '10px' }}>
-                <button onClick={cargarTodo} className="btn-refresh-inventory">
-                    <RefreshCw size={18} className={cargando ? 'spin' : ''} />
-                </button>
-                <div className="inventory-search-wrapper">
-                    <Search size={18} className="search-icon" />
-                    <input 
-                        type="text" 
-                        placeholder="Buscar producto..." 
-                        className="inventory-search-input"
-                        value={busqueda}
-                        onChange={(e) => setBusqueda(e.target.value)}
-                    />
-                </div>
+              <button onClick={cargarTodo} className="btn-refresh-inventory"><RefreshCw size={18} className={cargando ? 'spin' : ''} /></button>
+              <div className="inventory-search-wrapper">
+                <Search size={18} className="search-icon" />
+                <input 
+                  type="text" placeholder="Buscar..." className="inventory-search-input"
+                  onChange={(e) => setBusqueda(e.target.value)}
+                />
+              </div>
             </div>
           </div>
 
@@ -200,45 +197,39 @@ const Inventory: React.FC = () => {
                 <tr>
                   <th style={{ width: '50px', textAlign: 'center' }}>
                       <button onClick={toggleTodos} className="btn-check-invisible">
-                          {seleccionados.length === productos.length && productos.length > 0 ? <CheckSquare size={22} color="#3498db"/> : <Square size={22} color="#bdc3c7"/>}
+                          {seleccionados.length === productos.length && productos.length > 0 ? <CheckSquare size={20} color="#3498db"/> : <Square size={20} color="#bdc3c7"/>}
                       </button>
                   </th>
                   <th>Producto</th>
                   <th>Medida</th>
-                  <th style={{ textAlign: 'right' }}>Precio</th>
+                  <th style={{ textAlign: 'right' }}>P. Venta</th>
                   <th style={{ textAlign: 'center' }}>Stock</th>
                 </tr>
               </thead>
               <tbody>
-                {cargando ? (
-                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>Cargando desde Render... (Esto puede tardar si el servidor estaba dormido)</td></tr>
-                ) : prodsFiltrados.length === 0 ? (
-                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>No hay productos en la base de datos.</td></tr>
-                ) : (
-                    prodsFiltrados.map((p) => (
-                        <tr key={p._id} className={seleccionados.includes(p._id) ? 'row-selected' : ''}>
-                          <td style={{ textAlign: 'center' }}>
-                            <button onClick={() => toggleSeleccion(p._id)} className="btn-check-invisible">
-                                {seleccionados.includes(p._id) ? <CheckSquare size={22} color="#3498db"/> : <Square size={22} color="#dfe6e9"/>}
-                            </button>
-                          </td>
-                          <td style={{ fontWeight: 'bold' }}>{p.nombre.toUpperCase()}</td>
-                          <td>{p.unidad}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>S/. {Number(p.precio).toFixed(2)}</td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span className={`stock-badge ${p.cantidad <= 0 ? 'empty' : 'fine'}`}>
-                              {p.cantidad}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                )}
+                {prodsFiltrados.map((p) => (
+                  <tr key={p._id} className={seleccionados.includes(p._id) ? 'row-selected' : ''}>
+                    <td style={{ textAlign: 'center' }}>
+                      <button onClick={() => toggleSeleccion(p._id)} className="btn-check-invisible">
+                          {seleccionados.includes(p._id) ? <CheckSquare size={20} color="#3498db"/> : <Square size={20} color="#dfe6e9"/>}
+                      </button>
+                    </td>
+                    <td style={{ fontWeight: 'bold' }}>{p.nombre.toUpperCase()}</td>
+                    <td>{p.unidad}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold' }}>S/. {p.precio.toFixed(2)}</td>
+                    <td style={{ textAlign: 'center' }}>
+                      <span className={`stock-badge ${p.cantidad <= 0 ? 'empty' : 'fine'}`}>
+                        {p.cantidad}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
 
           <div className="inventory-table-footer">
-             {seleccionados.length > 0 && <span className="selected-count">{seleccionados.length} marcados</span>}
+             {seleccionados.length > 0 && <span className="selected-count">{seleccionados.length} seleccionados</span>}
              <button 
                onClick={handleEliminarMasivo}
                disabled={seleccionados.length === 0}

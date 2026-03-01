@@ -116,23 +116,72 @@ app.post('/api/ventas', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
-
-// 3. INVENTARIO: Guardar/Actualizar
+// --- RUTA 3: ACTUALIZAR PRODUCTO (GESTIÓN DE PRECIOS, NO DE STOCK) ---
 app.post('/api/productos', async (req, res) => {
     try {
-        const { nombre, precio, cantidad, unidad } = req.body;
-        const prodExistente = await Producto.findOne({ nombre: new RegExp(`^${nombre}$`, 'i') });
-        const stockAnt = prodExistente ? prodExistente.cantidad : 0;
-
+        const { nombre, precio, unidad } = req.body;
+        
+        // Buscamos el producto. NO permitimos actualizar 'cantidad' desde aquí.
         const prod = await Producto.findOneAndUpdate(
             { nombre: new RegExp(`^${nombre}$`, 'i') },
-            { nombre, precio, cantidad, unidad },
+            { 
+                precio: Number(precio), 
+                unidad: unidad 
+                // NOTA: No incluimos 'cantidad' para prohibir el stock manual
+            },
             { upsert: true, new: true }
         );
 
-        await new Kardex({ nombre_producto: nombre, cantidad: cantidad - stockAnt, motivo: 'ACTUALIZACIÓN', stock_anterior: stockAnt, stock_actual: cantidad }).save();
-        await new LogAuditoria({ accion: 'INVENTARIO', detalle: `Actualizado: ${nombre} (Stock: ${cantidad})` }).save();
+        await new LogAuditoria({ 
+            accion: 'GESTIÓN PRECIO', 
+            detalle: `Se actualizó precio de ${nombre} a S/. ${precio}` 
+        }).save();
+
         res.json(prod);
+    } catch (e) { res.status(500).json({ error: e.message }); }
+});
+
+// --- RUTA: REGISTRAR COMPRA / INVERSIÓN (ÚNICA VÍA PARA SUBIR STOCK) ---
+app.post('/api/inversiones', async (req, res) => {
+    try {
+        const { nombre, costoTotal, cantidad, costoUnid } = req.body;
+        
+        // 1. Guardar el registro de la compra para historial
+        const inv = new Inversion({
+            nombre, costo_total: costoTotal, cantidad_comprada: cantidad, costo_unitario: costoUnid
+        });
+        await inv.save();
+
+        // 2. Buscar producto para saber stock anterior
+        const prodExistente = await Producto.findOne({ nombre: new RegExp(`^${nombre}$`, 'i') });
+        const sAnt = prodExistente ? prodExistente.cantidad : 0;
+        const sAct = sAnt + Number(cantidad);
+
+        // 3. ACTUALIZAR STOCK Y PRECIO DE COMPRA
+        await Producto.findOneAndUpdate(
+            { nombre: new RegExp(`^${nombre}$`, 'i') },
+            { 
+                $inc: { cantidad: Number(cantidad) }, 
+                $set: { precio_compra: Number(costoUnid) } 
+            },
+            { upsert: true }
+        );
+
+        // 4. Registro en Kardex (Motivo: COMPRA)
+        await new Kardex({
+            nombre_producto: nombre,
+            cantidad: Number(cantidad),
+            motivo: 'COMPRA',
+            stock_anterior: sAnt,
+            stock_actual: sAct
+        }).save();
+
+        await new LogAuditoria({ 
+            accion: 'INVERSIÓN', 
+            detalle: `Compra de ${cantidad} unid. de ${nombre} a S/. ${costoUnid} c/u` 
+        }).save();
+
+        res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
