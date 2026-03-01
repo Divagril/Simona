@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, Search, RefreshCw, UserPlus, 
-  Trash2, DollarSign, History, X, Printer 
+  Trash2, DollarSign, X, Printer 
 } from 'lucide-react';
 import { 
   getClientesConDeuda, 
@@ -18,7 +18,6 @@ import type { Cliente, Movimiento } from '../types';
 const Clients: React.FC = () => {
   const { showNotification } = useNotification();
   
-  // --- ESTADOS ---
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
@@ -27,14 +26,10 @@ const Clients: React.FC = () => {
   const [montoAbono, setMontoAbono] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   
-  // Estados para el Ticket
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [datosTicket, setDatosTicket] = useState<any>(null);
-
-  // Estado para la notificación de VUELTO
   const [vueltoAlert, setVueltoAlert] = useState<number | null>(null);
 
-  // --- CARGA DE DATOS ---
   const cargarClientes = async () => {
     try {
       const data = await getClientesConDeuda();
@@ -47,8 +42,6 @@ const Clients: React.FC = () => {
   useEffect(() => {
     cargarClientes();
   }, []);
-
-  // --- FUNCIONES LÓGICAS ---
 
   const seleccionarCliente = async (cliente: Cliente) => {
     setSelectedClient(cliente);
@@ -76,15 +69,13 @@ const Clients: React.FC = () => {
     }
   };
 
-  // --- FUNCIÓN CORREGIDA: TRAE FECHA Y HORA REAL ---
-  const handleImprimirMovimiento = (mov: Movimiento) => {
+  const handleImprimirMovimiento = (mov: any) => {
     if (!selectedClient) return;
 
-    // CAPTURAMOS LA FECHA EXACTA DEL MOVIMIENTO
     const dataParaTicket = {
         total: mov.monto,
-        saldoPendiente: selectedClient.deudaTotal,
-        fechaOriginal: mov.fecha, // <--- AQUÍ CAPTURAMOS LA FECHA DE LA TABLA
+        saldoPendiente: mov.saldo_al_momento !== undefined ? mov.saldo_al_momento : selectedClient.deudaTotal,
+        fechaOriginal: mov.fecha,
         items: [{
             nombre: mov.tipo === 'PAGO' ? "ABONO A CUENTA" : (mov.descripcion || "COMPRA AL FIADO"),
             cantidadSeleccionada: 1,
@@ -119,10 +110,10 @@ const Clients: React.FC = () => {
       
       setMontoAbono('');
       cargarClientes();
-      // Refrescar historial
+      
       const movs = await getMovimientosCliente(selectedClient._id);
       setMovimientos(movs);
-      // Actualizar deuda en pantalla
+      
       const res = await getClientesConDeuda();
       const actualizado = res.find((c:any) => c._id === selectedClient._id);
       if(actualizado) setSelectedClient(actualizado);
@@ -147,7 +138,6 @@ const Clients: React.FC = () => {
   return (
     <div className="clients-container">
       
-      {/* PANEL IZQUIERDO */}
       <div className="panel-blanco" style={{ width: '350px', display: 'flex', flexDirection: 'column', padding: '15px' }}>
         <div className="clients-header-row">
           <h3 style={{margin: 0}}><Users size={20} /> Clientes</h3>
@@ -181,7 +171,6 @@ const Clients: React.FC = () => {
         </div>
       </div>
 
-      {/* PANEL DERECHO */}
       <div className="pos-right" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <div className="panel-blanco panel-header-cliente" style={{ padding: '20px' }}>
           {selectedClient ? (
@@ -226,7 +215,7 @@ const Clients: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {movimientos.map(mov => (
+                  {movimientos.map((mov: any) => (
                     <tr key={mov._id}>
                       <td style={{ fontSize: '12px', color: '#7F8C8D' }}>{new Date(mov.fecha).toLocaleString()}</td>
                       <td>
@@ -250,7 +239,6 @@ const Clients: React.FC = () => {
         )}
       </div>
 
-      {/* NOTIFICACIÓN VUELTO */}
       {vueltoAlert !== null && (
         <div className="vuelto-left-alert">
           <div className="left-alert-content">
@@ -265,7 +253,6 @@ const Clients: React.FC = () => {
         </div>
       )}
 
-      {/* MODALES */}
       <ConfirmModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={ejecutarEliminacionReal} titulo="¿Eliminar?" mensaje="¿Borrar cliente?" />
       
       {datosTicket && (
@@ -276,7 +263,7 @@ const Clients: React.FC = () => {
             total={datosTicket.total}
             metodoPago={datosTicket.metodoPago}
             saldoPendiente={datosTicket.saldoPendiente}
-            fechaManual={datosTicket.fechaOriginal} // <--- PASAMOS LA FECHA REAL AL TICKET
+            fechaManual={datosTicket.fechaOriginal}
         />
       )}
     </div>

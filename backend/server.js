@@ -50,6 +50,7 @@ const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
     tipo: String, // 'DEUDA' o 'PAGO'
     monto: Number,
     descripcion: String,
+    saldo_al_momento: Number,
     fecha: { type: Date, default: Date.now }
 }));
 
@@ -195,7 +196,8 @@ app.post('/api/fiados/masivo', async (req, res) => {
             cliente_id: new mongoose.Types.ObjectId(cliente_id), // <--- CAMBIO AQUÍ
             tipo: 'DEUDA', 
             monto: total, 
-            descripcion: 'Compra al fiado' 
+            descripcion: 'Compra al fiado',
+            saldo_al_momento: deudaDespuesDeCompra
         });
         await mov.save();
 
@@ -210,13 +212,18 @@ app.post('/api/fiados/masivo', async (req, res) => {
 app.post('/api/fiados/abono', async (req, res) => {
     try {
         const { cliente_id, monto } = req.body;
+        const cliente = await Cliente.findById(cliente_id);
+
+        // Calculamos cuánto debe justo después de pagar
+        const deudaDespuesDePago = cliente.deudaTotal - monto;
         
         // GUARDAR EL HISTORIAL DEL PAGO
         const mov = new MovimientoFiado({ 
             cliente_id: new mongoose.Types.ObjectId(cliente_id), // <--- CAMBIO AQUÍ
             tipo: 'PAGO', 
             monto: monto, 
-            descripcion: 'Abono a cuenta' 
+            descripcion: 'Abono a cuenta' ,
+            saldo_al_momento: deudaDespuesDePago
         });
         await mov.save();
 
