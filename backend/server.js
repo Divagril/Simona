@@ -4,176 +4,99 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
-
-// --- MIDDLEWARES ---
 app.use(cors());
 app.use(express.json());
 
-// --- CONEXIÓN A MONGO DB ---
-// Asegúrate de que tu .env tenga: MONGO_URI=mongodb+srv://.../sistema_pos_v5
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ Conectado a MongoDB Atlas (Base de datos: sistema_pos_v5)"))
+    .then(() => console.log("✅ MongoDB Conectado"))
     .catch(err => console.error("❌ Error de conexión:", err));
 
 // --- MODELOS ---
-
-// Modelo para Inventario (Productos)
 const Producto = mongoose.model('Producto', new mongoose.Schema({
-    codigo_barra: { type: String, default: "" },
-    nombre: { type: String, required: true },
-    precio: { type: Number, default: 0 },
-    cantidad: { type: Number, default: 0 },
-    unidad: { type: String, default: 'UNIDAD' }
+    nombre: String, precio: Number, cantidad: Number, unidad: String, precio_compra: Number
 }));
 
-// Modelo para Compras (Inversiones)
-const Inversion = mongoose.model('Inversion', new mongoose.Schema({
-    nombre: String,
-    costo_total: Number,
-    cantidad_comprada: Number,
-    costo_unitario: Number,
-    fecha: { type: Date, default: Date.now }
-}));
-
-// Modelo para Dashboard (Ventas)
 const Venta = mongoose.model('Venta', new mongoose.Schema({
-    productos: Array,
-    total: Number,
+    productos: Array, total: Number, metodoPago: String, fecha: { type: Date, default: Date.now }
+}));
+
+// MODELO DE CLIENTES (Lo que faltaba)
+const Cliente = mongoose.model('Cliente', new mongoose.Schema({
+    nombre: { type: String, required: true },
+    deudaTotal: { type: Number, default: 0 }
+}));
+
+// MODELO DE MOVIMIENTOS/FIADOS
+const Movimiento = mongoose.model('Movimiento', new mongoose.Schema({
+    cliente_id: mongoose.Schema.Types.ObjectId,
+    tipo: String, // 'DEUDA' o 'PAGO'
+    monto: Number,
+    descripcion: String,
     fecha: { type: Date, default: Date.now }
 }));
 
 // --- RUTAS ---
 
-// 1. OBTENER NOMBRES ÚNICOS DESDE INVERSIONES (Para el desplegable del Inventario)
-app.get('/api/nombres-inversiones', async (req, res) => {
-    try {
-        console.log("🔍 Buscando nombres en la colección 'inversions'...");
-        // distinct('nombre') devuelve un array con los nombres sin repetir
-        const nombres = await Inversion.find().distinct('nombre');
-        
-        console.log("📦 Nombres encontrados en BD:", nombres);
-        res.json(nombres);
-    } catch (e) {
-        console.error("❌ Error en nombres-inversiones:", e);
-        res.status(500).json({ error: e.message });
-    }
-});
-
-// 2. OBTENER PRODUCTOS DEL INVENTARIO
+// 1. Productos
 app.get('/api/productos', async (req, res) => {
-    try {
-        const prods = await Producto.find().sort({ nombre: 1 });
-        res.json(prods);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    const prods = await Producto.find().sort({ nombre: 1 });
+    res.json(prods);
 });
 
-// 3. ACTUALIZAR O GUARDAR PRODUCTO EN INVENTARIO
-app.post('/api/productos', async (req, res) => {
-    try {
-        const { nombre, precio, cantidad, unidad } = req.body;
-        // Buscamos si ya existe para actualizarlo, si no, lo crea (upsert)
-        const prod = await Producto.findOneAndUpdate(
-            { nombre: new RegExp(`^${nombre}$`, 'i') },
-            { nombre, precio, cantidad, unidad },
-            { upsert: true, new: true }
-        );
-        res.json(prod);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 4. ELIMINAR VARIOS PRODUCTOS A LA VEZ (Masivo)
-app.post('/api/productos/eliminar-masivo', async (req, res) => {
-    try {
-        const { ids } = req.body;
-        await Producto.deleteMany({ _id: { $in: ids } });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 5. GUARDAR UNA NUEVA INVERSIÓN (Y actualizar stock automáticamente)
-app.post('/api/inversiones', async (req, res) => {
-    try {
-        const { nombre, costoTotal, cantidad, costoUnid } = req.body;
-        
-        // Guardar registro de la compra
-        const inv = new Inversion({
-            nombre, costo_total: costoTotal, cantidad_comprada: cantidad, costo_unitario: costoUnid
-        });
-        await inv.save();
-
-        // Actualizar stock y costo en la tabla de productos
-        await Producto.findOneAndUpdate(
-            { nombre: new RegExp(`^${nombre}$`, 'i') },
-            { 
-                $inc: { cantidad: Number(cantidad) }, 
-                $set: { precio_compra: Number(costoUnid) } 
-            },
-            { upsert: true }
-        );
-
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 6. OBTENER HISTORIAL DE INVERSIONES
-app.get('/api/inversiones', async (req, res) => {
-    try {
-        const historial = await Inversion.find().sort({ fecha: -1 });
-        res.json(historial);
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 7. RUTA DASHBOARD: RENTABILIDAD
-app.get('/api/dashboard/rentabilidad', async (req, res) => {
-    try {
-        const ventas = await Venta.find();
-        const ingresosTotales = ventas.reduce((acc, v) => acc + v.total, 0);
-
-        const productos = await Producto.find();
-        // Costo de inversión = cantidad en stock * costo de compra
-        const inversionEnStock = productos.reduce((acc, p) => acc + (p.cantidad * (p.precio_compra || 0)), 0);
-
-        res.json({
-            ingresosTotales,
-            inversionTotalEnVentas: inversionEnStock,
-            gananciaNeta: ingresosTotales - inversionEnStock,
-            totalVentas: ventas.length
-        });
-    } catch (e) { res.status(500).json({ error: e.message }); }
-});
-
-// 8. RUTA PARA REGISTRAR UNA VENTA (Esta es la que faltaba)
+// 2. Ventas (Cobrar en efectivo/yape)
 app.post('/api/ventas', async (req, res) => {
     try {
-        const { items, total } = req.body;
-
-        // 1. Guardamos la venta en la base de datos
-        const nuevaVenta = new Venta({
-            productos: items, // Aquí guardamos el array de productos del carrito
-            total: total,
-            fecha: new Date()
-        });
-        await nuevaVenta.save();
-
-        // 2. DESCONTAR EL STOCK (Importante para que el inventario baje)
-        for (const item of items) {
-            // Buscamos por ID y restamos la cantidad vendida
-            await Producto.findByIdAndUpdate(item._id, {
-                $inc: { cantidad: -Number(item.cantidadSeleccionada) }
-            });
+        const { items, total, metodoPago } = req.body;
+        const v = new Venta({ productos: items, total, metodoPago });
+        await v.save();
+        for (const it of items) {
+            if (it._id && !it._id.toString().startsWith('MANUAL')) {
+                await Producto.findByIdAndUpdate(it._id, { $inc: { cantidad: -Number(it.cantidadSeleccionada) } });
+            }
         }
-
-        res.json({ success: true, message: "Venta cobrada con éxito" });
-    } catch (e) {
-        console.error("❌ Error al cobrar:", e);
-        res.status(500).json({ error: e.message });
-    }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
+// 3. Clientes - Obtener todos con su deuda
+app.get('/api/clientes/deudas', async (req, res) => {
+    const clientes = await Cliente.find().sort({ nombre: 1 });
+    res.json(clientes);
+});
 
-// --- INICIO DEL SERVIDOR ---
+// 4. Clientes - CREAR NUEVO (Esta es la ruta que te daba error)
+app.post('/api/clientes', async (req, res) => {
+    try {
+        const { nombre } = req.body;
+        const nuevoCliente = new Cliente({ nombre, deudaTotal: 0 });
+        await nuevoCliente.save();
+        res.json(nuevoCliente);
+    } catch (e) { res.status(500).json({ error: "Error al crear cliente" }); }
+});
+
+// 5. Fiados - Registrar compra al fiado
+app.post('/api/fiados/masivo', async (req, res) => {
+    try {
+        const { cliente_id, items, total } = req.body;
+        
+        // Registrar el movimiento de deuda
+        const mov = new Movimiento({
+            cliente_id, tipo: 'DEUDA', monto: total, descripcion: 'Compra al fiado'
+        });
+        await mov.save();
+
+        // Aumentar deuda del cliente
+        await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
+
+        // Descontar stock
+        for (const it of items) {
+            if (it._id && !it._id.toString().startsWith('MANUAL')) {
+                await Producto.findByIdAndUpdate(it._id, { $inc: { cantidad: -Number(it.cantidadSeleccionada) } });
+            }
+        }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor listo en puerto ${PORT}`);
-    console.log(`👉 Prueba la ruta de nombres aquí: http://localhost:${PORT}/api/nombres-inversiones`);
-});
+app.listen(PORT, () => console.log(`🚀 Servidor en puerto ${PORT}`));
