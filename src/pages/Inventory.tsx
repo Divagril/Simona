@@ -1,287 +1,244 @@
 import React, { useState, useEffect } from 'react';
-import { Search, RefreshCw, FilePenLine } from 'lucide-react';
-import { getProductos, addProducto, updateProducto, eliminarProducto } from '../services/api';
-import { useNotification } from '../context/NotificationContext';
-import ConfirmModal from '../components/ConfirmModal';
-import type { Producto } from '../types';
+import axios from 'axios';
+import { 
+  Trash2, CheckSquare, Square, Box, Save, 
+  Eraser, Search, PackageCheck, ChevronDown, RefreshCw
+} from 'lucide-react';
 
 const Inventory: React.FC = () => {
-  const { showNotification } = useNotification();
-  
   // --- ESTADOS ---
-  const [productos, setProductos] = useState<Producto[]>([]);
+  const [productos, setProductos] = useState<any[]>([]);
+  const [sugerencias, setSugerencias] = useState<string[]>([]); 
+  const [form, setForm] = useState({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' });
+  const [seleccionados, setSeleccionados] = useState<string[]>([]); 
   const [busqueda, setBusqueda] = useState('');
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [cargando, setCargando] = useState(false);
 
-  // Estado inicial limpio
-  const estadoInicial: any = {
-    codigo_barra: '',
-    nombre: '',
-    precio: '',
-    cantidad: '',
-    unidad: 'UNIDAD'
-  };
-
-  const [form, setForm] = useState<any>(estadoInicial);
+  // --- DIRECCIÓN DEL SERVIDOR (IMPORTANTE: Volvemos a localhost) ---
+  const API_URL = 'http://localhost:5000/api';
 
   // --- CARGA DE DATOS ---
-  const cargarInventario = async () => {
+  const cargarTodo = async () => {
     try {
-      const data = await getProductos();
-      setProductos(data);
+      setCargando(true);
+      // Traemos productos y nombres de inversiones
+      const resProds = await axios.get(`${API_URL}/productos`);
+      const resSugerencias = await axios.get(`${API_URL}/nombres-inversiones`);
+      
+      setProductos(resProds.data);
+      setSugerencias(resSugerencias.data);
     } catch (error) {
-      showNotification("Error al conectar con el servidor", true);
+      console.error("Error cargando inventario:", error);
+      alert("❌ No se pudo conectar con el servidor en el puerto 5000. Asegúrate de que el backend esté encendido.");
+    } finally {
+      setCargando(false);
     }
   };
 
-  useEffect(() => {
-    cargarInventario();
+  useEffect(() => { 
+    cargarTodo(); 
   }, []);
 
-  // --- FUNCIONES LÓGICAS ---
-  const limpiarForm = () => setForm(estadoInicial);
-
-  const seleccionarParaEditar = (prod: Producto) => {
-    setForm(prod);
+  // --- LÓGICA DE SELECCIÓN ---
+  const toggleSeleccion = (id: string) => {
+    setSeleccionados(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
+  const toggleTodos = () => {
+    if (seleccionados.length === productos.length) setSeleccionados([]);
+    else setSeleccionados(productos.map(p => p._id));
+  };
+
+  // --- GUARDAR O ACTUALIZAR ---
   const handleGuardar = async () => {
-    if (!form.nombre.trim()) {
-      showNotification("⚠️ El nombre es obligatorio", true);
-      return;
-    }
-
-    // Lógica de Código Automático
-    let codigoFinal = form.codigo_barra.trim();
-    if (!codigoFinal) {
-      codigoFinal = "MAN-" + Date.now().toString().slice(-10);
-    }
-
-    const datosParaEnviar = {
-      ...form,
-      codigo_barra: codigoFinal,
-      precio: Number(form.precio) || 0,
-      cantidad: Number(form.cantidad) || 0 
-    };
-
+    if (!form.nombre) return alert("❌ Seleccione un producto de la lista");
+    
     try {
-      if (form._id) {
-        // ACTUALIZAR
-        await updateProducto(form._id, datosParaEnviar);
-        showNotification("✅ Producto actualizado con éxito");
-      } else {
-        // GUARDAR NUEVO
-        await addProducto(datosParaEnviar);
-        showNotification(`✅ Guardado con código: ${codigoFinal}`);
+      // Enviamos los datos al backend
+      // El backend en server.js espera: nombre, precio, cantidad, unidad
+      await axios.post(`${API_URL}/productos`, { 
+          nombre: form.nombre, 
+          precio: Number(form.precio) || 0, 
+          cantidad: Number(form.stock) || 0,
+          unidad: form.unidad
+      });
+      
+      alert("✅ Producto guardado correctamente");
+      setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' });
+      cargarTodo();
+    } catch (error) {
+      alert("❌ Error al guardar el producto");
+    }
+  };
+
+  // --- ELIMINACIÓN MASIVA ---
+  const handleEliminarMasivo = async () => {
+    if (seleccionados.length === 0) return;
+    if (window.confirm(`¿Seguro que quieres eliminar ${seleccionados.length} productos?`)) {
+      try {
+        await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
+        setSeleccionados([]);
+        cargarTodo();
+      } catch (error) {
+        alert("❌ Error al eliminar");
       }
-      limpiarForm();
-      cargarInventario();
-    } catch (error) {
-      showNotification("❌ Error al procesar la solicitud", true);
     }
   };
 
-  const ejecutarEliminacionReal = async () => {
-    if (!form._id) return;
-    try {
-      await eliminarProducto(form._id);
-      showNotification(`🗑️ "${form.nombre}" eliminado`);
-      limpiarForm();
-      cargarInventario();
-    } catch (error) {
-      showNotification("Error al eliminar", true);
-    }
-  };
-
-  const filtrados = productos.filter(p => 
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
-    p.codigo_barra.includes(busqueda)
+  const prodsFiltrados = productos.filter(p => 
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
   );
 
   return (
-    <div className="inventory-layout">
+    <div className="inventory-page-container">
       
-      {/* PANEL IZQUIERDO: FORMULARIO */}
-      <div className="form-container">
-        
-        {/* CABECERA: TÍTULO + BOTÓN REFRESCAR CUADRADO */}
-        <div className="header-row">
-          <h2 className="title-icon">
-            <FilePenLine size={24} strokeWidth={2.5} /> Producto
-          </h2>
-          <button className="btn-refresh-square" onClick={cargarInventario} title="Refrescar">
-            <RefreshCw size={20} />
-          </button>
-        </div>
+      {/* PANEL IZQUIERDO: FORMULARIO (RESPONSIVE) */}
+      <aside className="inventory-form-aside">
+        <div className="inventory-card">
+          <h3 className="inventory-title">
+            <Box color="#3498db" size={24}/> Gestión de Stock
+          </h3>
 
-        <div className="input-field">
-          <label className="input-label-bold">Código:</label>
-          <input 
-            type="text" 
-            className="input-main" 
-            placeholder="Automático si se deja vacío..."
-            value={form.codigo_barra} 
-            onChange={e => setForm({...form, codigo_barra: e.target.value})}
-          />
-        </div>
-
-        <fieldset className="group-box" style={{ padding: '15px', margin: '15px 0' }}>
-          <legend>Datos</legend>
-          
-          <div className="input-field">
-            <label className="input-label-bold">Nombre del Producto:</label>
-            <input 
-              type="text" 
-              className="input-main" 
-              value={form.nombre} 
-              onChange={e => setForm({...form, nombre: e.target.value})}
-            />
+          <div className="inventory-form-group">
+            <label className="inventory-label">SELECCIONAR PRODUCTO DE INVERSIÓN</label>
+            <div className="select-wrapper">
+              <select 
+                className="inventory-select-main"
+                value={form.nombre} 
+                onChange={e => setForm({...form, nombre: e.target.value})}
+              >
+                <option value="">-- ELIGE UN PRODUCTO --</option>
+                {sugerencias.map((nom, i) => (
+                  <option key={i} value={nom}>{nom.toUpperCase()}</option>
+                ))}
+              </select>
+              <ChevronDown className="select-icon" size={18} />
+            </div>
+            {sugerencias.length === 0 && (
+              <p style={{ color: '#E74C3C', fontSize: '11px', marginTop: '5px', fontWeight: 'bold' }}>
+                ⚠️ No hay compras registradas en inversiones
+              </p>
+            )}
           </div>
 
-          <div className="input-field">
-            <label className="input-label-bold">Uni:</label>
+          <div className="inventory-form-group">
+            <label className="inventory-label">UNIDAD DE MEDIDA</label>
             <select 
-              className="input-main" 
+              className="inventory-input" 
               value={form.unidad} 
               onChange={e => setForm({...form, unidad: e.target.value})}
             >
-              <option value="UNIDAD">UNIDAD</option>
-              <option value="BOTELLA">BOTELLA</option>
-              <option value="LATA">LATA</option>
-              <option value="KG">KG</option>
-              <option value="LITRO">LITRO</option>
-              <option value="METRO">METRO</option>
-              <option value="PAQUETE">PAQUETE</option>
+                <option value="UNIDAD">UNIDAD</option>
+                <option value="CAJA">CAJA</option>
+                <option value="PAQUETE">PAQUETE</option>
+                <option value="KILO">KILO</option>
             </select>
           </div>
 
-          <div className="grid-row">
-            <div className="input-field">
-              <label className="input-label-bold">Precio:</label>
-              <input 
-                type="text" 
-                className="input-main" 
-                value={form.precio} 
-                placeholder="0.00"
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => setForm({...form, precio: e.target.value})} 
-              />
-            </div>
-            <div className="input-field">
-              <label className="input-label-bold">Stock:</label>
-              <input 
-                type="text" 
-                className="input-main" 
-                value={form.cantidad} 
-                placeholder="0"
-                onFocus={(e) => e.target.select()}
-                onChange={(e) => setForm({...form, cantidad: e.target.value})} 
-              />
-            </div>
+          <div className="inventory-grid-inputs">
+              <div className="inventory-form-group">
+                  <label className="inventory-label">PRECIO VENTA</label>
+                  <input type="number" className="inventory-input" placeholder="0.00" value={form.precio} onChange={e => setForm({...form, precio: e.target.value})} />
+              </div>
+              <div className="inventory-form-group">
+                  <label className="inventory-label">STOCK</label>
+                  <input type="number" className="inventory-input" placeholder="0" value={form.stock} onChange={e => setForm({...form, stock: e.target.value})} />
+              </div>
           </div>
-        </fieldset>
 
-        {/* BOTONES ORDENADOS */}
-        <div className="form-footer">
-          <div className="buttons-row">
-            <button 
-              className="btn-guardar" 
-              onClick={handleGuardar}
-              disabled={!!form._id} 
-              style={{ opacity: form._id ? 0.5 : 1 }}
-            >
-              Guardar
-            </button>
-            <button 
-              className="btn-editar" 
-              onClick={handleGuardar}
-              disabled={!form._id}
-              style={{ opacity: !form._id ? 0.5 : 1 }}
-            >
-              Editar
-            </button>
-          </div>
-          
-          <button className="btn-limpiar" onClick={limpiarForm}>
-            Limpiar
-          </button>
-        </div>
-      </div>
-
-      {/* PANEL DERECHO: CATÁLOGO */}
-      <div className="catalog-container">
-        <div className="catalog-header">
-          <h2 className="title-icon">
-             📦 Catálogo
-          </h2>
-          <div className="catalog-search-box">
-            <Search className="lupa-inventario" size={18} color="#7F8C8D" />
-            <input 
-              type="text" 
-              placeholder="Buscar por nombre..." 
-              className="input-busqueda-inventario" 
-              value={busqueda} 
-              onChange={e => setBusqueda(e.target.value)} 
-            />
+          <div className="inventory-form-actions">
+              <button onClick={handleGuardar} className="btn-inventory-save">
+                <Save size={18}/> Actualizar Inventario
+              </button>
+              <button onClick={() => setForm({ nombre: '', unidad: 'UNIDAD', precio: '', stock: '' })} className="btn-inventory-clear">
+                <Eraser size={18}/> Limpiar
+              </button>
           </div>
         </div>
+      </aside>
 
-        <div className="table-wrapper">
-          <table className="modern-table">
-            <thead>
-              <tr>
-                <th style={{ width: '25%' }}>COD</th>
-                <th style={{ width: '40%' }}>PROD</th>
-                <th style={{ width: '15%', textAlign: 'center' }}>UNI</th>
-                <th style={{ width: '10%', textAlign: 'right' }}>PRE</th>
-                <th style={{ width: '10%', textAlign: 'center' }}>STK</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtrados.length === 0 ? (
+      {/* PANEL DERECHO: TABLA (CATÁLOGO) */}
+      <section className="inventory-table-section">
+        <div className="inventory-card">
+          <div className="inventory-table-header">
+            <h3 className="inventory-title">
+              <PackageCheck size={24} color="#3498db" /> Catálogo ({prodsFiltrados.length})
+            </h3>
+            
+            <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={cargarTodo} className="btn-refresh-inventory">
+                    <RefreshCw size={18} className={cargando ? 'spin' : ''} />
+                </button>
+                <div className="inventory-search-wrapper">
+                    <Search size={18} className="search-icon" />
+                    <input 
+                        type="text" 
+                        placeholder="Buscar producto..." 
+                        className="inventory-search-input"
+                        value={busqueda}
+                        onChange={(e) => setBusqueda(e.target.value)}
+                    />
+                </div>
+            </div>
+          </div>
+
+          <div className="inventory-table-responsive">
+            <table className="inventory-table">
+              <thead>
                 <tr>
-                   <td colSpan={5} style={{textAlign:'center', padding:'30px', color:'#95a5a6'}}>
-                      No hay productos que coincidan.
-                   </td>
+                  <th style={{ width: '50px', textAlign: 'center' }}>
+                      <button onClick={toggleTodos} className="btn-check-invisible">
+                          {seleccionados.length === productos.length && productos.length > 0 ? <CheckSquare size={22} color="#3498db"/> : <Square size={22} color="#bdc3c7"/>}
+                      </button>
+                  </th>
+                  <th>Producto</th>
+                  <th>Medida</th>
+                  <th style={{ textAlign: 'right' }}>Precio</th>
+                  <th style={{ textAlign: 'center' }}>Stock</th>
                 </tr>
-              ) : (
-                filtrados.map(p => (
-                  <tr 
-                    key={p._id} 
-                    onClick={() => seleccionarParaEditar(p)} 
-                    className={`row-hover ${Number(p.cantidad) < 10 ? 'low-stock' : ''} ${form._id === p._id ? 'selected-row' : ''}`}
-                  >
-                    <td style={{ fontSize: '12px', color: '#7f8c8d' }}>{p.codigo_barra}</td>
-                    <td style={{ fontWeight: 'bold' }}>{p.nombre}</td>
-                    <td style={{ textAlign: 'center' }}>{p.unidad}</td>
-                    <td style={{ textAlign: 'right' }}>S/. {Number(p.precio).toFixed(2)}</td>
-                    <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{p.cantidad}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-        
-        {/* BOTÓN ELIMINAR FLOTANTE A LA DERECHA */}
-        <div className="footer-row">
-          <button 
-            className="btn-eliminar-moderno" 
-            onClick={() => form._id ? setIsDeleteModalOpen(true) : showNotification("⚠️ Seleccione un producto primero", true)}
-          >
-            <span>🗑️</span> Eliminar
-          </button>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {cargando ? (
+                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>Cargando info...</td></tr>
+                ) : prodsFiltrados.length === 0 ? (
+                    <tr><td colSpan={5} style={{textAlign: 'center', padding: '30px'}}>No hay productos en el inventario</td></tr>
+                ) : (
+                    prodsFiltrados.map((p) => (
+                        <tr key={p._id} className={seleccionados.includes(p._id) ? 'row-selected' : ''}>
+                          <td style={{ textAlign: 'center' }}>
+                            <button onClick={() => toggleSeleccion(p._id)} className="btn-check-invisible">
+                                {seleccionados.includes(p._id) ? <CheckSquare size={22} color="#3498db"/> : <Square size={22} color="#dfe6e9"/>}
+                            </button>
+                          </td>
+                          <td style={{ fontWeight: 'bold' }}>{p.nombre.toUpperCase()}</td>
+                          <td>{p.unidad}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 'bold' }}>S/. {Number(p.precio).toFixed(2)}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className={`stock-badge ${p.cantidad <= 0 ? 'empty' : 'fine'}`}>
+                              {p.cantidad}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-      {/* MODAL DE CONFIRMACIÓN */}
-      <ConfirmModal 
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={ejecutarEliminacionReal}
-        titulo="¿Eliminar Producto?"
-        mensaje={form.nombre ? "¿Estás seguro de eliminar permanentemente " + form.nombre + "?" : ""}
-      />
+          <div className="inventory-table-footer">
+             {seleccionados.length > 0 && <span className="selected-count">{seleccionados.length} marcados</span>}
+             <button 
+               onClick={handleEliminarMasivo}
+               disabled={seleccionados.length === 0}
+               className="btn-inventory-delete"
+             >
+               <Trash2 size={18} /> Eliminar Seleccionados
+             </button>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

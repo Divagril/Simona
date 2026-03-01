@@ -12,6 +12,8 @@ import Reports from './pages/Reports';
 import Audit from './pages/Audit';
 import Config from './pages/Config';
 import Login from './pages/Login';     
+import Catalogo from './pages/Catalogo';
+
 import { ProtectedRoute } from './components/ProtectedRoute'; // Un solo punto
 
 import './App.css';
@@ -37,6 +39,7 @@ function AppContent() {
           <Route path="/reportes" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
           <Route path="/auditoria" element={<ProtectedRoute><Audit /></ProtectedRoute>} />
           <Route path="/config" element={<ProtectedRoute><Config /></ProtectedRoute>} />
+          <Route path="/catalogo" element={<Catalogo />} />
 
           {/* Redirección por defecto */}
           <Route path="*" element={<Navigate to={isAuthenticated ? "/pos" : "/login"} />} />

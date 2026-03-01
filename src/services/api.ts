@@ -73,3 +73,8 @@ export const getClientes = async () => {
 export const eliminarCliente = async (id: string) => {
   return await axios.delete(`${API_URL}/clientes/${id}`);
 };
+
+export const eliminarMultiplesProductos = async (ids: string[]) => {
+    const res = await axios.post(`${API_URL}/productos/eliminar-multiples`, { ids });
+    return res.data;
+};

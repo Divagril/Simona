@@ -34,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
         <button className="btn-toggle-mobile" onClick={() => setIsCollapsed(false)}>
           <Menu size={28} color="white" />
         </button>
-        <span className="mobile-logo">Tienda Simona</span>
+        <span className="mobile-logo">Tienda Simo</span>
       </div>
 
       {/* 2. SOMBRA OSCURA (OVERLAY) 
@@ -54,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
           </button>
           
           <div className={`app-title-container ${isCollapsed ? 'hide' : ''}`}>
-            <span className="app-title-text">Tienda Simona</span>
+            <span className="app-title-text">Tienda Simo</span>
           </div>
         </div>
 

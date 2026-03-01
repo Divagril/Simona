@@ -73,7 +73,7 @@ const TicketPreviewModal: React.FC<Props> = ({
         </head>
         <body>
           <div class="text-center">
-            <div class="biz-name">TIENDA SIMONA</div>
+            <div class="biz-name">TIENDA SIMO</div>
             <div class="info-text bold">RUC: 10XXXXXXXXX</div>
             <div class="info-text">CALLE PRINCIPAL #123 - LIMA</div>
             <div class="divider"></div>
@@ -118,7 +118,7 @@ const TicketPreviewModal: React.FC<Props> = ({
 
         <div className="thermal-paper-sheet">
           <div style={{textAlign: 'center'}}>
-            <h2 style={{margin: 0, fontSize: '16px', fontWeight: 900}}>TIENDA SIMONA</h2>
+            <h2 style={{margin: 0, fontSize: '18px', fontWeight: 900}}>TIENDA SIMO</h2>
             <p style={{fontSize: '9px', color: '#666', margin: 0}}>{fechaParaMostrar}</p>
             <hr style={{border: '0.5px dashed #ccc', margin: '8px 0'}}/>
           </div>

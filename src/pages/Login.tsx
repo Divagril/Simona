@@ -29,7 +29,7 @@ const Login: React.FC = () => {
           <div className="login-logo-circle">
             <Store size={40} color="#3498DB" />
           </div>
-          <h2>Tienda Simona</h2>
+          <h2>Tienda Simo</h2>
           <p>Acceso al Sistema Administrativo</p>
         </div>
 
