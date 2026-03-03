@@ -56,6 +56,7 @@ const Kardex = mongoose.model('Kardex', new mongoose.Schema({
 // --- RUTAS ---
 
 app.get('/', (req, res) => res.send("🚀 Servidor Simona Funcionando"));
+app.get('/api/health', (req, res) => res.json({ status: "ok", message: "Servidor Simona Online" }));
 
 // PRODUCTOS CON CÁLCULO DE STOCK REAL (Sincronizado con Inversiones)
 app.get('/api/productos', async (req, res) => {
