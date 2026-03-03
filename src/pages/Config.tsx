@@ -27,16 +27,17 @@ const Config: React.FC = () => {
   const verificarConexion = async () => {
     setDbStatus('cargando');
     try {
-        // 1. USA LA URL QUE TERMINA EN -pl4b
-        await axios.get('https://simona-pl4b.onrender.com/api/productos');
+        // 1. CAMBIA ESTA URL a la de Render
+        await axios.get('https://simona-backend.onrender.com/api/productos');
+        
         setDbStatus('conectado');
-        showNotification("✅ Conexión con la Nube exitosa");
+        showNotification("✅ Conexión con el servidor en la nube exitosa");
     } catch (error) {
         setDbStatus('desconectado');
-        // CAMBIAMOS EL MENSAJE PARA SABER QUE YA NO ES LOCAL
-        showNotification("❌ El servidor en Render no responde. Espera 1 minuto a que despierte.", true);
+        // 2. CAMBIA ESTE TEXTO (aquí es donde decía "local")
+        showNotification("❌ El servidor en la nube no responde. Revisa los logs en Render.", true);
     }
-  };
+ };
 
   useEffect(() => {
     verificarConexion();

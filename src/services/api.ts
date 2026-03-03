@@ -2,9 +2,7 @@
 import axios from 'axios';
 import type { Producto } from '../types';
 
-const API_URL = 'https://simona-pl4b.onrender.com/api'; 
-
-
+const API_URL = 'https://simona-backend.onrender.com/api';
 
 export const getProductos = async () => {
     const res = await axios.get(`${API_URL}/productos`);
