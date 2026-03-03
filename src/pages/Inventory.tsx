@@ -26,7 +26,7 @@ const Inventory: React.FC = () => {
   });
 
   const formatosCompra = ['UNIDAD', 'BOTELLA', 'LATA', 'KG', 'LITRO', 'METRO', 'PAQUETE', 'CAJA', 'GALÓN DE GAS'];
-  const API_URL = 'http://localhost:5000/api';
+  const API_URL = 'https://simona-backend.onrender.com/api';
 
   const cargarDatos = async () => {
     setCargando(true);

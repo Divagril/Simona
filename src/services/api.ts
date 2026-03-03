@@ -2,7 +2,8 @@
 import axios from 'axios';
 import type { Producto } from '../types';
 
-const API_URL = 'http://127.0.0.1:5000/api';
+const API_URL = 'https://simona-backend.onrender.com/api';
+
 
 
 export const getProductos = async () => {
@@ -27,7 +28,7 @@ export const eliminarProducto = async (id: string) => {
 
 export const registrarVenta = async (datos: any) => {
     // Esta función llama a la ruta que acabamos de crear en el server
-    const res = await axios.post('http://localhost:5000/api/ventas', datos);
+    const res = await axios.post('https://simona-backend.onrender.com/api/ventas', datos);
     return res.data;
 };
 
@@ -43,7 +44,7 @@ export const crearCliente = async (nombre: string) => {
 
 export const getMovimientosCliente = async (id: string) => {
     // IMPORTANTE: Asegúrate de que use localhost:5000
-    const res = await axios.get(`http://localhost:5000/api/clientes/${id}/movimientos`);
+    const res = await axios.get(`https://simona-backend.onrender.com/api/clientes/${id}/movimientos`);
     return res.data;
 };
 
@@ -60,7 +61,7 @@ export const registrarFiadoMasivo = async (datos: any) => {
 
 export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
     // IMPORTANTE: Asegúrate que use localhost:5000
-    const res = await axios.get(`http://localhost:5000/api/reportes/ventas`, { 
+    const res = await axios.get(`https://simona-backend.onrender.com/api/reportes/ventas`, { 
         params: { desde, hasta, categoria } 
     });
     return res.data;
@@ -78,7 +79,7 @@ export const getClientes = async () => {
 };
 
 export const eliminarCliente = async (id: string) => {
-  return await axios.delete(`http://localhost:5000/api/clientes/${id}`);
+  return await axios.delete(`https://simona-backend.onrender.com/api/clientes/${id}`);
 
 };
 

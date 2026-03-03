@@ -320,5 +320,5 @@ app.delete('/api/clientes/:id', async (req, res) => {
     }
 });
 
-const PORT = 5000;
-app.listen(PORT, () => console.log(`🚀 Puerto: ${PORT}`));
+const PORT = process.env.PORT || 5000; 
+app.listen(PORT, () => console.log(`🚀 Servidor listo en puerto ${PORT}`));

@@ -31,7 +31,7 @@ const Catalogo: React.FC = () => {
   const eliminarMasivo = async () => {
     if (seleccionados.length === 0) return;
     if (window.confirm(`¿Eliminar ${seleccionados.length} productos?`)) {
-      await axios.post('http://localhost:5000/api/productos/eliminar-masivo', { ids: seleccionados });
+      await axios.post('https://simona-backend.onrender.com/api/productos/eliminar-masivo', { ids: seleccionados });
       setSeleccionados([]);
       cargar();
     }
