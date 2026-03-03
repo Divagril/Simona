@@ -98,11 +98,19 @@ app.get('/api/productos', async (req, res) => {
 app.post('/api/productos', async (req, res) => {
     try {
         const { nombre, precio, unidad_venta, unidades_por_paquete } = req.body;
+        
         const prod = await Producto.findOneAndUpdate(
             { nombre: new RegExp(`^${nombre}$`, 'i') },
-            { nombre: nombre.toUpperCase(), precio, unidad_venta, unidades_por_paquete: Number(unidades_por_paquete) || 1 },
+            { nombre: nombre.toUpperCase(), precio, unidad_venta, unidades_por_paquete },
             { upsert: true, new: true }
         );
+
+        // REGISTRO EN AUDITORÍA
+        await new Log({
+            accion: 'SINCRONIZACIÓN',
+            detalle: `Se configuró el producto ${nombre.toUpperCase()} a S/. ${precio}`
+        }).save();
+
         res.json(prod);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -125,28 +133,23 @@ app.post('/api/clientes', async (req, res) => {
         res.json(nuevoCliente); // Devolvemos el cliente creado con su _id
     } catch (e) { res.status(500).json({ error: "No se pudo crear" }); }
 });
-
-// --- RUTA: REGISTRAR ABONO (BOTÓN VERDE) ---
 app.post('/api/fiados/abono', async (req, res) => {
     try {
         const { cliente_id, monto } = req.body;
-        const cliente = await Cliente.findById(cliente_id);
+        const c = await Cliente.findById(cliente_id);
         
-        // Calculamos el saldo que queda justo después de este pago
-        const saldoDespuesDelPago = cliente.deudaTotal - monto;
-
-        const abono = new MovimientoFiado({
-            cliente_id: new mongoose.Types.ObjectId(cliente_id),
-            tipo: 'PAGO',
-            monto: monto,
+        await new MovimientoFiado({
+            cliente_id, tipo: 'PAGO', monto,
             descripcion: 'ABONO EN EFECTIVO',
-            saldo_al_momento: saldoDespuesDelPago, // <--- "FOTOGRAFÍA" DEL SALDO
-            fecha: new Date()
-        });
-        await abono.save();
+            saldo_al_momento: c.deudaTotal - monto
+        }).save();
+        
+        await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: -monto } });
 
-        // Actualizamos al cliente
-        await Cliente.findByIdAndUpdate(cliente_id, { deudaTotal: saldoDespuesDelPago });
+        await new Log({
+            accion: 'ABONO',
+            detalle: `El cliente ${c.nombre} pagó S/. ${monto.toFixed(2)} de su deuda.`
+        }).save();
 
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
@@ -154,41 +157,37 @@ app.post('/api/fiados/abono', async (req, res) => {
 app.post('/api/fiados/masivo', async (req, res) => {
     try {
         const { cliente_id, items, total } = req.body;
-
-        // 1. REGISTRAMOS LA VENTA (Esto es lo que hace que el stock baje)
-        // Como tu sistema resta 'Ventas' de 'Inversiones', al crear esta venta el stock cae.
-        const nuevaVenta = new Venta({
-            productos: items,
-            total: total,
-            metodoPago: 'FIADO', // Lo marcamos como fiado para tus reportes
-            fecha: new Date()
-        });
+        const cliente = await Cliente.findById(cliente_id);
+        
+        // Registrar Venta para mover stock
+        const nuevaVenta = new Venta({ productos: items, total, metodoPago: 'FIADO' });
         await nuevaVenta.save();
 
-        // 2. BUSCAMOS AL CLIENTE PARA ACTUALIZAR SU DEUDA
-        const cliente = await Cliente.findById(cliente_id);
-        const nuevoSaldo = (cliente.deudaTotal || 0) + total;
+        // Kardex y Log
+        for (const item of items) {
+            await new Kardex({
+                nombre_producto: item.nombre,
+                cantidad: -item.cantidadSeleccionada,
+                motivo: `VENTA AL FIADO (${cliente.nombre})`,
+                stock_actual: item.stock_actual - item.cantidadSeleccionada
+            }).save();
+        }
 
-        // 3. CREAMOS EL MOVIMIENTO EN EL HISTORIAL DEL CLIENTE
         const movimiento = new MovimientoFiado({
-            cliente_id: new mongoose.Types.ObjectId(cliente_id),
-            tipo: 'DEUDA',
-            monto: total,
-            descripcion: `COMPRA FIADA: ${items.map(i => i.nombre).join(', ')}`,
-            saldo_al_momento: nuevoSaldo,
-            fecha: new Date()
+            cliente_id, tipo: 'DEUDA', monto: total,
+            descripcion: `COMPRA FIADA: ${items.length} productos`,
+            saldo_al_momento: (cliente.deudaTotal || 0) + total
         });
         await movimiento.save();
+        await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
 
-        // 4. ACTUALIZAMOS LA DEUDA TOTAL DEL CLIENTE
-        await Cliente.findByIdAndUpdate(cliente_id, { deudaTotal: nuevoSaldo });
+        await new Log({
+            accion: 'FIADO',
+            detalle: `Crédito otorgado a ${cliente.nombre} por S/. ${total.toFixed(2)}`
+        }).save();
 
-        res.json({ success: true, message: "Venta registrada y stock descontado" });
-
-    } catch (e) {
-        console.error("Error al registrar fiado:", e);
-        res.status(500).json({ success: false, error: e.message });
-    }
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
 });
 
 app.get('/api/clientes/:id/movimientos', async (req, res) => {
@@ -272,24 +271,30 @@ app.get('/api/nombres-inversiones', async (req, res) => {
 app.post('/api/ventas', async (req, res) => {
     try {
         const { items, total, metodoPago } = req.body;
-        
-        // 1. Guardamos la venta
-        const nuevaVenta = new Venta({
-            productos: items, // Aquí van los productos del carrito
-            total: total,
-            metodoPago: metodoPago,
-            fecha: new Date()
-        });
-        await nuevaVenta.save();
+        const v = new Venta(req.body);
+        await v.save();
 
-        // 2. IMPORTANTE: Responder con SUCCESS para que el Frontend sepa que terminó
+        // REGISTRO EN KARDEX POR CADA PRODUCTO VENDIDO
+        for (const item of items) {
+            await new Kardex({
+                nombre_producto: item.nombre,
+                cantidad: -item.cantidadSeleccionada, // Negativo porque sale del stock
+                motivo: `VENTA DIRECTA (${metodoPago})`,
+                stock_actual: item.stock_actual - item.cantidadSeleccionada,
+                fecha: new Date()
+            }).save();
+        }
+
+        // LOG GENERAL
+        await new Log({
+            accion: 'VENTA',
+            detalle: `Venta realizada por S/. ${total.toFixed(2)} (${metodoPago})`
+        }).save();
+
         res.json({ success: true });
-
-    } catch (e) {
-        console.error("Error al cobrar:", e);
-        res.status(500).json({ success: false, error: e.message });
-    }
+    } catch (e) { res.status(500).json({ success: false }); }
 });
+
 
 app.delete('/api/clientes/:id', async (req, res) => {
     try {
