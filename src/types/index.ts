@@ -1,11 +1,11 @@
 export interface Producto {
-  _id?: string;
-  codigo_barra: string;
+   _id: string;
   nombre: string;
-  categoria: string;
   precio: number;
+  stock_actual: number; // <--- AÑADE ESTA LÍNEA
+  unidad_venta?: string;
+  unidades_por_paquete?: number;
   cantidad: number;
-  unidad: string;
 }
 
 export interface CartItem extends Producto {

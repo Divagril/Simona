@@ -23,19 +23,20 @@ const Config: React.FC = () => {
     "Microsoft Print to PDF",
     "Generic / Text Only"
   ];
-
-  // --- VERIFICAR CONEXIÓN A MONGO ---
-  const verificarConexion = async () => {
+  // Busca esta parte en src/pages/Config.tsx
+const verificarConexion = async () => {
     setDbStatus('cargando');
     try {
-      await getProductos(); 
-      setDbStatus('conectado');
-      showNotification("✅ Conexión con MongoDB exitosa");
+        // En lugar de usar axios directamente con una URL fija, 
+        // usa la función que ya importaste:
+        await getProductos(); 
+        
+        setDbStatus('conectado');
     } catch (error) {
-      setDbStatus('desconectado');
-      showNotification("❌ El servidor no responde", true);
+        setDbStatus('desconectado');
+        showNotification("❌ El servidor local no responde", true);
     }
-  };
+};
 
   useEffect(() => {
     verificarConexion();

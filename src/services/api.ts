@@ -2,7 +2,7 @@
 import axios from 'axios';
 import type { Producto } from '../types';
 
-const API_URL = 'https://simona-backend.onrender.com';
+const API_URL = 'http://127.0.0.1:5000/api';
 
 
 export const getProductos = async () => {
@@ -27,7 +27,7 @@ export const eliminarProducto = async (id: string) => {
 
 export const registrarVenta = async (datos: any) => {
     // Esta función llama a la ruta que acabamos de crear en el server
-    const res = await axios.post(`${API_URL}/ventas`, datos);
+    const res = await axios.post('http://localhost:5000/api/ventas', datos);
     return res.data;
 };
 
@@ -42,7 +42,8 @@ export const crearCliente = async (nombre: string) => {
 };
 
 export const getMovimientosCliente = async (id: string) => {
-    const res = await axios.get(`${API_URL}/clientes/${id}/movimientos`);
+    // IMPORTANTE: Asegúrate de que use localhost:5000
+    const res = await axios.get(`http://localhost:5000/api/clientes/${id}/movimientos`);
     return res.data;
 };
 
@@ -55,9 +56,11 @@ export const registrarFiadoMasivo = async (datos: any) => {
     const res = await axios.post(`${API_URL}/fiados/masivo`, datos);
     return res.data;
 };
+// En src/services/api.ts
+
 export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
-    // Ahora enviamos 3 parámetros al servidor
-    const res = await axios.get(`${API_URL}/reportes/ventas`, { 
+    // IMPORTANTE: Asegúrate que use localhost:5000
+    const res = await axios.get(`http://localhost:5000/api/reportes/ventas`, { 
         params: { desde, hasta, categoria } 
     });
     return res.data;
@@ -75,7 +78,8 @@ export const getClientes = async () => {
 };
 
 export const eliminarCliente = async (id: string) => {
-  return await axios.delete(`${API_URL}/clientes/${id}`);
+  return await axios.delete(`http://localhost:5000/api/clientes/${id}`);
+
 };
 
 export const eliminarMultiplesProductos = async (ids: string[]) => {

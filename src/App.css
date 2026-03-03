@@ -207,11 +207,7 @@ legend {
   color: #2C3E50;
 }
 .modern-table { width: 100%; border-collapse: collapse; }
-.modern-table thead th {
-  position: sticky; top: 0; background-color: #ECF0F1;
-  padding: 12px; text-align: left; border-bottom: 2px solid #BDC3C7;
-  color: #7F8C8D; font-size: 13px;
-}
+
 .modern-table td { padding: 10px; border-bottom: 1px solid #F2F3F4; }
 
 /* COLORES DE FILA */
@@ -989,31 +985,6 @@ fieldset.group-box legend {
   overflow-y: auto; /* Scroll vertical */
   border: 1px solid #ECF0F1;
   border-radius: 8px;
-}
-
-.modern-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.modern-table thead th {
-  background-color: #ECF0F1;
-  color: #5D6D7E;
-  font-size: 12px;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 12px 10px;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  text-align: left;
-}
-
-.modern-table tbody td {
-  padding: 12px 10px;
-  border-bottom: 1px solid #F2F3F4;
-  font-size: 14px;
-  color: #2C3E50;
 }
 
 .row-hover:hover { background-color: #F4F6F7; cursor: pointer; }
@@ -3086,6 +3057,84 @@ fieldset.group-box legend {
     table-layout: fixed; /* Mantiene las columnas firmes */
     width: 100%;
   }
+  :root {
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --bg-main: #f8fafc;
+  --card-bg: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Tarjetas Pro */
+.inventory-card, .panel-blanco {
+  background: var(--card-bg);
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: var(--shadow);
+  transition: transform 0.2s ease;
+}
+
+/* Botones Modernos */
+.btn-inventory-save, .btn-cobrar-modal {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+}
+
+.btn-inventory-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+}
+
+/* Tablas Estilizadas */
+.modern-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.modern-table thead th {
+  background-color: #f1f5f9;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 16px;
+}
+
+.modern-table tbody td {
+  padding: 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.row-hover:hover {
+  background-color: #f8fafc;
+}
+
+/* Badges de Stock */
+.stock-badge {
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.stock-ok { background: #d1fae5; color: #065f46; }
+.stock-low { background: #fee2e2; color: #991b1b; }
 
   /* 3. Definimos anchos por columna para que se vea ordenado */
   /* COD */
@@ -3449,13 +3498,6 @@ fieldset.group-box legend {
     display: none !important;
   }
 
-  /* 2. Forzamos que la página sea blanca y el contenido sea negro */
-  body {
-    background: white !important;
-    visibility: hidden; /* Ocultamos todo por defecto */
-    margin: 0 !important;
-  }
-
   /* 3. Mostramos SOLO el ticket y lo pegamos arriba a la izquierda */
   .thermal-paper-sheet, .thermal-paper-sheet * {
     visibility: visible !important;
@@ -3684,12 +3726,6 @@ fieldset.group-box legend {
   outline: none;
 }
 
-.stock-badge {
-  padding: 4px 12px;
-  border-radius: 15px;
-  font-weight: bold;
-  font-size: 12px;
-}
 
 .stock-badge.fine { background: #ebfbee; color: #27ae60; }
 .stock-badge.empty { background: #fee2e2; color: #ef4444; }
@@ -3761,4 +3797,17 @@ fieldset.group-box legend {
   .inventory-grid-inputs {
     grid-template-columns: 1fr;
   }
+}
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+.loading-skeleton {
+  animation: pulse 1.5s infinite ease-in-out;
+  background: #f1f5f9;
+  border-radius: 8px;
+  height: 20px;
+  width: 100%;
 }

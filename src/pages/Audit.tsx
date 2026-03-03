@@ -21,10 +21,10 @@ const Audit: React.FC = () => {
     setCargando(true);
     try {
       // Usamos la URL de Render
-      const resLogs = await axios.get('https://simona-backend.onrender.com/api/auditoria');
+      const resLogs = await axios.get('http://localhost:5000/api/auditoria');
       setLogs(resLogs.data);
 
-      const resKardex = await axios.get('https://simona-backend.onrender.com/api/kardex');
+      const resKardex = await axios.get('http://localhost:5000/api/kardex');
       setMovimientos(resKardex.data);
       
     } catch (error) {

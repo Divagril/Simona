@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  BarChart3, RefreshCw, FileText, Search, TrendingUp, Calendar, Printer 
-} from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell 
-} from 'recharts';
-import { getVentasReporte, getProductos } from '../services/api';
+import { BarChart3, RefreshCw, FileText, Search, TrendingUp, Calendar, Printer, DollarSign, Wallet } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { getVentasReporte } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import TicketPreviewModal from '../components/TicketPreviewModal'; 
 import jsPDF from 'jspdf';
@@ -13,176 +9,128 @@ import autoTable from 'jspdf-autotable';
 
 const Reports: React.FC = () => {
   const { showNotification } = useNotification();
-  
-  // Fecha por defecto: desde el 1ero de este mes
   const hoy = new Date();
   const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
   const hoyString = hoy.toISOString().split('T')[0];
 
-  const [ventas, setVentas] = useState<any[]>([]);
-  const [categorias, setCategorias] = useState<string[]>([]);
+  const [reporteData, setReporteData] = useState<any>({
+    ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0
+  });
   const [fechaDesde, setFechaDesde] = useState(primerDiaMes);
   const [fechaHasta, setFechaHasta] = useState(hoyString);
-  const [catFiltro, setCatFiltro] = useState('TODAS');
-
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [datosTicket, setDatosTicket] = useState<any>(null);
 
-  const cargarDatosIniciales = async () => {
-    try {
-      const prods = await getProductos();
-      const catsUnicas = Array.from(new Set(prods.map((p: any) => p.categoria))).filter(c => c) as string[];
-      setCategorias(catsUnicas);
-      consultarVentas();
-    } catch (error) {
-      console.error("Error al inicializar reportes:", error);
-    }
-  };
-
   const consultarVentas = async () => {
     try {
-      const data = await getVentasReporte(fechaDesde, fechaHasta, catFiltro);
-      setVentas(data);
+      const res = await getVentasReporte(fechaDesde, fechaHasta, 'TODAS');
+      setReporteData(res || { ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0 });
     } catch (error) {
-      showNotification("Error al cargar datos", true);
+      showNotification("Error al cargar reportes", true);
     }
   };
 
-  useEffect(() => {
-    cargarDatosIniciales();
-  }, []);
+  useEffect(() => { consultarVentas(); }, []);
 
-  const totalGeneral = ventas.reduce((acc, v) => acc + v.total, 0);
+  const datosGrafico = useMemo(() => {
+    const dias: any = {};
+    (reporteData?.ventas || []).forEach((v: any) => {
+        if(v.metodoPago === 'FIADO') return;
+        const d = new Date(v.fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+        dias[d] = { name: d, total: (dias[d]?.total || 0) + v.total };
+    });
+    (reporteData?.abonos || []).forEach((a: any) => {
+        const d = new Date(a.fecha).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' });
+        dias[d] = { name: d, total: (dias[d]?.total || 0) + a.monto };
+    });
+    return Object.values(dias);
+  }, [reporteData]);
 
-  const handleReimprimir = (venta: any) => {
+  const handleReimprimir = (item: any, esAbono: boolean) => {
     setDatosTicket({
-      items: venta.items,
-      total: venta.total,
-      metodoPago: venta.metodoPago || venta.metodo_pago,
-      pagoCon: venta.pagoCon || 0,
-      vuelto: venta.vuelto || 0,
-      fecha: venta.fecha 
+      items: esAbono ? [{ nombre: "ABONO DE DEUDA", cantidadSeleccionada: 1, subtotal: item.monto }] : item.items,
+      total: esAbono ? item.monto : item.total,
+      metodoPago: esAbono ? "EFECTIVO" : item.metodoPago,
+      fecha: item.fecha 
     });
     setIsTicketModalOpen(true);
   };
 
-  const datosGrafico = useMemo(() => {
-    const dias: any = {};
-    ventas.forEach(v => {
-      const fechaObj = new Date(v.fecha);
-      const diaEtiqueta = fechaObj.toLocaleDateString('es-PE', { weekday: 'short', day: 'numeric' });
-      if (!dias[diaEtiqueta]) {
-        dias[diaEtiqueta] = { name: diaEtiqueta, total: 0 };
-      }
-      dias[diaEtiqueta].total += v.total;
-    });
-    return Object.values(dias);
-  }, [ventas]);
-
-  const exportarPDF = () => {
-    if (ventas.length === 0) return;
-    const doc = new jsPDF();
-    doc.setFontSize(18);
-    doc.text("Reporte de Ventas - Tienda Simona", 105, 15, { align: "center" });
-    autoTable(doc, {
-      startY: 25,
-      head: [['Fecha', 'Productos', 'Total', 'Pago']],
-      body: ventas.map(v => [new Date(v.fecha).toLocaleString(), v.items.map((it: any) => it.nombre).join(', '), v.total.toFixed(2), v.metodoPago]),
-    });
-    doc.save(`Reporte_Tienda_Simona.pdf`);
-  };
-
   return (
-    <div className="reports-layout">
-      
-      <div className="reports-top-header">
-        <h2 className="title-icon"><BarChart3 color="#2C3E50" size={28} /> Reportes</h2>
-        <button className="btn-teal-refresh" onClick={consultarVentas}><RefreshCw size={16} /> Actualizar</button>
+    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#f8fafc', minHeight: '100vh' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><BarChart3 color="#1e293b"/> Reporte de Caja</h2>
+        <button onClick={consultarVentas} style={{ padding: '10px 20px', borderRadius: '10px', cursor: 'pointer' }}><RefreshCw size={16} /> Actualizar</button>
       </div>
 
-      <div className="reports-filters-bar panel-blanco">
-        <div className="filter-group">
-          <label>DESDE:</label>
-          <input type="date" className="input-main" value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
+      <div style={{ display: 'flex', gap: '20px', background: 'white', padding: '20px', borderRadius: '15px', border: '1px solid #e2e8f0' }}>
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold' }}>DESDE</label>
+          <input type="date" style={{ width: '100%', padding: '10px' }} value={fechaDesde} onChange={e => setFechaDesde(e.target.value)} />
         </div>
-        <div className="filter-group">
-          <label>HASTA:</label>
-          <input type="date" className="input-main" value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
+        <div style={{ flex: 1 }}>
+          <label style={{ fontSize: '12px', fontWeight: 'bold' }}>HASTA</label>
+          <input type="date" style={{ width: '100%', padding: '10px' }} value={fechaHasta} onChange={e => setFechaHasta(e.target.value)} />
         </div>
-        <div className="filter-actions">
-          <button className="btn-search-blue" onClick={consultarVentas}><Search size={20} /></button>
-          <button className="btn-pdf-red" onClick={exportarPDF}><FileText size={18} /> PDF</button>
-        </div>
+        <button onClick={consultarVentas} style={{ alignSelf: 'flex-end', padding: '12px 25px', background: '#2563eb', color: 'white', border: 'none', borderRadius: '10px', cursor: 'pointer' }}>CONSULTAR</button>
       </div>
 
-      <div className="reports-visual-section">
-        <div className="chart-container panel-blanco">
-          <h3 className="chart-title"><Calendar size={18} /> Ventas Diarias (S/.)</h3>
-          {/* ALTURA FIJA PARA QUE NO SE VEA BLANCO EN EL CELULAR */}
-          <div className="responsive-chart-wrapper" style={{ width: '100%', height: 300 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={datosGrafico}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#eee" />
-                <XAxis dataKey="name" fontSize={11} tickLine={false} axisLine={false} />
-                <YAxis fontSize={11} tickLine={false} axisLine={false} />
-                <Tooltip cursor={{fill: '#f9f9f9'}} />
-                <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                  {datosGrafico.map((_entry: any, index: number) => (
-                    <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3498DB' : '#2ecc71'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        <div style={{ background: 'white', padding: '30px', borderRadius: '15px', borderTop: '6px solid #22c55e', textAlign: 'center' }}>
+          <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>DINERO TOTAL EN CAJA</div>
+          <div style={{ fontSize: '40px', fontWeight: '900', color: '#16a34a' }}>S/. {(reporteData?.totalGananciaReal || 0).toFixed(2)}</div>
         </div>
-
-        <div className="kpi-total-card">
-          <div className="kpi-label">TOTAL PERIODO</div>
-          <div className="kpi-value">S/. {totalGeneral.toFixed(2)}</div>
-          <div className="kpi-subtext">{ventas.length} ventas procesadas</div>
+        <div style={{ background: 'white', padding: '30px', borderRadius: '15px', borderTop: '6px solid #f59e0b', textAlign: 'center' }}>
+          <div style={{ color: '#64748b', fontSize: '12px', fontWeight: 'bold' }}>PLATA POR COBRAR (FIADOS)</div>
+          <div style={{ fontSize: '40px', fontWeight: '900', color: '#d97706' }}>S/. {(reporteData?.totalFiadoPeriodo || 0).toFixed(2)}</div>
         </div>
       </div>
 
-      <div className="table-responsive-container">
-        <fieldset className="group-box-reports" style={{border:'none', margin: 0}}>
-          <legend className="group-legend">📋 Operaciones</legend>
-          <table className="modern-table">
-            <thead>
-              <tr>
-                <th>FECHA</th>
-                <th>PRODUCTOS</th>
-                <th style={{ textAlign: 'right' }}>TOTAL</th>
-                <th style={{ textAlign: 'center' }}>PAGO</th>
-                <th style={{ textAlign: 'center' }}>TICKET</th>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '15px', height: '300px' }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={datosGrafico}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} />
+            <XAxis dataKey="name" fontSize={12} />
+            <YAxis fontSize={12} />
+            <Tooltip />
+            <Bar dataKey="total" fill="#2563eb" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div style={{ background: 'white', borderRadius: '15px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: '#f8fafc' }}>
+            <tr>
+              <th style={{ padding: '15px', textAlign: 'left' }}>FECHA</th>
+              <th style={{ padding: '15px', textAlign: 'left' }}>CONCEPTO</th>
+              <th style={{ padding: '15px', textAlign: 'right' }}>INGRESO</th>
+              <th style={{ padding: '15px', textAlign: 'center' }}>TICKET</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(reporteData?.ventas || []).map((v: any) => (
+              <tr key={v._id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                <td style={{ padding: '15px', fontSize: '12px' }}>{new Date(v.fecha).toLocaleString()}</td>
+                <td style={{ padding: '15px' }}>
+                  <div style={{ fontWeight: 'bold' }}>{v.metodoPago === 'FIADO' ? '📝 VENTA AL FIADO' : '🛒 VENTA DIRECTA'}</div>
+                  <small style={{ color: '#64748b' }}>{v.metodoPago}</small>
+                </td>
+                <td style={{ padding: '15px', textAlign: 'right', fontWeight: 'bold', color: v.metodoPago === 'FIADO' ? '#94a3b8' : '#16a34a' }}>S/. {v.total.toFixed(2)}</td>
+                <td style={{ padding: '15px', textAlign: 'center' }}>
+                  <button onClick={() => handleReimprimir(v, false)} style={{ background: '#f1f5f9', border: 'none', padding: '5px 10px', borderRadius: '5px', cursor: 'pointer' }}><Printer size={14} /></button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {ventas.map((v) => (
-                <tr key={v._id} className="row-hover">
-                  <td style={{ fontSize: '11px', color: '#7f8c8d' }}>{new Date(v.fecha).toLocaleString()}</td>
-                  <td className="bold">{v.items.map((it: any) => it.nombre).join(', ')}</td>
-                  <td className="bold" style={{ textAlign: 'right' }}>S/. {v.total.toFixed(2)}</td>
-                  <td style={{ textAlign: 'center' }}>
-                    <span className="badge-pago">{v.metodoPago || 'EFECTIVO'}</span>
-                  </td>
-                  <td style={{ textAlign: 'center' }}>
-                    <button className="btn-reprint-table" onClick={() => handleReimprimir(v)}><Printer size={16} /></button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </fieldset>
+            ))}
+          </tbody>
+        </table>
       </div>
 
       {datosTicket && (
         <TicketPreviewModal 
-            isOpen={isTicketModalOpen} 
-            onClose={() => setIsTicketModalOpen(false)} 
-            items={datosTicket.items} 
-            total={datosTicket.total}
-            metodoPago={datosTicket.metodoPago}
-            fechaManual={datosTicket.fecha} 
+            isOpen={isTicketModalOpen} onClose={() => setIsTicketModalOpen(false)} 
+            items={datosTicket.items} total={datosTicket.total}
+            metodoPago={datosTicket.metodoPago} fechaManual={datosTicket.fecha} 
         />
       )}
     </div>

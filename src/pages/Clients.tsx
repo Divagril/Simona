@@ -72,9 +72,10 @@ const Clients: React.FC = () => {
   const handleImprimirMovimiento = (mov: any) => {
     if (!selectedClient) return;
 
+    // Aquí está el truco: usamos mov.saldo_al_momento
     const dataParaTicket = {
         total: mov.monto,
-        saldoPendiente: mov.saldo_al_momento !== undefined ? mov.saldo_al_momento : selectedClient.deudaTotal,
+        saldoPendiente: mov.saldo_al_momento, // <--- USA EL SALDO DEL HISTORIAL
         fechaOriginal: mov.fecha,
         items: [{
             nombre: mov.tipo === 'PAGO' ? "ABONO A CUENTA" : (mov.descripcion || "COMPRA AL FIADO"),
@@ -84,11 +85,10 @@ const Clients: React.FC = () => {
         }]
     };
 
-    if (mov.tipo === 'PAGO') {
-        setDatosTicket({ ...dataParaTicket, metodoPago: "EFECTIVO" });
-    } else {
-        setDatosTicket({ ...dataParaTicket, metodoPago: "FIADO" });
-    }
+    setDatosTicket({
+        ...dataParaTicket,
+        metodoPago: mov.tipo === 'PAGO' ? "EFECTIVO" : "FIADO"
+    });
     setIsTicketModalOpen(true);
   };
 
