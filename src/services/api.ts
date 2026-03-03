@@ -2,7 +2,7 @@
 import axios from 'axios';
 import type { Producto } from '../types';
 
-const API_URL = 'https://simona-backend.onrender.com/api';
+const API_URL = 'https://simona-pl4b.onrender.com/api'; 
 
 
 
@@ -44,7 +44,7 @@ export const crearCliente = async (nombre: string) => {
 
 export const getMovimientosCliente = async (id: string) => {
     // IMPORTANTE: Asegúrate de que use localhost:5000
-    const res = await axios.get(`https://simona-backend.onrender.com/api/clientes/${id}/movimientos`);
+    const res = await axios.get(`${API_URL}/clientes/${id}/movimientos`);
     return res.data;
 };
 
@@ -60,8 +60,7 @@ export const registrarFiadoMasivo = async (datos: any) => {
 // En src/services/api.ts
 
 export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
-    // IMPORTANTE: Asegúrate que use localhost:5000
-    const res = await axios.get(`https://simona-backend.onrender.com/api/reportes/ventas`, { 
+    const res = await axios.get(`${API_URL}/reportes/ventas`, {
         params: { desde, hasta, categoria } 
     });
     return res.data;
