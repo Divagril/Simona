@@ -7,22 +7,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// --- CONEXIÓN A MONGODB ---
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("✅ Conectado a MongoDB Atlas"))
-    .catch(err => console.error("❌ Error:", err));
+    .catch(err => console.error("❌ Error de conexión:", err));
 
 // --- MODELOS ---
-
 const Producto = mongoose.model('Producto', new mongoose.Schema({
     nombre: { type: String, required: true },
     precio: { type: Number, default: 0 },
-    unidad_venta: { type: String, default: 'PAQUETE' }, // 'PAQUETE' o 'UNIDAD'
+    unidad_venta: { type: String, default: 'PAQUETE' },
     unidades_por_paquete: { type: Number, default: 1 }
 }));
 
 const Inversion = mongoose.model('Inversion', new mongoose.Schema({
     nombre: String,
-    cantidad_comprada: Number, // Cantidad en paquetes
+    cantidad_comprada: Number,
     fecha: { type: Date, default: Date.now }
 }));
 
@@ -35,92 +35,105 @@ const Cliente = mongoose.model('Cliente', new mongoose.Schema({
 }));
 
 const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
-    cliente_id: mongoose.Schema.Types.ObjectId, tipo: String, monto: Number, saldo_al_momento: Number, fecha: { type: Date, default: Date.now }
+    cliente_id: mongoose.Schema.Types.ObjectId, 
+    tipo: String, // 'DEUDA' o 'PAGO'
+    monto: Number, 
+    descripcion: String,
+    saldo_al_momento: Number, 
+    fecha: { type: Date, default: Date.now }
 }));
 
 // --- RUTAS ---
 
-// 1. OBTENER PRODUCTOS CON STOCK REAL SINCRONIZADO
+// Ruta de prueba para saber si el servidor está vivo
+app.get('/', (req, res) => res.send("🚀 Servidor de Simona Funcionando"));
+
+// 1. PRODUCTOS
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find().sort({ nombre: 1 });
         const inversiones = await Inversion.find();
-
-        // Calculamos el stock sumando inversiones para cada producto
         const resultado = productos.map(p => {
             const totalPaquetes = inversiones
                 .filter(inv => inv.nombre && inv.nombre.toLowerCase() === p.nombre.toLowerCase())
                 .reduce((acc, curr) => acc + (curr.cantidad_comprada || 0), 0);
-
             return {
                 ...p._doc,
-                stock_base: totalPaquetes, // Cuántos paquetes hay
-                // Stock final depende de si vende por unidad o paquete
                 stock_actual: p.unidad_venta === 'UNIDAD' 
+                    ? (totalPaquetes * p.unidades_por_paquete) 
+                    : totalPaquetes,
+                cantidad: p.unidad_venta === 'UNIDAD' 
                     ? (totalPaquetes * p.unidades_por_paquete) 
                     : totalPaquetes
             };
         });
-
         res.json(resultado);
-    } catch (e) { res.status(500).json([]); }
+    } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 2. ACTUALIZAR CONFIGURACIÓN DE PRODUCTO
 app.post('/api/productos', async (req, res) => {
     try {
         const { nombre, precio, unidad_venta, unidades_por_paquete } = req.body;
         const prod = await Producto.findOneAndUpdate(
             { nombre: new RegExp(`^${nombre}$`, 'i') },
-            { 
-                nombre: nombre.toUpperCase(), 
-                precio, 
-                unidad_venta, 
-                unidades_por_paquete: Number(unidades_por_paquete) || 1 
-            },
+            { nombre: nombre.toUpperCase(), precio, unidad_venta, unidades_por_paquete: Number(unidades_por_paquete) || 1 },
             { upsert: true, new: true }
         );
         res.json(prod);
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-// 3. NOMBRES DESDE INVERSIONES
-app.get('/api/nombres-inversiones', async (req, res) => {
-    try {
-        const nombres = await Inversion.find().distinct('nombre');
-        res.json(nombres.filter(n => n)); // Filtra nombres nulos
-    } catch (e) { res.json([]); }
-});
-
-// 4. VENTAS
-app.post('/api/ventas', async (req, res) => {
-    try {
-        const { items, total, metodoPago } = req.body;
-        const v = new Venta({ productos: items, total, metodoPago });
-        await v.save();
-        // Nota: El descuento de stock aquí debería restar de la colección Inversion 
-        // o manejar un inventario de salidas. Por ahora guardamos la venta.
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
-
-// 5. CLIENTES Y OTROS (MANTENER)
+// 2. CLIENTES
 app.get('/api/clientes/deudas', async (req, res) => {
     const c = await Cliente.find().sort({ nombre: 1 });
     res.json(c);
+});
+
+app.post('/api/clientes', async (req, res) => {
+    const nuevo = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0 });
+    await nuevo.save();
+    res.json(nuevo);
+});
+
+app.delete('/api/clientes/:id', async (req, res) => {
+    await Cliente.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+});
+
+// 3. MOVIMIENTOS Y FIADOS
+app.get('/api/clientes/:id/movimientos', async (req, res) => {
+    const movs = await MovimientoFiado.find({ cliente_id: req.params.id }).sort({ fecha: -1 });
+    res.json(movs);
 });
 
 app.post('/api/fiados/abono', async (req, res) => {
     const { cliente_id, monto } = req.body;
     const c = await Cliente.findById(cliente_id);
     const nS = c.deudaTotal - monto;
-    await new MovimientoFiado({ cliente_id, tipo: 'PAGO', monto, saldo_al_momento: nS }).save();
+    await new MovimientoFiado({ 
+        cliente_id, tipo: 'PAGO', monto, 
+        descripcion: 'ABONO EN EFECTIVO', saldo_al_momento: nS 
+    }).save();
     await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: -monto } });
     res.json({ success: true });
 });
 
-app.post('/api/productos/eliminar-masivo', async (req, res) => {
-    await Producto.deleteMany({ _id: { $in: req.body.ids } });
+app.post('/api/fiados/masivo', async (req, res) => {
+    const { cliente_id, total } = req.body;
+    const c = await Cliente.findById(cliente_id);
+    const nS = (c.deudaTotal || 0) + total;
+    await new MovimientoFiado({ 
+        cliente_id, tipo: 'DEUDA', monto: total, 
+        descripcion: 'COMPRA AL FIADO', saldo_al_momento: nS 
+    }).save();
+    await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
+    res.json({ success: true });
+});
+
+// 4. VENTAS Y REPORTES
+app.post('/api/ventas', async (req, res) => {
+    const v = new Venta(req.body);
+    await v.save();
     res.json({ success: true });
 });
 
@@ -132,5 +145,10 @@ app.get('/api/reportes/ventas', async (req, res) => {
     res.json(ventas.map(v => ({ ...v._doc, items: v.productos })));
 });
 
+app.get('/api/nombres-inversiones', async (req, res) => {
+    const nombres = await Inversion.find().distinct('nombre');
+    res.json(nombres.filter(n => n));
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Servidor listo en ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor listo en puerto ${PORT}`));
