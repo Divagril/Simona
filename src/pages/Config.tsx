@@ -24,18 +24,17 @@ const Config: React.FC = () => {
     "Microsoft Print to PDF",
     "Generic / Text Only"
   ];
-
-  // --- FUNCIÓN DE VERIFICACIÓN CORREGIDA ---
   const verificarConexion = async () => {
     setDbStatus('cargando');
     try {
-        // Intentamos llamar al servidor de Render
-        await getProductos(); 
+        // 1. USA LA URL QUE TERMINA EN -pl4b
+        await axios.get('https://simona-pl4b.onrender.com/api/productos');
         setDbStatus('conectado');
-        showNotification("✅ Conexión con el servidor exitosa");
+        showNotification("✅ Conexión con la Nube exitosa");
     } catch (error) {
         setDbStatus('desconectado');
-        showNotification("❌ El servidor en la nube no responde", true);
+        // CAMBIAMOS EL MENSAJE PARA SABER QUE YA NO ES LOCAL
+        showNotification("❌ El servidor en Render no responde. Espera 1 minuto a que despierte.", true);
     }
   };
 
