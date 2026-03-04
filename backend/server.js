@@ -57,7 +57,28 @@ const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
 // --- RUTAS ---
 
 app.get('/', (req, res) => res.send("🚀 Servidor Simona Online"));
+app.post('/api/ventas', async (req, res) => {
+    try {
+        const { items, total, metodoPago } = req.body;
 
+        // Guardamos la venta asegurando que el campo se llame 'productos'
+        const nuevaVenta = new Venta({
+            productos: items, // <--- IMPORTANTE: Sincronizado con la lógica de stock
+            total: total,
+            metodoPago: metodoPago,
+            fecha: new Date()
+        });
+        await nuevaVenta.save();
+
+        console.log(`💰 Venta registrada: S/. ${total} (${metodoPago})`);
+        res.json({ success: true });
+    } catch (e) {
+        console.error("Error al cobrar:", e);
+        res.status(500).json({ success: false });
+    }
+});
+
+// --- 2. MOTOR DE CÁLCULO DE STOCK (REFORZADO) ---
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find().sort({ nombre: 1 });
@@ -65,45 +86,31 @@ app.get('/api/productos', async (req, res) => {
         const ventas = await Venta.find();
 
         const resultado = productos.map(p => {
-            // Limpiamos el nombre para comparar sin errores
-            const nombreBusqueda = (p.nombre || "").toLowerCase().trim();
+            const n = (p.nombre || "").toLowerCase().trim();
             
-            // 1. SUMA TOTAL DE ENTRADAS (Inversiones)
-            const totalEntradas = inversiones
-                .filter(inv => (inv.nombre || "").toLowerCase().trim() === nombreBusqueda)
-                .reduce((acc, curr) => {
-                    const cant = Number(curr.cantidadFormato) || 0;
-                    const upf = Number(curr.unidadesPorFormato) || 1;
-                    return acc + (cant * upf);
-                }, 0);
+            // Sumar Entradas
+            const ent = inversiones
+                .filter(i => (i.nombre || "").toLowerCase().trim() === n)
+                .reduce((acc, c) => acc + (Number(c.cantidadFormato) * Number(c.unidadesPorFormato) || 0), 0);
             
-            // 2. SUMA TOTAL DE SALIDAS (Ventas directas + Fiados)
-            let totalSalidas = 0;
+            // Sumar Salidas (Busca en TODOS los tickets de venta)
+            let sal = 0;
             ventas.forEach(v => {
-                if (v.productos && Array.isArray(v.productos)) {
-                    v.productos.forEach(prodVendido => {
-                        if ((prodVendido.nombre || "").toLowerCase().trim() === nombreBusqueda) {
-                            totalSalidas += (Number(prodVendido.cantidadSeleccionada) || 0);
-                        }
-                    });
+                const lista = v.productos || [];
+                const encontrado = lista.find(item => (item.nombre || "").toLowerCase().trim() === n);
+                if (encontrado) {
+                    sal += Number(encontrado.cantidadSeleccionada);
                 }
             });
 
-            // 3. CÁLCULO FINAL
-            const saldoUnidades = totalEntradas - totalSalidas;
-
+            const base = ent - sal;
             return { 
                 ...p._doc, 
-                stock_actual: p.unidad_venta === 'UNIDAD' 
-                    ? saldoUnidades 
-                    : Math.floor(saldoUnidades / (p.unidades_por_paquete || 1)) 
+                stock_actual: p.unidad_venta === 'UNIDAD' ? base : Math.floor(base / (p.unidades_por_paquete || 1)) 
             };
         });
         res.json(resultado);
-    } catch (e) {
-        console.error("Error calculando stock:", e);
-        res.status(500).json([]);
-    }
+    } catch (e) { res.status(500).json([]); }
 });
 
 app.post('/api/productos', async (req, res) => {
@@ -116,16 +123,6 @@ app.post('/api/productos', async (req, res) => {
     res.json(prod);
 });
 
-// 2. VENTAS
-app.post('/api/ventas', async (req, res) => {
-    try {
-        const v = new Venta(req.body);
-        await v.save();
-        res.json({ success: true });
-    } catch (e) {
-        res.status(500).json({ success: false });
-    }
-});
 
 // 3. FIADOS Y CLIENTES
 app.post('/api/fiados/masivo', async (req, res) => {

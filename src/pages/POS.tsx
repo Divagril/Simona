@@ -110,12 +110,11 @@ const POS: React.FC = () => {
         showNotification("El carrito está vacío", true);
     }
    };
-  // En src/pages/POS.tsx busca handleFinalizeVenta
+
    const handleFinalizeVenta = async (datosPago: any) => {
       if (carrito.length === 0) return;
 
       try {
-        // 1. Enviamos la venta al servidor
         const res = await registrarVenta({ 
           items: carrito, 
           total: total, 
@@ -123,21 +122,22 @@ const POS: React.FC = () => {
         });
 
         if (res.success) {
+          // 1. Limpiamos ticket y cerramos modal
+          setLastSaleData({ items: [...carrito], total, metodoPago: datosPago.metodo });
           setCarrito([]); 
-          setSelectedProd(null);
           setIsModalOpen(false);
       
+          // 2. Esperamos un instante y recargamos el stock
           setTimeout(async () => {
-            await cargarDatos(); 
-            showNotification("✅ Venta realizada y stock actualizado");
-          }, 500);
-
+            await cargarDatos(); // Esta es la función que pide los productos de nuevo
+            setIsTicketModalOpen(true);
+            showNotification("✅ Venta cobrada. Stock actualizado.");
+          }, 300); 
         }
       } catch (e) {
-        showNotification("❌ Error al conectar con el servidor", true);
+        showNotification("❌ Error de conexión", true);
       }
     };
-
   const handleConfirmarFiado = async (cliente: any) => {
     if (carrito.length === 0) return;
     try {
