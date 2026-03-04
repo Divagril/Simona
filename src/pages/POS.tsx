@@ -112,44 +112,35 @@ const POS: React.FC = () => {
    };
   // En src/pages/POS.tsx busca handleFinalizeVenta
    const handleFinalizeVenta = async (datosPago: any) => {
-     if (carrito.length === 0) return;
+      if (carrito.length === 0) return;
 
-     try {
-       // Llamamos a la API
-       const res = await registrarVenta({ 
-         items: carrito, 
-         total: total, 
-         metodoPago: datosPago.metodo 
-       });
+      try {
+        // 1. Enviamos la venta al servidor
+        const res = await registrarVenta({ 
+          items: carrito, 
+          total: total, 
+          metodoPago: datosPago.metodo 
+        });
 
-       // SI EL SERVIDOR RESPONDIÓ OK:
-       if (res.success) {
-         // Guardamos una copia para el ticket antes de borrar el carrito
-         setLastSaleData({ 
-           items: [...carrito], 
-           total: total, 
-           metodoPago: datosPago.metodo 
-         });
-
-         setCarrito([]);           // Vaciamos el carrito
-         setIsModalOpen(false);    // Cerramos el modal de cobro
-         setIsTicketModalOpen(true); // ¡ABRIMOS EL TICKET!
+        if (res.success) {
+          setCarrito([]); 
+          setSelectedProd(null);
+          setIsModalOpen(false);
       
-         cargarDatos(); // Recargamos el stock para que baje en la lista
-         showNotification("✅ Venta realizada con éxito");
-       } else {
-         showNotification("❌ El servidor rechazó la venta", true);
-       }
-     } catch (e) { 
-       console.error(e);
-       showNotification("❌ Error de red: El servidor no responde", true); 
+          setTimeout(async () => {
+            await cargarDatos(); 
+            showNotification("✅ Venta realizada y stock actualizado");
+          }, 500);
+
         }
-   };
+      } catch (e) {
+        showNotification("❌ Error al conectar con el servidor", true);
+      }
+    };
 
   const handleConfirmarFiado = async (cliente: any) => {
     if (carrito.length === 0) return;
     try {
-      // ENVIAMOS: id del cliente, los productos (items) y el total
       const res = await registrarFiadoMasivo({ 
           cliente_id: cliente._id, 
           items: carrito, // <--- ESTO ES VITAL
@@ -171,7 +162,9 @@ const POS: React.FC = () => {
         <fieldset className="pos-group-box">
           <legend className="pos-legend">🔍 Buscador de Productos</legend>
           <div style={{display:'flex', justifyContent:'flex-end', marginBottom:'5px'}}>
-            <button className="btn-recargar-verde" onClick={cargarDatos}><RefreshCw size={14}/> Recargar</button>
+            <button className="btn-recargar-verde" onClick={() => cargarDatos()}>
+              <RefreshCw size={14}/> Recargar
+            </button>
           </div>
           <input 
             ref={barcodeRef} type="text" className="input-pos-flat" 
