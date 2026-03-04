@@ -34,16 +34,21 @@ const Venta = mongoose.model('Venta', new mongoose.Schema({
 }));
 
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
-    nombre: String, deudaTotal: { type: Number, default: 0 }
+    nombre: String,
+    deudaTotal: { type: Number, default: 0 },
+    // ESTA LÍNEA ES LA QUE HACE QUE APAREZCA EN MONGODB COMPASS
+    detalles_deuda: { type: Array, default: [] } 
 }));
 const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
-    cliente_id: mongoose.Schema.Types.ObjectId, 
-    tipo: String, // 'DEUDA' o 'PAGO'
-    monto: Number, 
-    descripcion: String, // <--- Asegúrate de que esté esta línea
-    saldo_al_momento: Number, 
+    cliente_id: mongoose.Schema.Types.ObjectId,
+    tipo: String, 
+    monto: Number,
+    descripcion: String,
+    // ASEGÚRATE DE QUE ESTO ESTÉ EXACTAMENTE ASÍ:
+    productos: { type: Array, default: [] }, 
+    saldo_al_momento: Number,
     fecha: { type: Date, default: Date.now }
-}));
+}, { strict: false }));
 
 const Log = mongoose.model('Log', new mongoose.Schema({
     accion: String, detalle: String, fecha: { type: Date, default: Date.now }
@@ -53,7 +58,13 @@ const Kardex = mongoose.model('Kardex', new mongoose.Schema({
     nombre_producto: String, cantidad: Number, motivo: String, stock_anterior: Number, stock_actual: Number, fecha: { type: Date, default: Date.now }
 }));
 
-// --- RUTAS ---
+const ent = inversiones
+    .filter(i => (i.nombre || "").toLowerCase().trim() === n)
+    .reduce((acc, c) => {
+        const cant = Number(c.cantidadFormato) || 0;
+        const upf = Number(c.unidadesPorFormato) || 1;
+        return acc + (cant * upf);
+    }, 0);
 
 app.get('/', (req, res) => res.send("🚀 Servidor Simona Funcionando"));
 app.get('/api/health', (req, res) => res.json({ status: "ok", message: "Servidor Simona Online" }));
@@ -157,37 +168,41 @@ app.post('/api/fiados/abono', async (req, res) => {
 app.post('/api/fiados/masivo', async (req, res) => {
     try {
         const { cliente_id, items, total } = req.body;
-        const cliente = await Cliente.findById(cliente_id);
-        
-        // Registrar Venta para mover stock
-        const nuevaVenta = new Venta({ productos: items, total, metodoPago: 'FIADO' });
-        await nuevaVenta.save();
 
-        // Kardex y Log
-        for (const item of items) {
-            await new Kardex({
-                nombre_producto: item.nombre,
-                cantidad: -item.cantidadSeleccionada,
-                motivo: `VENTA AL FIADO (${cliente.nombre})`,
-                stock_actual: item.stock_actual - item.cantidadSeleccionada
-            }).save();
-        }
+        // VERIFICACIÓN EN TERMINAL (Mira tu VS Code cuando des clic en Fiar)
+        console.log("📦 PRODUCTOS RECIBIDOS:", items ? items.length : "0");
+
+        // Preparamos el detalle detallado
+        const detalleDashboard = items.map(it => ({
+            nombre: it.nombre,
+            cantidad: it.cantidadSeleccionada,
+            precio: it.precio
+        }));
 
         const movimiento = new MovimientoFiado({
-            cliente_id, tipo: 'DEUDA', monto: total,
+            cliente_id: new mongoose.Types.ObjectId(cliente_id),
+            tipo: 'DEUDA',
+            monto: total,
             descripcion: `COMPRA FIADA: ${items.length} productos`,
-            saldo_al_momento: (cliente.deudaTotal || 0) + total
+            // AQUÍ SE GUARDA LA INFO QUE QUIERES VER:
+            productos: detalleDashboard, 
+            saldo_al_momento: total, 
+            fecha: new Date()
         });
-        await movimiento.save();
-        await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
 
-        await new Log({
-            accion: 'FIADO',
-            detalle: `Crédito otorgado a ${cliente.nombre} por S/. ${total.toFixed(2)}`
-        }).save();
+        await movimiento.save();
+
+        // Actualizar deuda del cliente
+        await Cliente.findByIdAndUpdate(cliente_id, { $inc: { deudaTotal: total } });
+        
+        // Guardar venta para stock
+        await new Venta({ productos: items, total, metodoPago: 'FIADO' }).save();
 
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) {
+        console.error("❌ ERROR AL GUARDAR:", e);
+        res.status(500).json({ success: false });
+    }
 });
 
 app.get('/api/clientes/:id/movimientos', async (req, res) => {
@@ -253,20 +268,39 @@ app.get('/api/kardex', async (req, res) => {
 
 app.get('/api/nombres-inversiones', async (req, res) => {
     try {
-        // Agrupamos por nombre y sumamos el campo total_unidades_compradas
-        const resumen = await Inversion.aggregate([
-            {
-                $group: {
-                    _id: "$nombre",
-                    totalGlobal: { $sum: "$total_unidades_compradas" }
-                }
-            },
-            { $sort: { _id: 1 } }
-        ]);
-        // Devolvemos objetos con nombre y total
-        res.json(resumen.map(r => ({ nombre: r._id, total: r.totalGlobal })));
-    } catch (e) { res.json([]); }
+        const invs = await Inversion.find();
+        const tots = {};
+
+        invs.forEach(i => {
+            // Usamos los nombres de campos de tu imagen de Compass
+            const n = (i.nombre || "S/N").trim(); 
+            
+            // Calculamos: Cantidad (10) * Unidades por formato (1) = 10 unidades
+            const cantidad = Number(i.cantidadFormato) || 0;
+            const unidadesPorF = Number(i.unidadesPorFormato) || 1;
+            const totalUnidades = cantidad * unidadesPorF;
+
+            // Agrupamos por nombre (ignorando mayúsculas/minúsculas)
+            const nombreKey = n.toUpperCase();
+            if (!tots[nombreKey]) {
+                tots[nombreKey] = { nombreOriginal: n, total: 0 };
+            }
+            tots[nombreKey].total += totalUnidades;
+        });
+
+        // Enviamos la lista formateada al frontend
+        const respuesta = Object.values(tots).map(item => ({
+            nombre: item.nombreOriginal,
+            total: item.total
+        }));
+
+        res.json(respuesta);
+    } catch (e) {
+        console.error("Error al calcular inversiones:", e);
+        res.json([]);
+    }
 });
+
 // En backend/server.js
 app.post('/api/ventas', async (req, res) => {
     try {

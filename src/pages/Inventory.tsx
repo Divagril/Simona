@@ -72,7 +72,10 @@ const Inventory: React.FC = () => {
   };
 
   const handleCambioProducto = (nombreElegido: string) => {
-    const encontrado = sugerencias.find(s => s.nombre === nombreElegido);
+    // Buscamos ignorando espacios y mayúsculas
+    const encontrado = sugerencias.find(s => 
+        s.nombre.trim().toLowerCase() === nombreElegido.trim().toLowerCase()
+    );
     setForm(prev => ({ ...prev, nombre: nombreElegido }));
     setUnidadesEnInversion(encontrado ? encontrado.total : 0);
   };

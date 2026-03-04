@@ -149,14 +149,20 @@ const POS: React.FC = () => {
   const handleConfirmarFiado = async (cliente: any) => {
     if (carrito.length === 0) return;
     try {
-      const res = await registrarFiadoMasivo({ cliente_id: cliente._id, items: carrito, total });
+      // ENVIAMOS: id del cliente, los productos (items) y el total
+      const res = await registrarFiadoMasivo({ 
+          cliente_id: cliente._id, 
+          items: carrito, // <--- ESTO ES VITAL
+          total: total 
+      });
+
       if (res.success) {
-        setLastSaleData({ items: [...carrito], total, metodoPago: 'FIADO', saldoPendiente: (cliente.deudaTotal + total) });
+        setLastSaleData({ items: [...carrito], total, metodoPago: 'FIADO' });
         setCarrito([]); setIsClientModalOpen(false); setIsTicketModalOpen(true);
         cargarDatos();
       }
-    } catch (e) { showNotification("Error al registrar fiado", true); }
-  };
+    } catch (e) { console.error(e); }
+ };
 
   return (
     <div className="pos-layout">
