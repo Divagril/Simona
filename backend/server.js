@@ -58,40 +58,50 @@ const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
 
 app.get('/', (req, res) => res.send("🚀 Servidor Simona Online"));
 
-// 1. PRODUCTOS CON STOCK REAL (CORREGIDO)
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find().sort({ nombre: 1 });
-        const inversiones = await Inversion.find(); // Se define aquí
-        const ventas = await Venta.find();           // Se define aquí
+        const inversiones = await Inversion.find();
+        const ventas = await Venta.find();
 
         const resultado = productos.map(p => {
-            const n = (p.nombre || "").toLowerCase().trim();
+            // Limpiamos el nombre para comparar sin errores
+            const nombreBusqueda = (p.nombre || "").toLowerCase().trim();
             
-            // Entradas desde Inversiones
-            const ent = inversiones
-                .filter(i => (i.nombre || "").toLowerCase().trim() === n)
-                .reduce((acc, c) => {
-                    const cant = Number(c.cantidadFormato) || 0;
-                    const upf = Number(c.unidadesPorFormato) || 1;
+            // 1. SUMA TOTAL DE ENTRADAS (Inversiones)
+            const totalEntradas = inversiones
+                .filter(inv => (inv.nombre || "").toLowerCase().trim() === nombreBusqueda)
+                .reduce((acc, curr) => {
+                    const cant = Number(curr.cantidadFormato) || 0;
+                    const upf = Number(curr.unidadesPorFormato) || 1;
                     return acc + (cant * upf);
                 }, 0);
             
-            // Salidas desde Ventas
-            const sal = ventas.reduce((acc, v) => {
-                const it = (v.productos || []).find(item => (item.nombre || "").toLowerCase().trim() === n);
-                return acc + (it ? Number(it.cantidadSeleccionada) : 0);
-            }, 0);
+            // 2. SUMA TOTAL DE SALIDAS (Ventas directas + Fiados)
+            let totalSalidas = 0;
+            ventas.forEach(v => {
+                if (v.productos && Array.isArray(v.productos)) {
+                    v.productos.forEach(prodVendido => {
+                        if ((prodVendido.nombre || "").toLowerCase().trim() === nombreBusqueda) {
+                            totalSalidas += (Number(prodVendido.cantidadSeleccionada) || 0);
+                        }
+                    });
+                }
+            });
 
-            const base = ent - sal;
+            // 3. CÁLCULO FINAL
+            const saldoUnidades = totalEntradas - totalSalidas;
 
             return { 
                 ...p._doc, 
-                stock_actual: p.unidad_venta === 'UNIDAD' ? base : Math.floor(base / (p.unidades_por_paquete || 1)) 
+                stock_actual: p.unidad_venta === 'UNIDAD' 
+                    ? saldoUnidades 
+                    : Math.floor(saldoUnidades / (p.unidades_por_paquete || 1)) 
             };
         });
         res.json(resultado);
     } catch (e) {
+        console.error("Error calculando stock:", e);
         res.status(500).json([]);
     }
 });
