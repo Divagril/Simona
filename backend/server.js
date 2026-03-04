@@ -69,41 +69,48 @@ const ent = inversiones
 app.get('/', (req, res) => res.send("🚀 Servidor Simona Funcionando"));
 app.get('/api/health', (req, res) => res.json({ status: "ok", message: "Servidor Simona Online" }));
 
-// PRODUCTOS CON CÁLCULO DE STOCK REAL (Sincronizado con Inversiones)
+// backend/server.js
+
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find().sort({ nombre: 1 });
-        const inversiones = await Inversion.find();
+        
+        // --- ESTA ES LA LÍNEA QUE TE FALTA Y CAUSA EL ERROR ---
+        const inversiones = await Inversion.find(); 
+        // -----------------------------------------------------
+
         const ventas = await Venta.find();
 
         const resultado = productos.map(p => {
-            const nombreProd = (p.nombre || "").toLowerCase();
-
-            // Sumamos unidades entrantes de Inversiones
-            const entradas = inversiones
-                .filter(inv => (inv.nombre || "").toLowerCase() === nombreProd)
-                .reduce((acc, curr) => acc + (Number(curr.total_unidades_compradas) || 0), 0);
-
-            // Restamos unidades vendidas
-            const salidas = ventas.reduce((acc, v) => {
-                const item = v.productos.find(it => (it.nombre || "").toLowerCase() === nombreProd);
-                return acc + (item ? Number(item.cantidadSeleccionada) : 0);
+            const n = (p.nombre || "").toLowerCase().trim();
+            
+            // Ahora 'inversiones' ya existe y no dará error
+            const ent = inversiones
+                .filter(i => (i.nombre || "").toLowerCase().trim() === n)
+                .reduce((acc, c) => {
+                    // Usamos los nombres de campos de tu imagen de Compass
+                    const cant = Number(c.cantidadFormato) || 0;
+                    const upf = Number(c.unidadesPorFormato) || 1;
+                    return acc + (cant * upf);
+                }, 0);
+            
+            const sal = ventas.reduce((acc, v) => {
+                const it = (v.productos || []).find(it => (it.nombre || "").toLowerCase().trim() === n);
+                return acc + (it ? Number(it.cantidadSeleccionada) : 0);
             }, 0);
 
-            const stockBase = entradas - salidas;
+            const base = ent - sal;
 
-            return {
-                ...p._doc,
-                stock_actual: p.unidad_venta === 'UNIDAD' 
-                    ? stockBase 
-                    : Math.floor(stockBase / (p.unidades_por_paquete || 1)),
-                cantidad: p.unidad_venta === 'UNIDAD' 
-                    ? stockBase 
-                    : Math.floor(stockBase / (p.unidades_por_paquete || 1))
+            return { 
+                ...p._doc, 
+                stock_actual: p.unidad_venta === 'UNIDAD' ? base : Math.floor(base / (p.unidades_por_paquete || 1)) 
             };
         });
         res.json(resultado);
-    } catch (e) { res.status(500).json([]); }
+    } catch (e) {
+        console.error("Error en productos:", e);
+        res.status(500).json([]);
+    }
 });
 
 app.post('/api/productos', async (req, res) => {
