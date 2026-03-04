@@ -63,7 +63,11 @@ export const getVentasReporte = async (desde: string, hasta: string, categoria: 
     });
     return res.data;
 };
-
+export const eliminarMasivoProductos = async (ids: string[]) => {
+    // Usamos la API_URL que definimos arriba (la de Render)
+    const res = await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids });
+    return res.data;
+};
 
 export const getStatsSemanales = async () => {
     const res = await axios.get(`${API_URL}/reportes/stats`);

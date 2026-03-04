@@ -158,6 +158,25 @@ app.post('/api/clientes', async (req, res) => {
     const n = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0 }); 
     await n.save(); res.json(n); 
 });
+app.post('/api/productos/eliminar-masivo', async (req, res) => {
+    try {
+        const { ids } = req.body; // Recibe la lista de IDs [1, 2, 3...]
+
+        if (!ids || ids.length === 0) {
+            return res.status(400).json({ success: false, message: "No hay IDs" });
+        }
+
+        // COMANDO DE MONGO: Borra todos los que coincidan con la lista
+        await Producto.deleteMany({ _id: { $in: ids } });
+
+        console.log(`🗑️ Se eliminaron ${ids.length} productos.`);
+        res.json({ success: true });
+        
+    } catch (e) {
+        console.error("Error al eliminar masivo:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 
 app.get('/api/clientes/:id/movimientos', async (req, res) => {
     const m = await MovimientoFiado.find({ cliente_id: new mongoose.Types.ObjectId(req.params.id) }).sort({ fecha: -1 });
