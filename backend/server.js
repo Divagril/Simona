@@ -77,7 +77,47 @@ app.post('/api/ventas', async (req, res) => {
         res.status(500).json({ success: false });
     }
 });
+app.get('/api/reportes/ventas', async (req, res) => {
+    try {
+        const { desde, hasta } = req.query;
+        if (!desde || !hasta) return res.json({ ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0 });
 
+        const fI = new Date(desde); fI.setHours(0,0,0,0);
+        const fF = new Date(hasta); fF.setHours(23,59,59,999);
+
+        // 1. Buscamos todas las ventas del periodo
+        const todasLasVentas = await Venta.find({ fecha: { $gte: fI, $lte: fF } }).sort({ fecha: -1 });
+
+        // 2. Buscamos todos los abonos (plata que entró de deudas)
+        const todosLosAbonos = await MovimientoFiado.find({ 
+            fecha: { $gte: fI, $lte: fF }, 
+            tipo: 'PAGO' 
+        }).sort({ fecha: -1 });
+
+        // --- CÁLCULOS DE PLATA ---
+        
+        // Ventas reales = Todo lo que NO sea fiado
+        const ventasEfectivas = todasLasVentas.filter(v => v.metodoPago !== 'FIADO');
+        // Ventas al fiado = Solo lo que se anotó en la cuenta
+        const ventasAlFiado = todasLasVentas.filter(v => v.metodoPago === 'FIADO');
+
+        const ingresoVentas = ventasEfectivas.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+        const ingresoAbonos = todosLosAbonos.reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+        const totalFiados = ventasAlFiado.reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+
+        // Enviamos la respuesta con la estructura exacta que pide el Frontend
+        res.json({
+            ventas: todasLasVentas.map(v => ({ ...v._doc, items: v.productos })),
+            abonos: todosLosAbonos,
+            totalGananciaReal: ingresoVentas + ingresoAbonos, // Plata física en mano
+            totalFiadoPeriodo: totalFiados // Valor de lo que se prestó
+        });
+
+    } catch (e) {
+        console.error("❌ Error en reporte:", e);
+        res.status(500).json({ ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0 });
+    }
+});
 // --- 2. MOTOR DE CÁLCULO DE STOCK (REFORZADO) ---
 app.get('/api/productos', async (req, res) => {
     try {

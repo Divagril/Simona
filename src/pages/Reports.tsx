@@ -23,10 +23,20 @@ const Reports: React.FC = () => {
 
   const consultarVentas = async () => {
     try {
+      // getVentasReporte ya debe estar configurada en api.ts con la URL de Render
       const res = await getVentasReporte(fechaDesde, fechaHasta, 'TODAS');
-      setReporteData(res || { ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0 });
+      
+      if (res) {
+        setReporteData({
+            ventas: res.ventas || [],
+            abonos: res.abonos || [],
+            totalGananciaReal: res.totalGananciaReal || 0,
+            totalFiadoPeriodo: res.totalFiadoPeriodo || 0
+        });
+      }
     } catch (error) {
-      showNotification("Error al cargar reportes", true);
+      console.error(error);
+      showNotification("Error al conectar con el servidor", true);
     }
   };
 
