@@ -10,9 +10,11 @@ export const getProductos = async () => {
 };
 
 export const addProducto = async (prod: any) => {
+    // Esta es la que te está dando el error 404 en la foto
     const res = await axios.post(`${API_URL}/productos`, prod);
     return res.data;
 };
+
 
 export const updateProducto = async (id: string, prod: any) => {
     const res = await axios.put(`${API_URL}/productos/${id}`, prod);
