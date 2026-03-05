@@ -25,8 +25,7 @@ export const eliminarProducto = async (id: string) => {
 };
 
 export const registrarVenta = async (datos: any) => {
-    // Esta función llama a la ruta que acabamos de crear en el server
-    const res = await axios.post('https://simona-backend.onrender.com/api/ventas', datos);
+    const res = await axios.post(`${API_URL}/ventas`, datos);
     return res.data;
 };
 
@@ -34,6 +33,7 @@ export const getClientesConDeuda = async () => {
     const res = await axios.get(`${API_URL}/clientes/deudas`);
     return res.data;
 };
+
 
 export const crearCliente = async (nombre: string) => {
     const res = await axios.post(`${API_URL}/clientes`, { nombre });
@@ -55,7 +55,6 @@ export const registrarFiadoMasivo = async (datos: any) => {
     const res = await axios.post(`${API_URL}/fiados/masivo`, datos);
     return res.data;
 };
-// En src/services/api.ts
 
 export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
     const res = await axios.get(`${API_URL}/reportes/ventas`, {
