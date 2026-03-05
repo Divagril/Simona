@@ -17,7 +17,19 @@ const Inversion = mongoose.model('Inversion', new mongoose.Schema({ nombre: Stri
 const Venta = mongoose.model('Venta', new mongoose.Schema({ productos: Array, total: Number, metodoPago: String, fecha: Date }));
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({ nombre: String, deudaTotal: Number, detalles_deuda: Array }, { strict: false }));
 const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({ cliente_id: mongoose.Schema.Types.ObjectId, tipo: String, monto: Number, productos: Array, saldo_al_momento: Number, fecha: { type: Date, default: Date.now } }));
+const Log = mongoose.models.Log || mongoose.model('Log', new mongoose.Schema({ 
+    accion: String, 
+    detalle: String, 
+    fecha: { type: Date, default: Date.now } 
+}));
 
+const Kardex = mongoose.models.Kardex || mongoose.model('Kardex', new mongoose.Schema({ 
+    nombre_producto: String, 
+    cantidad: Number, 
+    motivo: String, 
+    stock_actual: Number, 
+    fecha: { type: Date, default: Date.now } 
+}));
 // --- RUTAS ---
 
 app.get('/', (req, res) => res.send("🚀 API Activa"));
@@ -161,17 +173,26 @@ app.post('/api/ventas', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
-
 app.get('/api/auditoria', async (req, res) => {
-    const logs = await Log.find().sort({ fecha: -1 }).limit(100);
-    res.json(logs);
+    try {
+        // Buscamos los logs, si no hay, devolvemos lista vacía para que no explote
+        const data = await Log.find().sort({ fecha: -1 }).limit(100);
+        res.json(data || []);
+    } catch (e) {
+        console.error("Error en Auditoria:", e);
+        res.status(500).json([]); // Devuelve vacío en vez de error 500
+    }
 });
 
 app.get('/api/kardex', async (req, res) => {
-    const data = await Kardex.find().sort({ fecha: -1 }).limit(100);
-    res.json(data);
+    try {
+        const data = await Kardex.find().sort({ fecha: -1 }).limit(100);
+        res.json(data || []);
+    } catch (e) {
+        console.error("Error en Kardex:", e);
+        res.status(500).json([]); // Devuelve vacío en vez de error 500
+    }
 });
-
 // REPORTES Y OTROS
 app.get('/api/reportes/ventas', async (req, res) => {
     const { desde, hasta } = req.query;
