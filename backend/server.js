@@ -115,12 +115,42 @@ app.post('/api/fiados/masivo', async (req, res) => {
 });
 
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
-
 app.get('/api/nombres-inversiones', async (req, res) => {
-    const invs = await Inversion.find();
-    const tots = {};
-    invs.forEach(i => { const n = (i.nombre || "S/N").toUpperCase(); tots[n] = (tots[n] || 0) + (Number(i.cantidadFormato) * Number(i.unidadesPorFormato)); });
-    res.json(Object.keys(tots).map(n => ({ nombre: n, total: tots[n] })));
+    try {
+        const invs = await Inversion.find();
+        const vts = await Venta.find();
+        const resumenStock = {};
+
+        // 1. Sumamos todo lo comprado (Entradas)
+        invs.forEach(i => {
+            const n = (i.nombre || "S/N").toUpperCase().trim();
+            const unidades = (Number(i.cantidadFormato) * Number(i.unidadesPorFormato)) || 0;
+            if (!resumenStock[n]) resumenStock[n] = 0;
+            resumenStock[n] += unidades;
+        });
+
+        // 2. Restamos todo lo vendido (Salidas)
+        vts.forEach(v => {
+            (v.productos || []).forEach(it => {
+                const nVenta = (it.nombre || "").toUpperCase().trim();
+                if (resumenStock[nVenta] !== undefined) {
+                    resumenStock[nVenta] -= Number(it.cantidadSeleccionada || 0);
+                }
+            });
+        });
+
+        // 3. Formateamos para el Frontend
+        // Solo enviamos los que tengan nombre y el total disponible real
+        const listaSugerencias = Object.keys(resumenStock).map(nombre => ({
+            nombre: nombre,
+            total: Math.max(0, resumenStock[nombre]) // No permitimos negativos aquí
+        }));
+
+        res.json(listaSugerencias);
+    } catch (e) {
+        console.error("Error al calcular stock de inversiones:", e);
+        res.json([]);
+    }
 });
 
 app.get('/api/clientes/:id/movimientos', async (req, res) => {
