@@ -41,7 +41,7 @@ export const crearCliente = async (nombre: string) => {
 };
 
 export const getMovimientosCliente = async (id: string) => {
-    // IMPORTANTE: Asegúrate de que use localhost:5000
+    // Asegúrate de que use la variable API_URL que definimos antes
     const res = await axios.get(`${API_URL}/clientes/${id}/movimientos`);
     return res.data;
 };

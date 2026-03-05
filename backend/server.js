@@ -123,6 +123,23 @@ app.get('/api/nombres-inversiones', async (req, res) => {
     res.json(Object.keys(tots).map(n => ({ nombre: n, total: tots[n] })));
 });
 
+app.get('/api/clientes/:id/movimientos', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Buscamos los movimientos usando el ID que viene en la URL
+        const movs = await MovimientoFiado.find({ 
+            cliente_id: new mongoose.Types.ObjectId(id) 
+        }).sort({ fecha: -1 });
+
+        res.json(movs);
+    } catch (e) {
+        console.error("Error al cargar movimientos:", e);
+        res.status(500).json([]);
+    }
+});
+
+
 // --- 5. PUERTO DINÁMICO PARA RENDER ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor listo en puerto ${PORT}`));
