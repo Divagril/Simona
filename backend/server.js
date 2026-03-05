@@ -188,7 +188,24 @@ app.post('/api/fiados/abono', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
+app.delete('/api/clientes/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // 1. Borramos al cliente de la tabla clientes
+        await Cliente.findByIdAndDelete(id);
+        
+        // 2. Borramos todos sus movimientos de la tabla movimientofiados
+        await MovimientoFiado.deleteMany({ 
+            cliente_id: new mongoose.Types.ObjectId(id) 
+        });
 
+        res.json({ success: true, message: "Cliente borrado" });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 // CLIENTES, REPORTES Y AUDITORÍA
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
 app.post('/api/clientes', async (req, res) => { const n = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0, detalles_deuda: [] }); await n.save(); res.json(n); });

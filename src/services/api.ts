@@ -80,10 +80,10 @@ export const getClientes = async () => {
   const res = await axios.get(`${API_URL}/clientes`);
   return res.data;
 };
-
 export const eliminarCliente = async (id: string) => {
-  return await axios.delete(`https://simona-backend.onrender.com/api/clientes/${id}`);
-
+    // Fíjate bien en el link: usa la URL del backend
+    const res = await axios.delete(`${API_URL}/clientes/${id}`);
+    return res.data;
 };
 
 export const eliminarMultiplesProductos = async (ids: string[]) => {
