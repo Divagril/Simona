@@ -34,8 +34,8 @@ export const getClientesConDeuda = async () => {
     return res.data;
 };
 
-
 export const crearCliente = async (nombre: string) => {
+    // Esta función llama a la ruta que acabamos de crear arriba
     const res = await axios.post(`${API_URL}/clientes`, { nombre });
     return res.data;
 };

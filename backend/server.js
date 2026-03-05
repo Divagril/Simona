@@ -113,6 +113,27 @@ app.post('/api/fiados/masivo', async (req, res) => {
     await new Log({ accion: 'FIADO', detalle: `Nuevo fiado por S/. ${total}` }).save();
     res.json({ success: true });
 });
+app.post('/api/clientes', async (req, res) => {
+    try {
+        const { nombre } = req.body;
+        
+        // Creamos el cliente con los campos que necesita tu Dashboard
+        const nuevoCliente = new Cliente({ 
+            nombre: nombre.toUpperCase().trim(), 
+            deudaTotal: 0,
+            detalles_deuda: [] // Inicializamos vacío para que no de error
+        });
+
+        await nuevoCliente.save();
+        console.log("👤 Nuevo cliente registrado:", nombre);
+        
+        // Devolvemos el cliente creado para que el frontend lo use de inmediato
+        res.json(nuevoCliente); 
+    } catch (e) {
+        console.error("Error al crear cliente:", e);
+        res.status(500).json({ error: "No se pudo registrar el cliente" });
+    }
+});
 
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
 app.get('/api/nombres-inversiones', async (req, res) => {
