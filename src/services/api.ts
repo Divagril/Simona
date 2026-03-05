@@ -47,6 +47,7 @@ export const getMovimientosCliente = async (id: string) => {
 };
 
 export const registrarAbono = async (cliente_id: string, monto: number) => {
+    // ASEGÚRATE DE USAR API_URL QUE YA TIENE EL LINK DE RENDER
     const res = await axios.post(`${API_URL}/fiados/abono`, { cliente_id, monto });
     return res.data;
 };

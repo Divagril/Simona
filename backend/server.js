@@ -134,6 +134,46 @@ app.post('/api/clientes', async (req, res) => {
         res.status(500).json({ error: "No se pudo registrar el cliente" });
     }
 });
+app.post('/api/fiados/abono', async (req, res) => {
+    try {
+        const { cliente_id, monto } = req.body;
+
+        // 1. Buscamos al cliente para saber su deuda actual
+        const cliente = await Cliente.findById(cliente_id);
+        if (!cliente) return res.status(404).json({ error: "Cliente no encontrado" });
+
+        // 2. Calculamos el nuevo saldo
+        const nuevoSaldo = (cliente.deudaTotal || 0) - Number(monto);
+
+        // 3. REGISTRAMOS EL MOVIMIENTO EN 'movimientofiados'
+        const abono = new MovimientoFiado({
+            cliente_id: new mongoose.Types.ObjectId(cliente_id),
+            tipo: 'PAGO',
+            monto: Number(monto),
+            descripcion: 'ABONO EN EFECTIVO',
+            saldo_al_momento: nuevoSaldo,
+            fecha: new Date()
+        });
+        await abono.save();
+
+        // 4. ACTUALIZAMOS LA DEUDA TOTAL EN LA COLECCIÓN 'clientes'
+        // Además, si la deuda llega a 0, limpiamos la lista de detalles_deuda
+        const updateData = { $set: { deudaTotal: nuevoSaldo } };
+        if (nuevoSaldo <= 0.1) {
+            updateData.$set.detalles_deuda = [];
+            updateData.$set.deudaTotal = 0;
+        }
+        
+        await Cliente.findByIdAndUpdate(cliente_id, updateData);
+
+        console.log(`💰 Pago recibido: S/. ${monto} de ${cliente.nombre}`);
+        res.json({ success: true });
+
+    } catch (e) {
+        console.error("❌ Error al procesar abono:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
 app.get('/api/nombres-inversiones', async (req, res) => {
