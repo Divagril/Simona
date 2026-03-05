@@ -297,56 +297,6 @@ app.delete('/api/clientes/:id', async (req, res) => {
     }
 });
 
-app.get('/api/dashboard/rentabilidad', async (req, res) => {
-    try {
-        const { desde, hasta, producto } = req.query;
-        const db = mongoose.connection.db;
-
-        // Filtros para ventas y inversiones
-        let queryInv = producto ? { nombre: producto } : {};
-        let queryVts = producto ? { "productos.nombre": producto } : {};
-        if (desde || hasta) {
-            const f = {};
-            if (desde) f.$gte = new Date(desde);
-            if (hasta) f.$lte = new Date(hasta);
-            queryInv.fecha = f;
-            queryVts.fecha = f;
-        }
-
-        const [invs, vts, clts] = await Promise.all([
-            db.collection('inversions').find(queryInv).toArray(),
-            db.collection('ventas').find(queryVts).toArray(),
-            db.collection('clientes').find({}).toArray()
-        ]);
-
-        // 1. Inversión total (siempre se resta)
-        const totalInversion = invs.reduce((acc, i) => acc + (Number(i.costo_total || i.costoTotal || 0)), 0);
-
-        // 2. Separar ventas: Efectivo vs Fiado
-        // Solo sumamos a "Caja" lo que tiene metodoPago: "EFECTIVO" (o lo que no sea FIADO)
-        const totalEnCaja = vts
-            .filter(v => v.metodoPago !== "FIADO")
-            .reduce((acc, v) => acc + (Number(v.total || 0)), 0);
-
-        // 3. Fiados (la suma total de deudas en clientes)
-        const totalFiados = clts.reduce((acc, c) => acc + (Number(c.deudaTotal || 0)), 0);
-
-        // 4. GANANCIA REAL: Solo lo que ya entró a caja menos lo invertido
-        const gananciaReal = totalEnCaja - totalInversion;
-
-        res.json({
-            inversionTotal: totalInversion,
-            ingresosTotalesVentas: totalEnCaja + totalFiados, // Total vendido
-            plataPorCobrar: totalFiados, // Lo que está en la calle
-            dineroEnCaja: totalEnCaja, // Lo que realmente tienes
-            gananciaReal: gananciaReal // Ganancia basada en efectivo real
-        });
-
-    } catch (e) {
-        res.status(500).json({ error: e.message });
-    }
-});
-
 // CLIENTES, REPORTES Y AUDITORÍA
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
 app.post('/api/clientes', async (req, res) => { const n = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0, detalles_deuda: [] }); await n.save(); res.json(n); });
