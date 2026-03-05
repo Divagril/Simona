@@ -146,34 +146,112 @@ app.post('/api/productos/eliminar-masivo', async (req, res) => {
     } catch (e) { res.status(500).json({ success: false }); }
 });
 
-// COBRAR VENTA (POS)
 app.post('/api/ventas', async (req, res) => {
     try {
         const { items, total, metodoPago } = req.body;
-        const v = new Venta({ productos: items, total, metodoPago, fecha: new Date() });
-        await v.save();
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
 
-// FIADO MASIVO
+        // 1. Guardamos la venta oficial
+        const nuevaVenta = new Venta({
+            productos: items,
+            total: total,
+            metodoPago: metodoPago,
+            fecha: new Date()
+        });
+        await nuevaVenta.save();
+
+        // 2. REGISTRO EN KARDEX (Para la tabla de Auditoría)
+        // Recorremos cada producto vendido para generar su movimiento de inventario
+        for (const it of items) {
+            await new Kardex({
+                nombre_producto: it.nombre,
+                cantidad: -it.cantidadSeleccionada, // Negativo porque sale stock
+                motivo: `VENTA DIRECTA (${metodoPago})`,
+                // Calculamos el stock que queda después de esta resta
+                stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada,
+                fecha: new Date()
+            }).save();
+        }
+
+        // 3. REGISTRO EN LOGS (Historial de acciones generales)
+        await new Log({
+            accion: 'VENTA',
+            detalle: `Cobro exitoso de S/. ${total.toFixed(2)} vía ${metodoPago}.`,
+            fecha: new Date()
+        }).save();
+
+        res.json({ success: true });
+
+    } catch (e) {
+        console.error("❌ Error en Ventas:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
+});
 app.post('/api/fiados/masivo', async (req, res) => {
     try {
         const { cliente_id, items, total } = req.body;
-        const detalleItems = items.map(it => ({ nombre_producto: it.nombre, cantidad: it.cantidadSeleccionada, precio: it.precio, fecha: new Date() }));
 
+        // 1. Preparamos el detalle de productos para tu DASHBOARD de Clientes
+        const infoDashboard = items.map(it => ({
+            prod: it.nombre,
+            cant: it.cantidadSeleccionada,
+            precio: it.precio,
+            fecha: new Date()
+        }));
+
+        // 2. ACTUALIZACIÓN EN LA COLECCIÓN 'CLIENTES' (Para tu otro sistema)
+        // Usamos el driver nativo para asegurar que se cree el campo detalles_deuda
         const db = mongoose.connection.db;
-        const op = await db.collection('clientes').findOneAndUpdate(
+        const opResult = await db.collection('clientes').findOneAndUpdate(
             { _id: new mongoose.Types.ObjectId(cliente_id) },
-            { $inc: { deudaTotal: total }, $push: { detalles_deuda: { $each: detalleItems } } },
+            { 
+                $inc: { deudaTotal: total },
+                $push: { detalles_deuda: { $each: infoDashboard } } 
+            },
             { returnDocument: 'after' }
         );
 
-        await new Venta({ productos: items, total, metodoPago: 'FIADO', fecha: new Date() }).save();
-        await new MovimientoFiado({ cliente_id: new mongoose.Types.ObjectId(cliente_id), tipo: 'DEUDA', monto: total, productos: detalleItems, saldo_al_momento: (op.value ? op.value.deudaTotal : total) }).save();
+        // 3. REGISTRAMOS LA VENTA (Para que el Stock Real baje en todo el sistema)
+        await new Venta({
+            productos: items,
+            total: total,
+            metodoPago: 'FIADO',
+            fecha: new Date()
+        }).save();
+
+        // 4. REGISTRO EN KARDEX (Auditoría de inventario)
+        for (const it of items) {
+            await new Kardex({
+                nombre_producto: it.nombre,
+                cantidad: -it.cantidadSeleccionada,
+                motivo: 'VENTA AL FIADO',
+                stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada,
+                fecha: new Date()
+            }).save();
+        }
+
+        // 5. REGISTRO EN LOGS (Historial de acciones)
+        await new Log({
+            accion: 'FIADO',
+            detalle: `Se otorgó crédito de S/. ${total.toFixed(2)} con ${items.length} productos.`,
+            fecha: new Date()
+        }).save();
+
+        // 6. Registro en Movimientos (Para los tickets del historial del cliente)
+        await new MovimientoFiado({
+            cliente_id: new mongoose.Types.ObjectId(cliente_id),
+            tipo: 'DEUDA',
+            monto: total,
+            productos: infoDashboard,
+            saldo_al_momento: (opResult.value ? opResult.value.deudaTotal : total),
+            fecha: new Date()
+        }).save();
 
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+
+    } catch (e) {
+        console.error("❌ Error en Fiado Masivo:", e);
+        res.status(500).json({ success: false, error: e.message });
+    }
 });
 
 // PAGOS (ABONOS)
@@ -188,6 +266,18 @@ app.post('/api/fiados/abono', async (req, res) => {
         res.json({ success: true });
     } catch (e) { res.status(500).json({ success: false }); }
 });
+app.get('/api/auditoria', async (req, res) => {
+    // Busca los logs reales en la base de datos
+    const logs = await Log.find().sort({ fecha: -1 }).limit(100);
+    res.json(logs);
+});
+
+app.get('/api/kardex', async (req, res) => {
+    // Busca los movimientos de inventario reales
+    const movimientos = await Kardex.find().sort({ fecha: -1 }).limit(100);
+    res.json(movimientos);
+});
+
 app.delete('/api/clientes/:id', async (req, res) => {
     try {
         const { id } = req.params;
