@@ -303,13 +303,41 @@ app.post('/api/clientes', async (req, res) => { const n = new Cliente({ nombre: 
 app.get('/api/clientes/:id/movimientos', async (req, res) => res.json(await MovimientoFiado.find({ cliente_id: new mongoose.Types.ObjectId(req.params.id) }).sort({ fecha: -1 })));
 
 app.get('/api/reportes/ventas', async (req, res) => {
-    const { desde, hasta } = req.query;
-    const fI = new Date(desde); fI.setHours(0,0,0,0);
-    const fF = new Date(hasta); fF.setHours(23,59,59,999);
-    const v = await Venta.find({ fecha: { $gte: fI, $lte: fF } });
-    const a = await MovimientoFiado.find({ fecha: { $gte: fI, $lte: fF }, tipo: 'PAGO' });
-    const real = v.filter(x => x.metodoPago !== 'FIADO').reduce((acc, x) => acc + x.total, 0) + a.reduce((acc, x) => acc + x.monto, 0);
-    res.json({ ventas: v.map(x => ({ ...x._doc, items: x.productos })), abonos: a, totalGananciaReal: real, totalFiadoPeriodo: v.filter(x => x.metodoPago === 'FIADO').reduce((acc, x) => acc + x.total, 0) });
+    try {
+        const { desde, hasta } = req.query;
+        if (!desde || !hasta) return res.json({ ventas: [], abonos: [], totalGananciaReal: 0, totalFiadoPeriodo: 0 });
+
+        const fI = new Date(desde); fI.setHours(0,0,0,0);
+        const fF = new Date(hasta); fF.setHours(23,59,59,999);
+
+        // 1. Buscamos todas las ventas y abonos del periodo seleccionado
+        const ventas = await Venta.find({ fecha: { $gte: fI, $lte: fF } });
+        const abonos = await MovimientoFiado.find({ fecha: { $gte: fI, $lte: fF }, tipo: 'PAGO' });
+
+        const totalVentasDirectas = ventas
+            .filter(v => v.metodoPago !== 'FIADO')
+            .reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+
+        const totalAbonosHoy = abonos.reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+
+        const totalFiadosEmitidos = ventas
+            .filter(v => v.metodoPago === 'FIADO')
+            .reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+        const dineroRealEnMano = totalVentasDirectas + totalAbonosHoy;
+
+        const saldoPendienteReal = Math.max(0, totalFiadosEmitidos - totalAbonosHoy);
+
+        res.json({
+            ventas: ventas.map(v => ({ ...v._doc, items: v.productos })),
+            abonos: abonos,
+            totalGananciaReal: dineroRealEnMano,
+            totalFiadoPeriodo: saldoPendienteReal // <--- AHORA SÍ DISMINUYE
+        });
+
+    } catch (e) {
+        console.error("Error en reporte:", e);
+        res.status(500).json({ totalGananciaReal: 0, totalFiadoPeriodo: 0 });
+    }
 });
 
 app.get('/api/auditoria', async (req, res) => res.json(await Log.find().sort({ fecha: -1 }).limit(100)));
