@@ -339,6 +339,98 @@ app.get('/api/reportes/ventas', async (req, res) => {
         res.status(500).json({ totalGananciaReal: 0, totalFiadoPeriodo: 0 });
     }
 });
+app.get('/api/dashboard/rentabilidad', async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    try {
+        const db = mongoose.connection.db;
+        if (!db) return res.status(503).json({ error: "Conectando a BD..." });
+
+        const { desde, hasta, producto } = req.query;
+
+        // 1. Filtro de Inversiones
+        let queryInv = producto ? { nombre: { $regex: new RegExp(producto, 'i') } } : {};
+
+        // 2. Filtro de Ventas (buscando el producto dentro del array)
+        let queryVts = {};
+        if (producto) {
+            queryVts = {
+                "productos": { 
+                    $elemMatch: { 
+                        $or: [
+                            { "nombre_producto": { $regex: new RegExp(producto, 'i') } },
+                            { "nombre": { $regex: new RegExp(producto, 'i') } }
+                        ] 
+                    } 
+                }
+            };
+        }
+
+        if (desde || hasta) {
+            const f = {};
+            if (desde) f.$gte = new Date(desde);
+            if (hasta) f.$lte = new Date(hasta);
+            queryInv.fecha = f;
+            queryVts.fecha = f;
+        }
+
+        // 3. Ejecutar consultas
+        const [invs, vts, clts] = await Promise.all([
+            db.collection('inversions').find(queryInv).toArray().catch(() => []),
+            db.collection('ventas').find(queryVts).toArray().catch(() => []),
+            db.collection('clientes').find({}).toArray().catch(() => [])
+        ]);
+
+        // --- LÓGICA DE CÁLCULO CORREGIDA ---
+
+        const totalInversion = invs.reduce((acc, i) => acc + (Number(i.costoTotal || i.costo_total || 0)), 0);
+        
+        // Sumar ingresos totales de ventas (solo de los productos filtrados si hay filtro)
+        const totalVentas = vts.reduce((acc, v) => {
+            if (producto) {
+                const subtotal = v.productos
+                    .filter(p => new RegExp(producto, 'i').test(p.nombre_producto || p.nombre || ""))
+                    .reduce((sum, p) => sum + (Number(p.subtotal || p.precio_total || 0)), 0);
+                return acc + subtotal;
+            }
+            return acc + (Number(v.total || 0));
+        }, 0);
+
+        // CORRECCIÓN DE FIADOS:
+        let totalFiados = 0;
+        if (producto) {
+            // Si hay producto, calculamos la deuda solo de las ventas filtradas que fueron fiadas
+            totalFiados = vts.reduce((acc, v) => {
+                // Si la venta tiene saldo pendiente (fiado)
+                const deudaDeEstaVenta = Number(v.total || 0) - Number(v.monto_pagado || v.pagado || 0);
+                if (deudaDeEstaVenta > 0) {
+                    // Calculamos qué parte de esa deuda le corresponde al producto filtrado
+                    const proporcionProducto = v.productos
+                        .filter(p => new RegExp(producto, 'i').test(p.nombre_producto || p.nombre || ""))
+                        .reduce((sum, p) => sum + (Number(p.subtotal || p.precio_total || 0)), 0);
+                    
+                    // Si la venta es de 100 y el producto es de 50, se asume que el fiado es proporcional
+                    return acc + proporcionProducto; 
+                }
+                return acc;
+            }, 0);
+        } else {
+            // Si no hay filtro, mostramos la deuda total de todos los clientes (como antes)
+            totalFiados = clts.reduce((acc, c) => acc + (Number(c.deudaTotal || 0)), 0);
+        }
+
+        res.json({
+            inversionTotal: totalInversion,
+            ingresosTotalesVentas: totalVentas,
+            plataPorCobrar: totalFiados,
+            dineroEnCaja: totalVentas - totalFiados,
+            gananciaReal: (totalVentas - totalFiados) - totalInversion
+        });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: e.message });
+    }
+});
 
 app.get('/api/auditoria', async (req, res) => res.json(await Log.find().sort({ fecha: -1 }).limit(100)));
 app.get('/api/kardex', async (req, res) => res.json(await Kardex.find().sort({ fecha: -1 }).limit(100)));
