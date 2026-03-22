@@ -1,0 +1,138 @@
+.config-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- TÍTULO --- */
+.config-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 30px;
+}
+
+/* --- PANELES DE CONFIGURACIÓN --- */
+.config-card {
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #e2e8f0;
+    padding: 25px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.config-card h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #334155;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+/* --- FORMULARIOS --- */
+.config-group {
+    margin-bottom: 20px;
+}
+
+.config-group label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #64748b;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.config-select {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+    background-color: #f8fafc;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1e293b;
+    outline: none;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.config-select:focus {
+    border-color: #3b82f6;
+    background-color: white;
+}
+
+/* --- BOTONES --- */
+.config-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.btn-config {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    font-weight: 800;
+    font-size: 0.95rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.2s;
+}
+
+.btn-blue { background-color: #3b82f6; color: white; box-shadow: 0 4px 0 #2563eb; }
+.btn-blue:active { transform: translateY(2px); box-shadow: none; }
+
+.btn-green { background-color: #10b981; color: white; box-shadow: 0 4px 0 #059669; }
+.btn-green:active { transform: translateY(2px); box-shadow: none; }
+
+.btn-gray { background-color: #94a3b8; color: white; box-shadow: 0 4px 0 #64748b; }
+.btn-gray:active { transform: translateY(2px); box-shadow: none; }
+
+/* --- ESTADOS DE CONEXIÓN --- */
+.status-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+}
+
+.status-box.connected { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+.status-box.disconnected { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.status-box.loading { background-color: #fef9c3; color: #a16207; border: 1px solid #fef08a; }
+
+/* --- FOOTER --- */
+.config-footer {
+    text-align: center;
+    margin-top: 40px;
+    color: #94a3b8;
+    font-size: 0.8rem;
+}
+
+/* ANIMACIÓN */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* RESPONSIVO */
+@media (max-width: 480px) {
+    .config-container { padding: 15px; }
+    .total-amount-big { font-size: 2.5rem; }
+}

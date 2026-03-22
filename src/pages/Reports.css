@@ -1,0 +1,176 @@
+/* --- CONTENEDOR PRINCIPAL --- */
+.reports-container {
+    padding: 25px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* --- HEADER TÍTULO --- */
+.reports-top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.btn-refresh-simple {
+    background: white;
+    border: 1px solid #e2e8f0;
+    padding: 8px 15px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- 1. BARRA DE FILTROS (DISEÑO IMAGEN) --- */
+.filter-card-pro {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 25px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+    display: flex;
+    align-items: flex-end;
+    gap: 20px;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.filter-group label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #94a3b8; /* Gris claro como la imagen */
+    letter-spacing: 0.5px;
+}
+
+.filter-group input {
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-weight: 700;
+    color: #1e293b;
+    outline: none;
+    font-size: 0.95rem;
+}
+
+.btn-consultar-blue {
+    background-color: #2563eb !important; /* Azul brillante como la imagen */
+    color: white !important;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 0 #1d4ed8;
+}
+
+.btn-consultar-blue:active { transform: translateY(2px); box-shadow: none; }
+
+/* --- 2. TARJETAS DINERO (DISEÑO IMAGEN) --- */
+.kpi-row-pro {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.kpi-card-modern {
+    background: white;
+    padding: 25px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid #e2e8f0;
+    position: relative;
+    overflow: hidden;
+}
+
+/* El borde de color a la izquierda */
+.kpi-card-modern.green { border-left: 6px solid #22c55e; }
+.kpi-card-modern.orange { border-left: 6px solid #f59e0b; }
+
+.kpi-icon-box {
+    width: 55px;
+    height: 55px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.green .kpi-icon-box { background-color: #dcfce7; color: #16a34a; }
+.orange .kpi-icon-box { background-color: #fffbeb; color: #d97706; }
+
+.kpi-text-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.kpi-label {
+    font-size: 11px;
+    font-weight: 900;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.kpi-value {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #000;
+}
+
+/* --- 3. TABLA --- */
+.table-card-dashboard {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 20px;
+}
+
+.table-header-row h3 { margin: 0 0 15px 0; font-weight: 800; color: #1e293b; }
+
+.table-responsive-wrapper { overflow-x: auto; }
+
+.pro-table { width: 100%; border-collapse: collapse; }
+.pro-table th { text-align: left; padding: 12px; font-size: 11px; color: #94a3b8; border-bottom: 2px solid #f1f5f9; text-transform: uppercase; }
+.pro-table td { padding: 15px 12px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; }
+
+.concept-stack { display: flex; flex-direction: column; }
+.concept-stack small { color: #94a3b8; font-weight: 700; font-size: 10px; }
+
+.col-amount { font-weight: 800; text-align: right; font-size: 1rem; }
+.text-green { color: #10b981; }
+
+.btn-reprint-mini { background: #1e293b; color: white; border: none; padding: 8px; border-radius: 8px; cursor: pointer; }
+
+/* ANIMACIONES */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .filter-card-pro { flex-direction: column; align-items: stretch; }
+    .kpi-row-pro { grid-template-columns: 1fr; }
+    .kpi-value { font-size: 1.8rem; }
+}

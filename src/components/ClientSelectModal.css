@@ -1,0 +1,115 @@
+.client-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    backdrop-filter: blur(4px);
+    padding: 20px;
+}
+
+.client-modal-container {
+    background: #f8fafc;
+    width: 100%;
+    max-width: 440px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.2s ease-out;
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* HEADER */
+.client-modal-header {
+    background: white;
+    padding: 18px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.header-title { display: flex; align-items: center; gap: 10px; font-weight: 800; color: #1e293b; }
+
+.btn-close-circle {
+    background: #f1f5f9; border: none; width: 32px; height: 32px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.2s;
+}
+.btn-close-circle:hover { background: #fee2e2; color: #ef4444; }
+
+/* CUERPO */
+.client-modal-body { padding: 25px; }
+
+.client-search-wrapper {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.client-search-wrapper .search-icon {
+    position: absolute; left: 15px; top: 50%; transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.client-search-wrapper input {
+    width: 100%; padding: 14px 15px 14px 45px; border-radius: 14px;
+    border: 2px solid #e2e8f0; background: white; font-size: 1rem;
+    outline: none; transition: 0.2s;
+}
+.client-search-wrapper input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1); }
+
+/* LISTA DE RESULTADOS */
+.client-results-list {
+    max-height: 300px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.client-selection-card {
+    background: white; padding: 15px; border-radius: 12px;
+    border: 1px solid #e2e8f0; display: flex; justify-content: space-between;
+    align-items: center; cursor: pointer; transition: 0.2s;
+}
+.client-selection-card:hover { transform: translateY(-2px); border-color: #3b82f6; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+.client-name { font-weight: 700; color: #1e293b; display: block; }
+.client-status-badge { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 6px; margin-top: 5px; display: inline-block; }
+.client-status-badge.clean { background: #dcfce7; color: #166534; }
+.client-status-badge.debt { background: #fee2e2; color: #991b1b; }
+
+.check-icon { color: #cbd5e1; opacity: 0; transition: 0.2s; }
+.client-selection-card:hover .check-icon { opacity: 1; color: #3b82f6; }
+
+/* NO ENCONTRADO */
+.client-not-found { text-align: center; padding: 20px 0; color: #64748b; }
+.btn-create-instant {
+    margin-top: 15px; background: #22c55e; color: white; border: none;
+    padding: 12px 25px; border-radius: 10px; font-weight: 800; cursor: pointer;
+    display: flex; align-items: center; gap: 10px; margin-inline: auto;
+}
+
+/* VISTA CONFIRMACIÓN */
+.confirm-create-view {
+    padding: 40px 30px; text-align: center; background: white;
+}
+.icon-circle-blue {
+    width: 80px; height: 80px; background: #eff6ff; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;
+}
+.confirm-create-view h3 { font-size: 1.4rem; color: #1e293b; margin-bottom: 10px; }
+.confirm-create-view p { color: #64748b; margin-bottom: 30px; }
+
+.confirm-buttons { display: flex; gap: 15px; }
+.btn-back { flex: 1; background: #f1f5f9; border: none; padding: 15px; border-radius: 12px; font-weight: 700; cursor: pointer; }
+.btn-confirm-create { flex: 1.5; background: #3b82f6; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 0 #2563eb; }
+
+.client-modal-footer { padding: 15px 25px; border-top: 1px solid #e2e8f0; background: white; }
+.btn-cancel-modal { width: 100%; background: #f1f5f9; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; color: #64748b; }

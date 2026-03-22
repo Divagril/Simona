@@ -1,0 +1,161 @@
+/* --- OVERLAY BLOQUEANTE --- */
+.pay-fixed-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2147483647 !important; /* Prioridad máxima */
+    backdrop-filter: blur(8px);
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* --- TARJETA DEL MODAL --- */
+.pay-fixed-card {
+    background: white !important;
+    width: 100%;
+    max-width: 460px; /* Ancho fijo para evitar desbordes */
+    border-radius: 28px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    animation: payIn 0.3s ease-out;
+}
+
+@keyframes payIn {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.pay-btn-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #f1f5f9;
+    border: none;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* --- CABECERA --- */
+.pay-header-section {
+    background: #f8fafc;
+    padding: 40px 20px 30px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pay-label-top { font-size: 13px; font-weight: 800; color: #64748b; letter-spacing: 1.5px; }
+.pay-main-total { font-size: 4rem; font-weight: 900; color: #1e293b; margin-top: 8px; line-height: 1; }
+
+/* --- CUERPO --- */
+.pay-body-content {
+    padding: 25px 30px;
+}
+
+.pay-field-group { margin-bottom: 22px; }
+.pay-label-title { display: block; font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px; }
+
+/* MÉTODOS */
+.pay-methods-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.pay-method-item {
+    padding: 12px 5px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    color: #475569;
+}
+
+.pay-method-item.active-cash { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+.pay-method-item.active-yape { border-color: #9333ea; background: #faf5ff; color: #6b21a8; }
+.pay-method-item.active-plin { border-color: #2563eb; background: #eff6ff; color: #1e40af; }
+
+/* INPUT DE MONTO */
+.pay-amount-box {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 0 20px;
+    height: 65px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pay-amount-box.is-locked { opacity: 0.5; background: #f1f5f9; cursor: not-allowed; }
+.pay-dollar-icon { color: #10b981; margin-right: 12px; flex-shrink: 0; }
+
+.pay-amount-box input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #1e293b;
+    outline: none;
+    width: 100%; /* Evita que el input crezca fuera del contenedor */
+    text-align: right;
+}
+
+/* VUELTO */
+.pay-change-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff7ed;
+    padding: 15px 20px;
+    border-radius: 16px;
+    border: 1.5px solid #ffedd5;
+}
+
+.v-label { font-weight: 800; color: #9a3412; font-size: 14px; }
+.v-value { font-size: 1.8rem; font-weight: 900; color: #ea580c; }
+
+/* FOOTER */
+.pay-footer-actions {
+    padding: 0 30px 35px;
+    display: flex;
+    gap: 12px;
+}
+
+.btn-pay-gray { flex: 1; padding: 16px; border: none; background: #f1f5f9; border-radius: 16px; font-weight: 700; color: #64748b; cursor: pointer; }
+
+.btn-pay-green {
+    flex: 2; padding: 16px; border: none; background: #10b981; color: white; border-radius: 16px;
+    font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 0 #059669;
+}
+
+.btn-pay-green:active { transform: translateY(2px); box-shadow: none; }
+.btn-pay-green:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; filter: grayscale(1); }
+
+/* RESPONSIVO MÓVIL */
+@media (max-width: 480px) {
+    .pay-main-total { font-size: 3rem; }
+    .pay-method-item span { display: none; } /* Oculta texto en móviles muy chicos */
+    .pay-footer-actions { flex-direction: column-reverse; }
+}

@@ -1,0 +1,139 @@
+.audit-container {
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- HEADER --- */
+.audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.audit-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.btn-refresh-audit {
+    padding: 10px 20px;
+    background-color: #1abc9c;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 0 #16a085;
+    transition: all 0.1s;
+}
+
+.btn-refresh-audit:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+/* --- TARJETAS --- */
+.audit-card {
+    background: white;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+}
+
+.audit-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #334155;
+}
+
+/* --- TABLAS --- */
+.audit-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #f1f5f9;
+}
+
+.audit-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.audit-table thead {
+    background-color: #f8fafc;
+}
+
+.audit-table th {
+    padding: 14px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.audit-table td {
+    padding: 16px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.9rem;
+    color: #1e293b;
+}
+
+/* --- BADGES Y COLORES --- */
+.badge-motivo {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    font-weight: 800;
+    color: #475569;
+}
+
+.badge-accion {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 800;
+}
+
+.text-date { font-size: 0.8rem; color: #94a3b8; }
+.text-stock { font-weight: 800; }
+.text-plus { color: #22c55e; font-weight: 900; }
+.text-minus { color: #ef4444; font-weight: 900; }
+
+.empty-row {
+    text-align: center;
+    padding: 40px !important;
+    color: #94a3b8;
+}
+
+/* --- ANIMACIÓN --- */
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .audit-container { padding: 15px; }
+    .audit-header { flex-direction: column; gap: 15px; align-items: flex-start; }
+    .btn-refresh-audit { width: 100%; justify-content: center; }
+}

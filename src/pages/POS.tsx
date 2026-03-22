@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Search, Plus, Trash2, RefreshCw, 
-  ShoppingCart, AlertTriangle, Eye 
+  Search, Plus, Trash2, RefreshCw, ShoppingCart, Eye, 
+  X, CreditCard, CheckCircle, Users, ArrowLeft 
 } from 'lucide-react';
 import type { Producto, CartItem } from '../types';
 import PaymentModal from '../components/PaymentModal';
@@ -10,6 +10,7 @@ import ConfirmModal from '../components/ConfirmModal';
 import TicketPreviewModal from '../components/TicketPreviewModal';
 import { getProductos, registrarVenta, registrarFiadoMasivo } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
+import './POS.css'; 
 
 const POS: React.FC = () => {
   const { showNotification } = useNotification();
@@ -20,7 +21,7 @@ const POS: React.FC = () => {
   const [busqueda, setBusqueda] = useState('');
   const [selectedProd, setSelectedProd] = useState<Producto | null>(null);
   const [qty, setQty] = useState<string>('1'); 
-  const [indexSeleccionadoCarrito, setIndexSeleccionadoCarrito] = useState<number | null>(null);
+  const [showCartMobile, setShowCartMobile] = useState(false); 
   const [lastSaleData, setLastSaleData] = useState<any>(null);
 
   // --- MODALES ---
@@ -29,16 +30,12 @@ const POS: React.FC = () => {
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
 
-  // --- VENTA MANUAL ---
-  const [manualDesc, setManualDesc] = useState('');
-  const [manualPrice, setManualPrice] = useState<string>('');
-
   const barcodeRef = useRef<HTMLInputElement>(null);
 
   const cargarDatos = async () => {
     try {
       const data = await getProductos();
-      setProductos(data);
+      setProductos(Array.isArray(data) ? data : []);
     } catch (error) {
       showNotification("Error al conectar con el servidor", true);
     }
@@ -54,236 +51,179 @@ const POS: React.FC = () => {
   // --- LÓGICA AGREGAR AL CARRITO ---
   const addToCart = () => {
     if (!selectedProd) return;
-    const cantidadAAgregar = Number(qty);
+    const nQty = Number(qty);
 
-    if (isNaN(cantidadAAgregar) || cantidadAAgregar <= 0) {
-      showNotification("⚠️ Ingrese una cantidad válida", true);
+    if (isNaN(nQty) || nQty <= 0) {
+      showNotification("⚠️ Cantidad inválida", true);
       return;
     }
 
-    // 1. Validar Stock Real
-    const cantidadEnTicket = carrito
-      .filter(item => item._id === selectedProd._id)
-      .reduce((acc, item) => acc + item.cantidadSeleccionada, 0);
-
-    if ((cantidadEnTicket + cantidadAAgregar) > selectedProd.stock_actual) {
-      showNotification(
-        `❌ STOCK INSUFICIENTE. Quedan ${selectedProd.stock_actual} unidades.`, 
-        true
-      );
+    if (nQty > selectedProd.stock_actual) {
+      showNotification(`❌ Solo quedan ${selectedProd.stock_actual} unid.`, true);
       return;
     }
 
-    // 2. Agregar o Sumar
-    const indexExistente = carrito.findIndex(item => item._id === selectedProd._id);
-    if (indexExistente !== -1) {
-      const nuevoCarrito = [...carrito];
-      nuevoCarrito[indexExistente].cantidadSeleccionada += cantidadAAgregar;
-      nuevoCarrito[indexExistente].subtotal = nuevoCarrito[indexExistente].cantidadSeleccionada * selectedProd.precio;
-      setCarrito(nuevoCarrito);
+    const index = carrito.findIndex(it => it._id === selectedProd._id);
+    if (index !== -1) {
+      const newC = [...carrito];
+      newC[index].cantidadSeleccionada += nQty;
+      newC[index].subtotal = newC[index].cantidadSeleccionada * selectedProd.precio;
+      setCarrito(newC);
     } else {
-      const newItem: CartItem = {
-        ...selectedProd,
-        cantidadSeleccionada: cantidadAAgregar,
-        subtotal: selectedProd.precio * cantidadAAgregar,
-        cantidad: selectedProd.stock_actual // Mapping para compatibilidad con CartItem
-      };
-      setCarrito([...carrito, newItem]);
+      setCarrito([...carrito, { 
+        ...selectedProd, 
+        cantidadSeleccionada: nQty, 
+        subtotal: selectedProd.precio * nQty,
+        cantidad: selectedProd.stock_actual
+      }]);
     }
     
     setQty('1'); 
-    showNotification(`✅ ${selectedProd.nombre} agregado`);
+    setSelectedProd(null);
+    showNotification(`✅ Agregado`);
   };
-  const abrirTicketManual = () => {
-    if (carrito.length > 0) {
-        // Creamos un borrador con lo que hay actualmente en el carrito
-        setLastSaleData({ 
-            items: [...carrito], 
-            total: total, 
-            metodoPago: 'VISTA PREVIA' 
-        });
-        setIsTicketModalOpen(true);
-    } else if (lastSaleData) {
-        // Si el carrito está vacío, muestra la última venta real que se cobró
-        setIsTicketModalOpen(true);
-    } else {
-        showNotification("El carrito está vacío", true);
-    }
-   };
 
-   const handleFinalizeVenta = async (datosPago: any) => {
-      if (carrito.length === 0) return;
+  const removeFromCart = (index: number) => {
+    const newC = [...carrito];
+    newC.splice(index, 1);
+    setCarrito(newC);
+  };
 
-      try {
-        const res = await registrarVenta({ 
-          items: carrito, 
-          total: total, 
-          metodoPago: datosPago.metodo 
-        });
-
-        if (res.success) {
-          // 1. Limpiamos ticket y cerramos modal
-          setLastSaleData({ items: [...carrito], total, metodoPago: datosPago.metodo });
-          setCarrito([]); 
-          setIsModalOpen(false);
-      
-          // 2. Esperamos un instante y recargamos el stock
-          setTimeout(async () => {
-            await cargarDatos(); // Esta es la función que pide los productos de nuevo
-            setIsTicketModalOpen(true);
-            showNotification("✅ Venta cobrada. Stock actualizado.");
-          }, 300); 
-        }
-      } catch (e) {
-        showNotification("❌ Error de conexión", true);
-      }
-    };
-  const handleConfirmarFiado = async (cliente: any) => {
-    if (carrito.length === 0) return;
+  // --- FINALIZAR PROCESOS ---
+  const handleFinalizeVenta = async (datosPago: any) => {
     try {
-      const res = await registrarFiadoMasivo({ 
-          cliente_id: cliente._id, 
-          items: carrito, // <--- ESTO ES VITAL
-          total: total 
-      });
-
+      const res = await registrarVenta({ items: carrito, total, metodoPago: datosPago.metodo });
       if (res.success) {
-        setLastSaleData({ items: [...carrito], total, metodoPago: 'FIADO' });
-        setCarrito([]); setIsClientModalOpen(false); setIsTicketModalOpen(true);
-        cargarDatos();
+        setLastSaleData({ items: [...carrito], total, metodoPago: datosPago.metodo });
+        setCarrito([]); setIsModalOpen(false); setShowCartMobile(false);
+        setTimeout(async () => {
+          await cargarDatos();
+          setIsTicketModalOpen(true);
+          showNotification("✅ Venta cobrada");
+        }, 300);
       }
-    } catch (e) { console.error(e); }
- };
+    } catch (e) { showNotification("Error al procesar cobro", true); }
+  };
+
+  const handleConfirmarFiado = async (cliente: any) => {
+    try {
+      const res = await registrarFiadoMasivo({ cliente_id: cliente._id, items: carrito, total });
+      if (res.success) {
+        setLastSaleData({ items: [...carrito], total, metodoPago: 'FIADO', saldoPendiente: (cliente.deudaTotal || 0) + total });
+        setCarrito([]); setIsClientModalOpen(false); setShowCartMobile(false);
+        setTimeout(async () => {
+          await cargarDatos();
+          setIsTicketModalOpen(true);
+          showNotification(`📝 Fiado para ${cliente.nombre}`);
+        }, 300);
+      }
+    } catch (e) { showNotification("Error al procesar fiado", true); }
+  };
 
   return (
-    <div className="pos-layout">
-      {/* PANEL IZQUIERDO */}
-      <div className="pos-left">
-        <fieldset className="pos-group-box">
-          <legend className="pos-legend">🔍 Buscador de Productos</legend>
-          <div style={{display:'flex', justifyContent:'flex-end', marginBottom:'5px'}}>
-            <button className="btn-recargar-verde" onClick={() => cargarDatos()}>
-              <RefreshCw size={14}/> Recargar
-            </button>
-          </div>
-          <input 
-            ref={barcodeRef} type="text" className="input-pos-flat" 
-            placeholder="Buscar por nombre..." value={busqueda} 
-            onChange={e => setBusqueda(e.target.value)} 
-          />
-        </fieldset>
-
-        <div className="table-container-pos panel-blanco">
-          <table className="modern-table">
-            <thead>
-              <tr><th>Producto</th><th style={{textAlign:'center'}}>Stock</th><th style={{textAlign:'right'}}>Precio</th></tr>
-            </thead>
-            <tbody>
-              {productos.filter(p => (p.nombre || '').toLowerCase().includes(busqueda.toLowerCase())).map(p => (
-                <tr 
-                  key={p._id} 
-                  onClick={() => { setSelectedProd(p); setQty('1'); }} 
-                  className={`row-hover ${p.stock_actual <= 0 ? 'out-of-stock' : ''} ${selectedProd?._id === p._id ? 'selected-row' : ''}`}
-                >
-                  <td className="bold">{p.nombre} {p.stock_actual <= 0 ? '(SIN STOCK)' : ''}</td>
-                  <td style={{textAlign:'center'}} className={p.stock_actual < 5 ? 'text-rojo bold' : ''}>
-                    {p.stock_actual}
-                  </td>
-                  <td style={{textAlign:'right'}}>S/. {Number(p.precio).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* BARRA DE SELECCIÓN */}
-        <div className={`selection-bar-modern-final ${selectedProd ? 'active' : ''} ${selectedProd && selectedProd.stock_actual <= 0 ? 'blocked' : ''}`}>
-          <div className="sel-left-info">
-            <span className="sel-badge-blue">SELECCIONADO</span>
-            <div className="sel-prod-name">{selectedProd ? selectedProd.nombre : 'Ninguno'}</div>
-            <div className="sel-prod-price">S/. {selectedProd ? (Number(selectedProd.precio) * Number(qty)).toFixed(2) : '0.00'}</div>
-          </div>
-          <div className="sel-right-controls">
-            <div className="qty-group">
-              <label>CANTIDAD</label>
-              <input 
-                type="number" className="qty-input-big" value={qty} 
-                disabled={!selectedProd || selectedProd.stock_actual <= 0}
-                onChange={e => setQty(e.target.value)} 
-              />
+    <div className={`pos-master-container ${showCartMobile ? 'mobile-cart-active' : 'mobile-list-active'}`}>
+      
+      {/* 1. PANEL IZQUIERDO: PRODUCTOS */}
+      <div className="pos-panel-products">
+        <header className="pos-search-bar">
+            <div className="search-inner">
+                <Search size={18} color="#94a3b8" />
+                <input ref={barcodeRef} placeholder="Buscar producto..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
             </div>
-            <button 
-              className="btn-agregar-orange" 
-              onClick={addToCart} 
-              disabled={!selectedProd || selectedProd.stock_actual <= 0}
-            >
-              {selectedProd && selectedProd.stock_actual <= 0 ? 'SIN STOCK' : '+ AGREGAR'}
-            </button>
-          </div>
-        </div>
+            <button className="btn-sync-teal" onClick={cargarDatos}><RefreshCw size={18}/></button>
+        </header>
 
-        {/* VENTA MANUAL */}
-        <fieldset className="group-box-manual">
-          <legend className="legend-manual">⚡ Venta Libre</legend>
-          <div className="manual-inputs-row">
-            <input type="text" placeholder="Descripción" className="input-flat-modern" value={manualDesc} onChange={e => setManualDesc(e.target.value)} />
-            <input type="number" placeholder="Precio S/." className="input-flat-modern" value={manualPrice} onChange={e => setManualPrice(e.target.value)} />
-            <button className="btn-manual-dark" onClick={() => {
-                 const pNum = Number(manualPrice);
-                 if (manualDesc && pNum > 0) {
-                     const newItem: any = { _id: `MANUAL-${Date.now()}`, nombre: manualDesc, precio: pNum, cantidadSeleccionada: 1, subtotal: pNum, stock_actual: 999 };
-                     setCarrito([...carrito, newItem]); setManualDesc(''); setManualPrice('');
-                 }
-            }}>Agregar</button>
-          </div>
-        </fieldset>
-      </div>
-
-      {/* PANEL DERECHO (TICKET) */}
-      <div className="pos-right">
-        <div className="panel-ticket-blue">
-          <h2 className="ticket-title">🧾 TICKET DE VENTA</h2>
-          <div className="ticket-table-wrapper">
-            <table className="modern-table">
-              <thead><tr style={{background:'#f8f9f9'}}><th>Producto</th><th style={{textAlign:'center'}}>Cant</th><th style={{textAlign:'right'}}>Subtotal</th></tr></thead>
-              <tbody>
-                {carrito.map((it, i) => (
-                  <tr key={i} onClick={() => setIndexSeleccionadoCarrito(i)} className={indexSeleccionadoCarrito === i ? 'selected-row-cart' : ''}>
-                    <td>{it.nombre}</td>
-                    <td style={{textAlign:'center'}}>{it.cantidadSeleccionada}</td>
-                    <td style={{textAlign:'right'}}>{it.subtotal.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
+        <div className="pos-scroll-area">
+            <table className="pos-main-table">
+                <thead>
+                    <tr>
+                        <th className="col-name">Producto</th>
+                        <th className="col-stock">Stock</th>
+                        <th className="col-price">Precio</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase())).map(p => (
+                        <tr key={p._id} onClick={() => {setSelectedProd(p); setQty('1');}} className={selectedProd?._id === p._id ? 'selected' : ''}>
+                            <td className="col-name p-bold">{p.nombre}</td>
+                            <td className={`col-stock p-bold ${p.stock_actual < 5 ? 'text-red' : 'text-green'}`}>{p.stock_actual}</td>
+                            <td className="col-price p-bold">S/. {p.precio.toFixed(2)}</td>
+                        </tr>
+                    ))}
+                </tbody>
             </table>
-          </div>
-          
-          <div className="total-section-pos" style={{ textAlign: 'right', padding: '20px 0', borderTop: '2px solid #eee' }}>
-            <span style={{ fontWeight: 800, color: '#7f8c8d' }}>TOTAL:</span>
-            <div className="total-amount" style={{ fontSize: '50px', fontWeight: 900, color: '#e74c3c' }}>S/. {total.toFixed(2)}</div>
-          </div>
-
-          <div className="pos-actions-grid">
-            <button className="btn-cobrar-big" onClick={() => carrito.length > 0 && setIsModalOpen(true)}>✅ COBRAR (F5)</button>
-            <div className="btn-row">
-              <button className="btn-purple" onClick={() => carrito.length > 0 && setIsClientModalOpen(true)}>📝 Fiado (F8)</button>
-              <button className="btn-dark-blue" onClick={() => (carrito.length > 0 || lastSaleData) && setIsTicketModalOpen(true)}>👁️ Ver Ticket</button>
-            </div>
-            <button className="btn-red-solid" onClick={() => {
-                if (indexSeleccionadoCarrito !== null) {
-                    const n = [...carrito]; n.splice(indexSeleccionadoCarrito, 1); setCarrito(n); setIndexSeleccionadoCarrito(null);
-                }
-            }}>❌ Quitar Producto</button>
-            <button className="btn-gray-solid" onClick={() => setIsClearModalOpen(true)}>🗑️ Limpiar Todo</button>
-          </div>
         </div>
+
+        {/* BARRA DE SELECCIÓN FLOTANTE */}
+        {selectedProd && (
+            <div className="selection-floating-bar">
+                <div className="info">
+                    <span className="name">{selectedProd.nombre}</span>
+                    <span className="price">S/. {(selectedProd.precio * Number(qty)).toFixed(2)}</span>
+                </div>
+                <div className="actions">
+                    <input type="number" value={qty} onChange={e => setQty(e.target.value)} onFocus={(e) => e.target.select()}/>
+                    <button className="btn-add-final" onClick={addToCart}>AGREGAR</button>
+                    <button className="btn-close-sel" onClick={() => setSelectedProd(null)}><X size={20}/></button>
+                </div>
+            </div>
+        )}
+
+        {/* BOTÓN MÓVIL PARA VER CARRITO */}
+        {carrito.length > 0 && !showCartMobile && (
+            <button className="btn-float-cart" onClick={() => setShowCartMobile(true)}>
+                <ShoppingCart size={24} />
+                <span>VER PEDIDO (S/. {total.toFixed(2)})</span>
+            </button>
+        )}
       </div>
 
-      {/* COMPONENTES MODALES */}
+      {/* 2. PANEL DERECHO: TICKET */}
+      <div className="pos-panel-ticket">
+        <header className="ticket-header-pro">
+            <button className="btn-back-pos" onClick={() => setShowCartMobile(false)}><ArrowLeft size={18}/> VOLVER</button>
+            <div className="ticket-title"><ShoppingCart size={20}/> <span>DETALLE DEL PEDIDO</span></div>
+        </header>
+
+        <div className="ticket-items-scroll">
+            {carrito.map((it, i) => (
+                <div key={i} className="ticket-item-card">
+                    <div className="item-row">
+                        <span className="item-name">{it.nombre}</span>
+                        <span className="item-sub">S/. {it.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="item-row secondary">
+                        <span>{it.cantidadSeleccionada} x S/. {it.precio.toFixed(2)}</span>
+                        <button className="btn-remove-item" onClick={() => removeFromCart(i)}><Trash2 size={14}/> Quitar</button>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        <footer className="ticket-footer-pro">
+            <div className="total-display-box">
+                <span className="label">TOTAL A COBRAR</span>
+                <div className="val">S/. {total.toFixed(2)}</div>
+            </div>
+            <div className="footer-actions">
+                <button className="btn-pay-main" onClick={() => setIsModalOpen(true)}>
+                   <CheckCircle size={22}/> COBRAR (F5)
+                </button>
+                <div className="actions-grid-sub">
+                    <button className="btn-fiado-sub" onClick={() => setIsClientModalOpen(true)}><Users size={18}/> FIADO</button>
+                    <button className="btn-clear-sub" onClick={() => setIsClearModalOpen(true)}><Trash2 size={18}/> LIMPIAR</button>
+                </div>
+            </div>
+        </footer>
+      </div>
+
+      {/* MODALES */}
       <PaymentModal isOpen={isModalOpen} total={total} onClose={() => setIsModalOpen(false)} onConfirm={handleFinalizeVenta} />
       <ClientSelectModal isOpen={isClientModalOpen} onClose={() => setIsClientModalOpen(false)} onConfirm={handleConfirmarFiado} />
-      <ConfirmModal isOpen={isClearModalOpen} onClose={() => setIsClearModalOpen(false)} onConfirm={() => setCarrito([])} titulo="¿Vaciar Ticket?" mensaje="Se eliminarán todos los productos del ticket actual." colorBoton="#95A5A6" />
-      <TicketPreviewModal isOpen={isTicketModalOpen} onClose={() => setIsTicketModalOpen(false)} items={lastSaleData?.items || carrito} total={lastSaleData?.total || total} metodoPago={lastSaleData?.metodoPago} saldoPendiente={lastSaleData?.saldoPendiente} />
+      <ConfirmModal isOpen={isClearModalOpen} onClose={() => setIsClearModalOpen(false)} onConfirm={() => setCarrito([])} titulo="¿Vaciar?" mensaje="Se eliminarán todos los productos." />
+      {lastSaleData && (
+        <TicketPreviewModal isOpen={isTicketModalOpen} onClose={() => setIsTicketModalOpen(false)} items={lastSaleData.items} total={lastSaleData.total} metodoPago={lastSaleData.metodoPago} saldoPendiente={lastSaleData.saldoPendiente} />
+      )}
     </div>
   );
 };

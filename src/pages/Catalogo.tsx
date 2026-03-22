@@ -2,109 +2,144 @@ import React, { useState, useEffect } from 'react';
 import { getProductos } from '../services/api';
 import axios from 'axios';
 import { Trash2, CheckSquare, Square, Search, Box } from 'lucide-react';
+import { useNotification } from '../context/NotificationContext';
+import './Catalogo.css'; // Importación de estilos
 
 const Catalogo: React.FC = () => {
+  const { showNotification } = useNotification();
+  
   const [productos, setProductos] = useState<any[]>([]);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [cargando, setCargando] = useState(false);
+
+  const API_URL = 'https://simona-backend.onrender.com/api';
 
   const cargar = async () => {
-    const res = await getProductos();
-    setProductos(res);
+    setCargando(true);
+    try {
+      const res = await getProductos();
+      setProductos(Array.isArray(res) ? res : []);
+      setSeleccionados([]); // Limpiar selección al recargar
+    } catch (error) {
+      showNotification("Error al cargar catálogo", true);
+    } finally {
+      setCargando(false);
+    }
   };
 
   useEffect(() => { cargar(); }, []);
 
-  // Seleccionar uno por uno
+  // Alternar selección individual
   const toggleUno = (id: string) => {
     setSeleccionados(prev => 
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
 
-  // Seleccionar TODOS
+  // Seleccionar o deseleccionar todos los visibles
   const toggleTodos = () => {
-    if (seleccionados.length === productos.length) setSeleccionados([]);
-    else setSeleccionados(productos.map(p => p._id));
+    const visibles = productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+    if (seleccionados.length === visibles.length) {
+      setSeleccionados([]);
+    } else {
+      setSeleccionados(visibles.map(p => p._id));
+    }
   };
 
   const eliminarMasivo = async () => {
     if (seleccionados.length === 0) return;
-    if (window.confirm(`¿Eliminar ${seleccionados.length} productos?`)) {
-      await axios.post('https://simona-backend.onrender.com/api/productos/eliminar-masivo', { ids: seleccionados });
-      setSeleccionados([]);
-      cargar();
+    if (window.confirm(`¿Está seguro de eliminar ${seleccionados.length} productos?`)) {
+      try {
+        await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
+        showNotification(`✅ Se eliminaron ${seleccionados.length} productos`);
+        cargar();
+      } catch (error) {
+        showNotification("No se pudo completar la eliminación", true);
+      }
     }
   };
 
-  const filtrados = productos.filter(p => p.nombre.toLowerCase().includes(busqueda.toLowerCase()));
+  const filtrados = productos.filter(p => 
+    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   return (
-    <div style={{ padding: '30px', backgroundColor: '#f4f7f6', minHeight: '100vh' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><Box /> Catálogo de Productos</h2>
-        <input 
-          type="text" placeholder="🔍 Buscar producto..." 
-          style={{ padding: '10px', borderRadius: '10px', border: '1px solid #ccc', width: '300px' }}
-          onChange={(e) => setBusqueda(e.target.value)}
-        />
-      </div>
+    <div className="catalogo-layout">
+      
+      {/* HEADER */}
+      <header className="catalogo-header">
+        <h2><Box size={32} color="#3b82f6" /> Catálogo Maestro</h2>
+        <div className="search-pill-wrapper">
+          <Search className="icon-lupa" size={20} />
+          <input 
+            type="text" 
+            placeholder="Buscar por nombre de producto..." 
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+          />
+        </div>
+      </header>
 
-      <div style={{ background: 'white', borderRadius: '15px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead style={{ background: '#ebedef', color: '#666', fontSize: '13px' }}>
-            <tr>
-              <th style={{ padding: '15px', width: '50px' }}>
-                <button onClick={toggleTodos} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
-                  {seleccionados.length === productos.length ? <CheckSquare size={20} color="#2563eb" /> : <Square size={20} />}
-                </button>
-              </th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>COD</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>PROD</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>UNI</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>PRE</th>
-              <th style={{ padding: '15px', textAlign: 'left' }}>STK</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtrados.map((p) => (
-              <tr 
-                key={p._id} 
-                onClick={() => toggleUno(p._id)}
-                style={{ 
-                  borderBottom: '1px solid #eee', 
-                  cursor: 'pointer',
-                  backgroundColor: seleccionados.includes(p._id) ? '#f0f7ff' : (p.cantidad === 0 ? '#fff5f5' : 'white') 
-                }}
-              >
-                <td style={{ padding: '15px', textAlign: 'center' }}>
-                  {seleccionados.includes(p._id) ? <CheckSquare size={20} color="#2563eb" /> : <Square size={20} color="#ccc" />}
-                </td>
-                <td style={{ padding: '15px', fontSize: '12px', color: '#999' }}>{p._id.substring(0,8)}</td>
-                <td style={{ padding: '15px', fontWeight: 'bold' }}>{p.nombre.toUpperCase()}</td>
-                <td style={{ padding: '15px' }}>{p.unidad || 'UNIDAD'}</td>
-                <td style={{ padding: '15px' }}>S/. {p.precio?.toFixed(2)}</td>
-                <td style={{ padding: '15px', fontWeight: 'bold', color: p.cantidad === 0 ? 'red' : 'black' }}>{p.cantidad}</td>
+      {/* TABLA */}
+      <div className="table-card">
+        <div className="table-responsive">
+          <table className="modern-table">
+            <thead>
+              <tr>
+                <th className="col-check">
+                  <button onClick={toggleTodos} style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                    {seleccionados.length > 0 && seleccionados.length === filtrados.length 
+                      ? <CheckSquare size={22} color="#3b82f6" /> 
+                      : <Square size={22} color="#94a3b8" />
+                    }
+                  </button>
+                </th>
+                <th>COD</th>
+                <th>PRODUCTO</th>
+                <th>UNIDAD</th>
+                <th>PRECIO</th>
+                <th style={{ textAlign: 'center' }}>STOCK</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filtrados.length === 0 ? (
+                <tr><td colSpan={6} style={{ textAlign: 'center', padding: '50px', color: '#94a3b8' }}>No se encontraron productos.</td></tr>
+              ) : (
+                filtrados.map((p) => (
+                  <tr 
+                    key={p._id} 
+                    onClick={() => toggleUno(p._id)}
+                    className={`row-hover ${seleccionados.includes(p._id) ? 'row-selected' : ''} ${p.stock_actual <= 0 ? 'row-no-stock' : ''}`}
+                  >
+                    <td className="col-check">
+                      {seleccionados.includes(p._id) 
+                        ? <CheckSquare size={20} color="#3b82f6" /> 
+                        : <Square size={20} color="#cbd5e1" />
+                      }
+                    </td>
+                    <td className="col-cod">{p._id.substring(0, 8).toUpperCase()}</td>
+                    <td className="col-prod">{p.nombre}</td>
+                    <td>{p.unidad_venta || 'UNIDAD'}</td>
+                    <td className="bold">S/. {Number(p.precio).toFixed(2)}</td>
+                    <td className={`col-stock text-center ${p.stock_actual <= 0 ? 'text-red' : 'text-blue'}`}>
+                      {p.stock_actual}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* BOTÓN FLOTANTE: Solo sale si hay algo marcado */}
+      {/* BOTÓN FLOTANTE ELIMINAR */}
       {seleccionados.length > 0 && (
-        <button 
-          onClick={(e) => { e.stopPropagation(); eliminarMasivo(); }}
-          style={{ 
-            position: 'fixed', bottom: '30px', right: '30px', 
-            backgroundColor: '#ef4444', color: 'white', padding: '15px 30px', 
-            borderRadius: '50px', border: 'none', fontWeight: 'bold', cursor: 'pointer',
-            boxShadow: '0 5px 15px rgba(239, 68, 68, 0.4)', display: 'flex', alignItems: 'center', gap: '10px'
-          }}
-        >
-          <Trash2 size={20} /> Eliminar Seleccionados ({seleccionados.length})
+        <button className="floating-delete-btn" onClick={eliminarMasivo}>
+          <Trash2 size={22} /> ELIMINAR SELECCIONADOS ({seleccionados.length})
         </button>
       )}
+
     </div>
   );
 };

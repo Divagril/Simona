@@ -1,0 +1,96 @@
+/* --- CONTENEDOR FLOTANTE --- */
+.notification-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 320px;
+    max-width: 450px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 2147483647; /* Máximo nivel de profundidad */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    color: white;
+    font-family: 'Inter', sans-serif;
+    animation: toastSlideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    overflow: hidden;
+}
+
+/* --- VARIANTES DE COLOR --- */
+.notification-toast.success {
+    background-color: #10b981; /* Verde esmeralda */
+    border: 1px solid #059669;
+}
+
+.notification-toast.error {
+    background-color: #ef4444; /* Rojo suave */
+    border: 1px solid #dc2626;
+}
+
+/* --- ICONOS Y TEXTO --- */
+.notif-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.2);
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+}
+
+.notif-content {
+    flex: 1;
+}
+
+.notif-message {
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.notif-close {
+    background: transparent;
+    border: none;
+    color: white;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 5px;
+    transition: opacity 0.2s;
+}
+
+.notif-close:hover { opacity: 1; }
+
+/* --- BARRA DE TIEMPO (PROGRESS) --- */
+.notif-progress-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.4);
+    width: 100%;
+    transform-origin: left;
+    animation: notifProgress 3.5s linear forwards;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes toastSlideIn {
+    from { transform: translateX(-50%) translateY(100px); opacity: 0; }
+    to { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes notifProgress {
+    from { transform: scaleX(1); }
+    to { transform: scaleX(0); }
+}
+
+/* --- RESPONSIVO --- */
+@media (max-width: 480px) {
+    .notification-toast {
+        width: 90%;
+        bottom: 20px;
+        padding: 12px 15px;
+    }
+}

@@ -1,0 +1,144 @@
+.catalogo-layout {
+    padding: 30px;
+    background-color: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- HEADER --- */
+.catalogo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.catalogo-header h2 {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+}
+
+.search-pill-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+}
+
+.search-pill-wrapper .icon-lupa {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+}
+
+.search-pill-wrapper input {
+    width: 100%;
+    padding: 12px 15px 12px 45px;
+    border-radius: 25px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    outline: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    transition: all 0.2s;
+}
+
+.search-pill-wrapper input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* --- TABLA --- */
+.table-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table thead th {
+    background-color: #f8fafc;
+    padding: 18px 15px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.modern-table tbody td {
+    padding: 18px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.95rem;
+    color: #1e293b;
+}
+
+.row-hover {
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.row-hover:hover { background-color: #f8fafc; }
+.row-selected { background-color: #eff6ff !important; }
+.row-no-stock { background-color: #fff1f2; }
+
+/* --- COLUMNAS ESPECÍFICAS --- */
+.col-check { width: 50px; text-align: center; }
+.col-cod { font-size: 0.75rem; color: #94a3b8; font-family: monospace; }
+.col-prod { font-weight: 700; color: #1e293b; text-transform: uppercase; }
+.col-stock { font-weight: 900; }
+.text-red { color: #ef4444; }
+.text-blue { color: #3b82f6; }
+
+/* --- BOTÓN FLOTANTE --- */
+.floating-delete-btn {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background-color: #ef4444;
+    color: white;
+    padding: 16px 30px;
+    border-radius: 50px;
+    border: none;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.4);
+    z-index: 1000;
+    animation: slideUp 0.3s ease-out;
+}
+
+.floating-delete-btn:active { transform: translateY(2px); box-shadow: none; }
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* RESPONSIVO */
+@media (max-width: 768px) {
+    .catalogo-layout { padding: 15px; }
+    .search-pill-wrapper { max-width: 100%; }
+    .floating-delete-btn { width: calc(100% - 40px); left: 20px; bottom: 20px; justify-content: center; }
+}

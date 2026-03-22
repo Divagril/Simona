@@ -19,7 +19,6 @@ export interface Cliente {
   nombre: string;
   deudaTotal: number;
 }
-
 export interface Movimiento {
   _id: string;
   cliente_id: string;
@@ -27,7 +26,11 @@ export interface Movimiento {
   tipo: 'DEUDA' | 'PAGO';
   descripcion: string;
   monto: number;
+  metodoPago?: string;
+  saldo_al_momento?: number;
+  productos?: any[]; // <--- ESTA LÍNEA QUITA EL ERROR ROJO
 }
+
 export interface VentaRealizada {
   _id: string;
   fecha: string; // ISO String o Formateada

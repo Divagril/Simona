@@ -48,9 +48,13 @@ export const getMovimientosCliente = async (id: string) => {
     return res.data;
 };
 
-export const registrarAbono = async (cliente_id: string, monto: number) => {
-    // ASEGÚRATE DE USAR API_URL QUE YA TIENE EL LINK DE RENDER
-    const res = await axios.post(`${API_URL}/fiados/abono`, { cliente_id, monto });
+export const registrarAbono = async (cliente_id: string, monto: number, metodoPago: string) => {
+    // IMPORTANTE: Enviamos el tercer dato: metodoPago
+    const res = await axios.post(`${API_URL}/fiados/abono`, { 
+        cliente_id, 
+        monto, 
+        metodoPago // <--- Esto envía "YAPE", "PLIN", etc.
+    });
     return res.data;
 };
 
@@ -58,6 +62,7 @@ export const registrarFiadoMasivo = async (datos: any) => {
     const res = await axios.post(`${API_URL}/fiados/masivo`, datos);
     return res.data;
 };
+
 
 export const getVentasReporte = async (desde: string, hasta: string, categoria: string) => {
     const res = await axios.get(`${API_URL}/reportes/ventas`, {

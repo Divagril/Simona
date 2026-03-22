@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CheckCircle } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, CheckCircle, Banknote, Smartphone, DollarSign } from 'lucide-react';
+import './PaymentModal.css';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -14,28 +16,24 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
   const [vuelto, setVuelto] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // --- LÓGICA DE CÁLCULO AUTOMÁTICO ---
   useEffect(() => {
     if (isOpen) {
       if (metodo === 'EFECTIVO') {
-        // En efectivo empezamos vacío para que el cajero escriba
         setPagoCon('');
         setVuelto(0);
-        // Auto-foco para escribir rápido
         setTimeout(() => inputRef.current?.focus(), 150);
       } else {
-        // Si es YAPE/PLIN/TARJETA, asume pago exacto automáticamente
         setPagoCon(total.toFixed(2));
         setVuelto(0);
       }
     }
   }, [metodo, isOpen, total]);
 
-  // Calcular el vuelto cada vez que cambia lo que el cliente entrega
   useEffect(() => {
-    const montoPagado = pagoCon === '' ? 0 : Number(pagoCon);
+    const montoRecibido = pagoCon === '' ? 0 : Number(pagoCon);
     if (metodo === 'EFECTIVO') {
-      setVuelto(montoPagado - total);
+      const calculo = montoRecibido - total;
+      setVuelto(calculo > 0 ? calculo : 0);
     } else {
       setVuelto(0);
     }
@@ -43,103 +41,93 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, total, onClose, onC
 
   if (!isOpen) return null;
 
-  // --- VALIDACIÓN PARA HABILITAR EL BOTÓN ---
-  // Se habilita si: es efectivo y el vuelto es >= 0, O si es otro método (ya está auto-rellenado)
-  const esValido = (metodo === 'EFECTIVO' && Number(pagoCon) >= total - 0.01) || (metodo !== 'EFECTIVO');
+  const esMontoValido = (Number(pagoCon) >= total - 0.01);
 
-  const handleConfirmar = () => {
-    if (esValido) {
-      onConfirm({ 
-        metodo, 
-        pagoCon: Number(pagoCon), 
-        vuelto: Math.max(0, vuelto) 
-      });
+  const handleFinalizar = () => {
+    if (esMontoValido) {
+      onConfirm({ metodo, pagoCon: Number(pagoCon), vuelto: vuelto });
     }
   };
 
-  return (
-    <div className="modal-overlay">
-      <div className="modal-container-tall">
-        {/* BOTÓN CERRAR X (Borde Rojo) */}
-        <button onClick={onClose} className="modal-close-x">
-          <X size={22} strokeWidth={3} />
+  return createPortal(
+    <div className="pay-fixed-overlay">
+      <div className="pay-fixed-card">
+        
+        <button onClick={onClose} className="pay-btn-close">
+          <X size={22} />
         </button>
 
-        {/* HEADER: TOTAL */}
-        <div className="total-pagar-container">
-          <span className="money-bag-emoji">💰</span>
-          <span className="total-pagar-text">Total a Pagar:</span>
-        </div>
-        
-        <div className="total-card-display">
-          <div className="total-amount-big">S/. {total.toFixed(2)}</div>
+        <div className="pay-header-section">
+          <span className="pay-label-top">TOTAL A COBRAR</span>
+          <div className="pay-main-total">S/. {total.toFixed(2)}</div>
         </div>
 
-        <div className="modal-inputs-stack">
-          {/* SELECCIÓN MÉTODO DE PAGO */}
-          <div className="input-group-modal">
-            <label className="modal-label-bold">
-              <span className="modal-icon-emoji">💳</span> Método de Pago:
-            </label>
-            <select 
-              value={metodo} 
-              onChange={(e) => setMetodo(e.target.value)}
-              className="modal-select-modern"
-            >
-              <option value="EFECTIVO">💵 EFECTIVO</option>
-              <option value="YAPE">🟣 YAPE</option>
-              <option value="PLIN">🔵 PLIN</option>
-              <option value="TARJETA">💳 TARJETA</option>
-              <option value="TRANSFERENCIA">🏦 TRANSFERENCIA</option>
-            </select>
+        <div className="pay-body-content">
+          {/* SECCIÓN MÉTODOS */}
+          <div className="pay-field-group">
+            <label className="pay-label-title">Método de Pago</label>
+            <div className="pay-methods-row">
+              <button 
+                className={`pay-method-item ${metodo === 'EFECTIVO' ? 'active-cash' : ''}`}
+                onClick={() => setMetodo('EFECTIVO')}
+              >
+                <Banknote size={18} /> <span>Efectivo</span>
+              </button>
+              <button 
+                className={`pay-method-item ${metodo === 'YAPE' ? 'active-yape' : ''}`}
+                onClick={() => setMetodo('YAPE')}
+              >
+                <Smartphone size={18} /> <span>Yape</span>
+              </button>
+              <button 
+                className={`pay-method-item ${metodo === 'PLIN' ? 'active-plin' : ''}`}
+                onClick={() => setMetodo('PLIN')}
+              >
+                <Smartphone size={18} /> <span>Plin</span>
+              </button>
+            </div>
           </div>
 
-          {/* INPUT PAGA CON */}
-          <div className="input-group-modal">
-            <label className="modal-label-bold underline">
-              <span className="modal-icon-emoji">💸</span> Paga con:
-            </label>
-            <input 
-              ref={inputRef}
-              type="number" 
-              placeholder="0.00"
-              step="0.10"
-              disabled={metodo !== 'EFECTIVO'}
-              value={pagoCon}
-              onFocus={(e) => e.target.select()}
-              onChange={(e) => setPagoCon(e.target.value)}
-              onKeyDown={(e) => { 
-                if(e.key === 'Enter') handleConfirmar(); 
-              }}
-              className="modal-input-large"
-            />
+          {/* SECCIÓN MONTO RECIBIDO */}
+          <div className="pay-field-group">
+            <label className="pay-label-title">¿Cuánto paga el cliente? (S/.)</label>
+            <div className={`pay-amount-box ${metodo !== 'EFECTIVO' ? 'is-locked' : ''}`}>
+              <DollarSign size={24} className="pay-dollar-icon" />
+              <input 
+                ref={inputRef}
+                type="number" 
+                placeholder="0.00"
+                value={pagoCon}
+                disabled={metodo !== 'EFECTIVO'}
+                onChange={(e) => setPagoCon(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleFinalizar()}
+              />
+            </div>
           </div>
+
+          {/* ÁREA DE VUELTO */}
+          {metodo === 'EFECTIVO' && (
+            <div className="pay-change-banner">
+              <span className="v-label">SU VUELTO:</span>
+              <span className="v-value">S/. {vuelto.toFixed(2)}</span>
+            </div>
+          )}
         </div>
 
-        {/* TEXTO VUELTO NARANJA */}
-        <div className="vuelto-naranja-pos">
-          Vuelto: S/. {vuelto > 0 ? vuelto.toFixed(2) : "0.00"}
-        </div>
-
-        {/* BOTONES DE ACCIÓN */}
-        <div className="modal-footer-flex">
-          <button onClick={onClose} className="btn-cancelar-modal">
-            Cancelar
-          </button>
-          
+        <div className="pay-footer-actions">
+          <button onClick={onClose} className="btn-pay-gray">Cancelar</button>
           <button 
-            disabled={!esValido}
-            onClick={handleConfirmar}
-            className="btn-cobrar-modal"
+            className="btn-pay-green" 
+            disabled={!esMontoValido} 
+            onClick={handleFinalizar}
           >
-            <div className="check-box-icon">
-                <CheckCircle size={16} />
-            </div> 
-            COBRAR
+            <CheckCircle size={20} /> FINALIZAR VENTA
           </button>
         </div>
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

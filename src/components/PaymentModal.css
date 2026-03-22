@@ -1,0 +1,145 @@
+/* --- OVERLAY BLOQUEANTE --- */
+.modal-pay-overlay {
+    position: fixed !important;
+    inset: 0 !important;
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 9999999 !important; /* MÁXIMA PRIORIDAD */
+    backdrop-filter: blur(8px);
+    padding: 20px;
+}
+
+/* --- TARJETA --- */
+.modal-pay-card {
+    background: white !important;
+    width: 100%;
+    max-width: 480px;
+    border-radius: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    animation: payPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes payPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.modal-pay-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #f1f5f9;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* --- HEADER --- */
+.modal-pay-header {
+    background: #f8fafc;
+    padding: 40px 20px 30px;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pay-label-small { font-size: 13px; font-weight: 800; color: #64748b; letter-spacing: 1px; }
+.pay-amount-huge { font-size: 4rem; font-weight: 900; color: #1e293b; margin-top: 5px; }
+
+/* --- BODY --- */
+.modal-pay-body { padding: 30px; }
+.pay-input-section { margin-bottom: 25px; }
+.pay-section-title { display: block; font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px; }
+
+/* MÉTODOS */
+.pay-methods-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.pay-method-btn {
+    padding: 12px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.pay-method-btn.active-cash { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+.pay-method-btn.active-yape { border-color: #9333ea; background: #faf5ff; color: #6b21a8; }
+.pay-method-btn.active-plin { border-color: #2563eb; background: #eff6ff; color: #1e40af; }
+
+/* INPUT */
+.pay-input-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 0 15px;
+    height: 70px;
+}
+
+.pay-input-wrapper.is-disabled { opacity: 0.5; background: #f1f5f9; }
+.pay-dollar-icon { color: #10b981; margin-right: 10px; }
+
+.pay-input-wrapper input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 2.2rem;
+    font-weight: 800;
+    color: #1e293b;
+    outline: none;
+    text-align: right;
+}
+
+/* VUELTO */
+.pay-vuelto-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff7ed;
+    padding: 18px 25px;
+    border-radius: 18px;
+    border: 1.5px solid #ffedd5;
+}
+
+.vuelto-label { font-weight: 800; color: #9a3412; font-size: 14px; }
+.vuelto-val { font-size: 1.8rem; font-weight: 900; color: #ea580c; }
+
+/* FOOTER */
+.modal-pay-footer {
+    padding: 0 30px 35px;
+    display: flex;
+    gap: 15px;
+}
+
+.btn-pay-cancel { flex: 1; padding: 16px; border: none; background: #f1f5f9; border-radius: 16px; font-weight: 700; color: #475569; cursor: pointer; }
+.btn-pay-finish {
+    flex: 2; padding: 16px; border: none; background: #10b981; color: white; border-radius: 16px;
+    font-weight: 900; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    box-shadow: 0 4px 0 #059669;
+}
+
+.btn-pay-finish:active { transform: translateY(2px); box-shadow: none; }
+.btn-pay-finish:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; filter: grayscale(1); }

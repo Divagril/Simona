@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Users, Search, RefreshCw, UserPlus, 
-  Trash2, DollarSign, X, Printer 
+  Users, Search, RefreshCw, UserPlus, Trash2, DollarSign, Printer, 
+  ChevronRight, CreditCard, ShieldCheck, CheckCircle, ArrowLeft, Loader2
 } from 'lucide-react';
 import { 
-  getClientesConDeuda, 
-  crearCliente, 
-  getMovimientosCliente, 
-  registrarAbono, 
-  eliminarCliente 
+  getClientesConDeuda, crearCliente, getMovimientosCliente, 
+  registrarAbono, eliminarCliente 
 } from '../services/api';
 import { useNotification } from '../context/NotificationContext';
 import ConfirmModal from '../components/ConfirmModal'; 
 import TicketPreviewModal from '../components/TicketPreviewModal'; 
-import type { Cliente, Movimiento } from '../types';
+import type { Cliente } from '../types';
+
+import './Clients.css'; 
 
 const Clients: React.FC = () => {
   const { showNotification } = useNotification();
@@ -21,251 +20,226 @@ const Clients: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [busqueda, setBusqueda] = useState('');
   const [selectedClient, setSelectedClient] = useState<Cliente | null>(null);
-  const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
-  const [nuevoNombre, setNuevoNombre] = useState('');
+  const [movimientos, setMovimientos] = useState<any[]>([]);
+  const [cargando, setCargando] = useState(false);
+  const [cargandoMovs, setCargandoMovs] = useState(false);
+  const [procesando, setProcesando] = useState(false);
+
   const [montoAbono, setMontoAbono] = useState('');
+  const [metodoPago, setMetodoPago] = useState('EFECTIVO');
+  const [nuevoNombre, setNuevoNombre] = useState('');
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
   const [datosTicket, setDatosTicket] = useState<any>(null);
-  const [vueltoAlert, setVueltoAlert] = useState<number | null>(null);
 
   const cargarClientes = async () => {
+    setCargando(true);
     try {
       const data = await getClientesConDeuda();
-      setClientes(data);
+      setClientes(Array.isArray(data) ? data : []);
+      if (selectedClient) {
+        const actualizado = data.find((c: any) => c._id === selectedClient._id);
+        if (actualizado) setSelectedClient(actualizado);
+      }
     } catch (error) {
-      console.error("Error al cargar clientes");
+      showNotification("Error de red", true);
+    } finally {
+      setTimeout(() => setCargando(false), 500);
     }
   };
 
-  useEffect(() => {
-    cargarClientes();
-  }, []);
+  useEffect(() => { cargarClientes(); }, []);
 
   const seleccionarCliente = async (cliente: Cliente) => {
     setSelectedClient(cliente);
+    setMovimientos([]);
+    setCargandoMovs(true);
     try {
       const movs = await getMovimientosCliente(cliente._id);
       setMovimientos(movs);
-    } catch (error) {
-      showNotification("Error al cargar movimientos", true);
-    }
+    } catch (e) { showNotification("Error historial", true); }
+    finally { setCargandoMovs(false); }
   };
 
   const handleCrearCliente = async () => {
-    const nombreLimpio = nuevoNombre.trim();
-    if (!nombreLimpio) {
-       showNotification("⚠️ Escriba un nombre", true);
-       return;
-    }
+    if (!nuevoNombre.trim()) return;
     try {
-       await crearCliente(nombreLimpio);
+       await crearCliente(nuevoNombre.trim().toUpperCase());
        setNuevoNombre(''); 
-       showNotification(`✅ Cliente registrado`);
        cargarClientes();
-    } catch (error) {
-       showNotification("❌ Error al guardar", true);
-    }
-  };
-
-  const handleImprimirMovimiento = (mov: any) => {
-    if (!selectedClient) return;
-
-    // Aquí está el truco: usamos mov.saldo_al_momento
-    const dataParaTicket = {
-        total: mov.monto,
-        saldoPendiente: mov.saldo_al_momento, // <--- USA EL SALDO DEL HISTORIAL
-        fechaOriginal: mov.fecha,
-        items: [{
-            nombre: mov.tipo === 'PAGO' ? "ABONO A CUENTA" : (mov.descripcion || "COMPRA AL FIADO"),
-            cantidadSeleccionada: 1,
-            precio: mov.monto,
-            subtotal: mov.monto
-        }]
-    };
-
-    setDatosTicket({
-        ...dataParaTicket,
-        metodoPago: mov.tipo === 'PAGO' ? "EFECTIVO" : "FIADO"
-    });
-    setIsTicketModalOpen(true);
+       showNotification("✅ Cliente guardado");
+    } catch (error) { showNotification("Error", true); }
   };
 
   const handleAbonar = async () => {
     if (!selectedClient || !montoAbono) return;
-    const montoPago = Number(montoAbono);
-    const deudaActual = selectedClient.deudaTotal;
-
+    setProcesando(true);
     try {
-      if (montoPago > deudaActual) {
-        const vueltoCalculado = montoPago - deudaActual;
-        setVueltoAlert(vueltoCalculado); 
-        setTimeout(() => setVueltoAlert(null), 60000); 
-        await registrarAbono(selectedClient._id, deudaActual);
-      } else {
-        await registrarAbono(selectedClient._id, montoPago);
-        showNotification("✅ Pago registrado");
-      }
-      
+      await registrarAbono(selectedClient._id, Number(montoAbono), metodoPago); 
       setMontoAbono('');
-      cargarClientes();
-      
+      showNotification(`✅ S/. ${montoAbono} registrado`);
+      await cargarClientes();
       const movs = await getMovimientosCliente(selectedClient._id);
-      setMovimientos(movs);
-      
-      const res = await getClientesConDeuda();
-      const actualizado = res.find((c:any) => c._id === selectedClient._id);
-      if(actualizado) setSelectedClient(actualizado);
-
-    } catch (error) {
-      showNotification("❌ Error al procesar pago", true);
-    }
+      setMovimientos(movs); 
+    } catch (error) { showNotification("Error", true); }
+    finally { setProcesando(false); }
   };
 
-  const ejecutarEliminacionReal = async () => {
-    if (!selectedClient) return;
-    try {
-      await eliminarCliente(selectedClient._id);
-      showNotification(`🗑️ Cliente eliminado`);
-      setSelectedClient(null);
-      cargarClientes();
-    } catch (error) {
-      showNotification("Error al eliminar", true);
-    }
+  const handleImprimir = (mov: any) => {
+    setDatosTicket({
+      total: mov.monto,
+      saldoPendiente: mov.saldo_al_momento,
+      fechaOriginal: mov.fecha,
+      items: mov.productos || [{ nombre: 'PAGO DE DEUDA', cantidadSeleccionada: 1, subtotal: mov.monto }],
+      metodoPago: mov.metodoPago || 'EFECTIVO'
+    });
+    setIsTicketModalOpen(true);
   };
 
   return (
-    <div className="clients-container">
+    <div className={`clients-master-wrapper ${selectedClient ? 'show-detail' : 'show-list'}`}>
       
-      <div className="panel-blanco" style={{ width: '350px', display: 'flex', flexDirection: 'column', padding: '15px' }}>
-        <div className="clients-header-row">
-          <h3 style={{margin: 0}}><Users size={20} /> Clientes</h3>
-          <button className="btn-icon-refresh-teal" onClick={cargarClientes}><RefreshCw size={16} /></button>
+      {/* 1. SIDEBAR IZQUIERDO */}
+      <aside className="clients-sidebar">
+        <div className="sidebar-header-pro">
+          <div className="title-row">
+            <div className="main-title"><Users size={20}/> <span>Clientes</span></div>
+            <button className={`btn-sync-teal ${cargando ? 'spin' : ''}`} onClick={cargarClientes}>
+              <RefreshCw size={18}/>
+            </button>
+          </div>
+          <div className="search-field">
+            <Search size={18} className="icon-search"/>
+            <input placeholder="Buscar..." value={busqueda} onChange={e => setBusqueda(e.target.value)}/>
+          </div>
         </div>
-        <input 
-          type="text" placeholder="🔍 Buscar cliente..." 
-          className="input-main" style={{ width: '100%', marginBottom: '10px' }}
-          value={busqueda} onChange={e => setBusqueda(e.target.value)}
-        />
-        <div style={{ flexGrow: 1, overflowY: 'auto', backgroundColor: '#F0F3F4', borderRadius: '8px', padding: '10px' }}>
-          {clientes.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase())).map(cliente => (
-            <div key={cliente._id} onClick={() => seleccionarCliente(cliente)}
-              className={`modal-client-card ${selectedClient?._id === cliente._id ? 'selected-row' : ''}`}>
-              <div className="modal-client-info">
-                <span className="modal-client-name">{cliente.nombre}</span>
-                <div className={`status-badge ${cliente.deudaTotal > 0.1 ? 'debt' : 'clean'}`}>
-                    {cliente.deudaTotal > 0.1 ? `S/. ${cliente.deudaTotal.toFixed(2)}` : 'AL DÍA'}
+
+        <div className="clients-list-scroll">
+          {clientes.filter(c => c.nombre.toLowerCase().includes(busqueda.toLowerCase())).map(c => (
+            <div key={c._id} className={`client-card-item ${selectedClient?._id === c._id ? 'active' : ''}`} onClick={() => seleccionarCliente(c)}>
+                <div className="info">
+                    <span className="name">{c.nombre}</span>
+                    <span className={`status ${c.deudaTotal > 0.1 ? 'debt' : 'clean'}`}>
+                        {c.deudaTotal > 0.1 ? `DEBE S/. ${c.deudaTotal.toFixed(2)}` : 'AL DÍA'}
+                    </span>
                 </div>
-              </div>
+                <ChevronRight size={18} className="chevron"/>
             </div>
           ))}
         </div>
-        <div className="create-client-footer">
-          <div className="input-with-btn">
-            <input type="text" placeholder="Nuevo cliente..." className="input-main"
-               value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}
-               onKeyDown={(e) => e.key === 'Enter' && handleCrearCliente()} />
-            <button className="btn-add-client-green" onClick={handleCrearCliente}><UserPlus size={20} /></button>
+
+        <div className="sidebar-footer-add">
+            <div className="input-add-group">
+                <input placeholder="Nuevo..." value={nuevoNombre} onChange={e => setNuevoNombre(e.target.value)}/>
+                <button onClick={handleCrearCliente}><UserPlus size={18}/></button>
+            </div>
+        </div>
+      </aside>
+
+      {/* 2. CONTENIDO DERECHO */}
+      <main className="clients-detail-view">
+        {selectedClient ? (
+          <div className="detail-scroll">
+            <button className="btn-back-mobile" onClick={() => setSelectedClient(null)}>
+                <ArrowLeft size={20} /> Directorio
+            </button>
+
+            <header className="profile-header-card">
+               <div className="profile-left">
+                  <div className="avatar-circle">{selectedClient.nombre.charAt(0)}</div>
+                  <div className="info">
+                    <h1>{selectedClient.nombre}</h1>
+                    <button className="btn-delete-pro" onClick={() => setIsDeleteModalOpen(true)}>
+                      <Trash2 size={14}/> Eliminar Ficha
+                    </button>
+                  </div>
+               </div>
+               <div className="profile-right">
+                  <span className="label">SALDO PENDIENTE</span>
+                  <span className={`amount ${selectedClient.deudaTotal > 0.1 ? 'text-red' : 'text-green'}`}>
+                    S/. {selectedClient.deudaTotal.toFixed(2)}
+                  </span>
+               </div>
+            </header>
+
+            <section className="payment-bar-pro card-white">
+                <div className="pay-group">
+                    <label className="pay-label-mini">¿CUÁNTO VA A PAGAR?</label>
+                    <div className="pay-input-container">
+                        <div className="pay-icon-circle"><DollarSign size={20} color="#27ae60"/></div>
+                        <input type="number" placeholder="0.00" value={montoAbono} onChange={e => setMontoAbono(e.target.value)}/>
+                    </div>
+                </div>
+
+                <div className="pay-group">
+                    <label className="pay-label-mini">¿CÓMO PAGA?</label>
+                    <div className="pay-select-container">
+                        <div className="pay-icon-circle"><CreditCard size={18} color="#3b82f6"/></div>
+                        <select value={metodoPago} onChange={e => setMetodoPago(e.target.value)}>
+                            <option value="EFECTIVO">💵 EFECTIVO</option>
+                            <option value="YAPE">🟣 YAPE</option>
+                            <option value="PLIN">🔵 PLIN</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button className="btn-register-payment-pro" onClick={handleAbonar} disabled={!montoAbono || procesando}>
+                   {procesando ? <Loader2 className="spin" size={20}/> : <CheckCircle size={20}/>}
+                   {procesando ? 'GUARDANDO...' : 'REGISTRAR PAGO'}
+                </button>
+            </section>
+
+            <section className="history-table-pro card-white">
+               <div className="history-header">
+                  <ShieldCheck size={20} color="#64748b" />
+                  <h3>Historial Detallado</h3>
+               </div>
+               <div className="table-container">
+                 <table className="history-table">
+                    <thead>
+                      <tr>
+                        <th className="col-fecha">FECHA</th>
+                        <th className="col-concepto">CONCEPTO</th>
+                        <th className="col-monto">MONTO</th>
+                        <th className="col-ticket">TICKET</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {movimientos.map(m => (
+                        <tr key={m._id}>
+                          <td className="col-fecha">{new Date(m.fecha).toLocaleDateString()}</td>
+                          <td className="col-concepto">
+                             <strong className={m.tipo === 'DEUDA' ? 'text-orange' : 'text-green'}>
+                                {m.tipo === 'DEUDA' ? '🛒 COMPRA' : '💵 PAGO'}
+                             </strong>
+                             <div className="sub-text">vía {m.metodoPago || 'Efectivo'}</div>
+                          </td>
+                          <td className="col-monto">S/. {m.monto.toFixed(2)}</td>
+                          <td className="col-ticket">
+                            <button className="btn-print-mini" onClick={() => handleImprimir(m)}><Printer size={16}/></button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                 </table>
+               </div>
+            </section>
           </div>
-        </div>
-      </div>
-
-      <div className="pos-right" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <div className="panel-blanco panel-header-cliente" style={{ padding: '20px' }}>
-          {selectedClient ? (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h1 style={{ margin: 0 }}>{selectedClient.nombre}</h1>
-                <button onClick={() => setIsDeleteModalOpen(true)} className="btn-delete-link"><Trash2 size={14} /> Eliminar Cliente</button>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                   <div style={{ fontWeight: 'bold', color: '#7F8C8D', fontSize: '12px' }}>DEUDA TOTAL</div>
-                   <div className={`deuda-header-valor ${(selectedClient?.deudaTotal || 0) <= 0.1 ? 'text-verde' : 'text-rojo'}`}>
-                    {(selectedClient?.deudaTotal || 0) <= 0.1 ? 'AL DÍA' : `S/. ${selectedClient.deudaTotal.toFixed(2)}`}
-                   </div>
-              </div>
-            </div>
-          ) : (
-            <div style={{ color: '#BDC3C7', textAlign: 'center', width: '100%', padding: '40px' }}>Seleccione un cliente de la lista</div>
-          )}
-        </div>
-
-        {selectedClient && (
-          <>
-            <div className="panel-blanco input-abono-group">
-              <div className="abono-input-container">
-                <DollarSign size={24} color="#27AE60" />
-                <input type="number" placeholder="Monto abono..." className="input-main" style={{ flex: 1, fontSize: '18px' }}
-                  value={montoAbono} onChange={e => setMontoAbono(e.target.value)} disabled={selectedClient.deudaTotal <= 0.1} />
-              </div>
-              <button className="btn-registrar-pago-pro" onClick={handleAbonar} disabled={selectedClient.deudaTotal <= 0.1}>
-                💵 REGISTRAR PAGO
-              </button>
-            </div>
-
-            <div className="table-history-wrapper">
-              <table className="modern-table">
-                <thead style={{ background: '#F8F9F9', position: 'sticky', top: 0 }}>
-                  <tr>
-                    <th style={{ padding: '15px' }}>FECHA</th>
-                    <th>CONCEPTO</th>
-                    <th style={{ textAlign: 'right', paddingRight: '20px' }}>MONTO (S/.)</th>
-                    <th style={{ textAlign: 'center' }}>TICKET</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {movimientos.map((mov: any) => (
-                    <tr key={mov._id}>
-                      <td style={{ fontSize: '12px', color: '#7F8C8D' }}>{new Date(mov.fecha).toLocaleString()}</td>
-                      <td>
-                        <span style={{ fontWeight: 'bold', color: mov.tipo === 'DEUDA' ? '#E67E22' : '#27AE60' }}>
-                          {mov.tipo === 'DEUDA' ? '🛒 COMPRA' : '💵 PAGO'}
-                        </span>
-                        <div style={{fontSize: '11px', color: '#7F8C8D'}}>{mov.descripcion}</div>
-                      </td>
-                      <td style={{ textAlign: 'right', paddingRight: '20px', fontWeight: 'bold' }}>S/. {mov.monto.toFixed(2)}</td>
-                      <td style={{ textAlign: 'center' }}>
-                         <button className="btn-reprint-table" onClick={() => handleImprimirMovimiento(mov)}>
-                            <Printer size={16} />
-                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </>
+        ) : (
+          <div className="no-client-selected">
+            <Users size={80} color="#cbd5e1"/>
+            <h2>Directorio de Clientes</h2>
+            <p>Selecciona un cliente para gestionar su cuenta.</p>
+          </div>
         )}
-      </div>
+      </main>
 
-      {vueltoAlert !== null && (
-        <div className="vuelto-left-alert">
-          <div className="left-alert-content">
-            <div className="left-alert-icon">💰</div>
-            <div className="left-alert-text">
-              <span className="left-alert-title">DAR VUELTO</span>
-              <span className="left-alert-amount">S/. {vueltoAlert.toFixed(2)}</span>
-            </div>
-            <button className="left-alert-close" onClick={() => setVueltoAlert(null)}><X size={16} /></button>
-          </div>
-          <div className="left-alert-progress"></div>
-        </div>
-      )}
-
-      <ConfirmModal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} onConfirm={ejecutarEliminacionReal} titulo="¿Eliminar?" mensaje="¿Borrar cliente?" />
-      
-      {datosTicket && (
-        <TicketPreviewModal 
-            isOpen={isTicketModalOpen} 
-            onClose={() => setIsTicketModalOpen(false)} 
-            items={datosTicket.items} 
-            total={datosTicket.total}
-            metodoPago={datosTicket.metodoPago}
-            saldoPendiente={datosTicket.saldoPendiente}
-            fechaManual={datosTicket.fechaOriginal}
-        />
-      )}
+      <ConfirmModal 
+        isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} 
+        onConfirm={() => eliminarCliente(selectedClient!._id).then(() => {setSelectedClient(null); cargarClientes();})}
+        titulo="¿Borrar Cliente?" mensaje="Esta acción es permanente."
+      />
     </div>
   );
 };

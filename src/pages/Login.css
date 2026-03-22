@@ -1,0 +1,186 @@
+.login-full-screen {
+    width: 100vw;
+    height: 100vh;
+    background-color: #0f172a; /* Azul noche profundo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+}
+
+/* --- TARJETA DE LOGIN --- */
+.login-card-container {
+    background: rgba(255, 255, 255, 0.95);
+    width: 100%;
+    max-width: 420px;
+    padding: 50px 40px;
+    border-radius: 32px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: loginFadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loginFadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- HEADER --- */
+.login-brand-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.login-logo-hex {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+}
+
+.login-brand-header h1 {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #1e293b;
+    margin: 0;
+}
+
+.login-brand-header p {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin-top: 5px;
+}
+
+/* --- INPUTS --- */
+.login-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.login-input-field label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.login-input-wrapper input {
+    width: 100%;
+    padding: 15px 18px;
+    border-radius: 14px;
+    border: 2px solid #e2e8f0;
+    background-color: #f8fafc;
+    font-size: 1rem;
+    font-weight: 600;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.login-input-wrapper input:focus {
+    border-color: #3b82f6;
+    background-color: white;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+/* --- BOTÓN --- */
+.btn-login-main {
+    background-color: #10b981; /* Verde Success */
+    color: white;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    font-weight: 800;
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    transition: all 0.2s;
+    box-shadow: 0 4px 0 #059669;
+}
+
+.btn-login-main:hover {
+    background-color: #059669;
+    transform: translateY(-2px);
+}
+
+.btn-login-main:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.btn-login-main:disabled {
+    background-color: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* --- SPINNER --- */
+.login-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(255,255,255,0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: loginSpin 0.8s linear infinite;
+}
+
+@keyframes loginSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* --- DECORACIÓN DE FONDO --- */
+.login-bg-blob {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    filter: blur(80px);
+    border-radius: 50%;
+    z-index: 1;
+    opacity: 0.4;
+}
+
+.blob-1 {
+    background: #3b82f6;
+    top: -200px;
+    right: -100px;
+}
+
+.blob-2 {
+    background: #8b5cf6;
+    bottom: -200px;
+    left: -100px;
+}
+
+.login-footer-info {
+    text-align: center;
+    margin-top: 30px;
+    color: #94a3b8;
+    font-size: 0.75rem;
+}
+
+.login-footer-info p { margin: 4px 0; }
+
+/* RESPONSIVO */
+@media (max-width: 480px) {
+    .login-card-container {
+        padding: 35px 25px;
+        margin: 20px;
+    }
+}

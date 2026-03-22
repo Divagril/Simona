@@ -4,40 +4,56 @@ const cors = require('cors');
 require('dotenv').config();
 
 const app = express();
+
+// --- CONFIGURACIÓN DE MIDDLEWARES ---
 app.use(cors());
 app.use(express.json());
 
+// --- CONEXIÓN A LA BASE DE DATOS MONGODB ---
 mongoose.connect(process.env.MONGO_URI)
-    .then(() => console.log("✅ Servidor Simona CONECTADO a Atlas"))
-    .catch(err => console.error("❌ Error de conexión:", err));
+    .then(() => {
+        console.log("-----------------------------------------");
+        console.log("✅ CONEXIÓN EXITOSA: MongoDB Atlas");
+        console.log("📂 BASE DE DATOS: sistema_pos_v5");
+        console.log("-----------------------------------------");
+    })
+    .catch(err => {
+        console.error("❌ ERROR CRÍTICO DE CONEXIÓN:", err);
+    });
 
-// --- 1. MODELOS ---
+// --- 1. DEFINICIÓN DE MODELOS (SCHEMAS) ---
 
+// MODELO: PRODUCTO (Catálogo de Ventas)
 const Producto = mongoose.model('Producto', new mongoose.Schema({
-    nombre: String, 
-    precio: Number, 
-    unidad_venta: String, 
+    nombre: { type: String, required: true },
+    precio: { type: Number, default: 0 },
+    unidad_venta: { type: String, default: 'PAQUETE' },
     unidades_por_paquete: { type: Number, default: 1 }
 }));
 
+// MODELO: INVERSION (Registro de compras a proveedores)
 const Inversion = mongoose.model('Inversion', new mongoose.Schema({
-    nombre: String,
-    cantidadFormato: Number,
-    unidadesPorFormato: Number,
-    costoTotal: Number,
+    nombre: { type: String, required: true },
+    formato_compra: String,
+    cantidadFormato: { type: Number, default: 0 },
+    unidadesPorFormato: { type: Number, default: 0 },
+    costoTotal: { type: Number, default: 0 },
     fecha: { type: Date, default: Date.now }
 }));
 
+// MODELO: VENTA (Registro de transacciones cerradas)
 const Venta = mongoose.model('Venta', new mongoose.Schema({
-    productos: Array, // [{nombre, cantidadSeleccionada, unidades_por_paquete, subtotal}]
-    total: Number,
-    metodoPago: String,
+    productos: Array, // Lista detallada del carrito
+    total: { type: Number, required: true },
+    metodoPago: String, // 'EFECTIVO', 'YAPE', 'PLIN', 'TARJETA'
     fecha: { type: Date, default: Date.now }
 }));
 
+// MODELO: CLIENTE (Ficha de deudores con detalles para Dashboard)
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
-    nombre: { type: String, uppercase: true },
+    nombre: { type: String, uppercase: true, required: true },
     deudaTotal: { type: Number, default: 0 },
+    // Array para que tu otro Dashboard sepa qué productos faltan pagar
     detalles_deuda: { type: Array, default: [] }
 }, { strict: false }));
 
@@ -45,46 +61,39 @@ const MovimientoFiado = mongoose.model('MovimientoFiado', new mongoose.Schema({
     cliente_id: mongoose.Schema.Types.ObjectId,
     tipo: String, 
     monto: Number,
+    metodoPago: String, // <--- ESTO ES LO QUE FALTA PARA QUE NO SE BORRE
+    descripcion: String,
     productos: Array,
     saldo_al_momento: Number,
     fecha: { type: Date, default: Date.now }
 }));
 
-const Log = mongoose.model('Log', new mongoose.Schema({ accion: String, detalle: String, fecha: { type: Date, default: Date.now } }));
-const Kardex = mongoose.model('Kardex', new mongoose.Schema({ nombre_producto: String, cantidad: Number, motivo: String, stock_actual: Number, fecha: { type: Date, default: Date.now } }));
+// MODELO: LOGS (Auditoría de acciones del usuario)
+const Log = mongoose.model('Log', new mongoose.Schema({
+    accion: String,
+    detalle: String,
+    fecha: { type: Date, default: Date.now }
+}));
 
-// --- 2. FUNCIÓN MAESTRA DE CÁLCULO (LA QUE ARREGLA TU ERROR) ---
+// MODELO: KARDEX (Seguimiento de movimientos físicos de mercadería)
+const Kardex = mongoose.model('Kardex', new mongoose.Schema({
+    nombre_producto: String,
+    cantidad: Number, // Entradas (+) y Salidas (-)
+    motivo: String,
+    stock_actual: Number,
+    fecha: { type: Date, default: Date.now }
+}));
 
-const obtenerUnidadesDisponibles = (nombreProd, inversiones, ventas) => {
-    const n = (nombreProd || "").toLowerCase().trim();
 
-    // 1. Calcular Entradas (Todo lo que se compró en facturas)
-    const entradas = inversiones
-        .filter(i => (i.nombre || "").toLowerCase().trim() === n)
-        .reduce((acc, c) => acc + (Number(c.cantidadFormato) * Number(c.unidadesPorFormato) || 0), 0);
+// --- 2. RUTAS DE LA API ---
 
-    // 2. Calcular Salidas (Todo lo que se ha vendido)
-    let salidas = 0;
-    ventas.forEach(v => {
-        const listaItems = v.productos || [];
-        listaItems.forEach(item => {
-            if ((item.nombre || "").toLowerCase().trim() === n) {
-                // IMPORTANTE: Si se vendió un paquete, restamos las unidades que ese paquete contenía
-                // Si vendió por unidad, unidades_por_paquete es 1.
-                const factor = Number(item.unidades_por_paquete) || 1;
-                salidas += (Number(item.cantidadSeleccionada) * factor);
-            }
-        });
-    });
+app.get('/', (req, res) => res.send("🚀 Servidor Simona v2.0 Online"));
 
-    return entradas - salidas;
-};
+/**
+ * SECCIÓN: GESTIÓN DE PRODUCTOS
+ */
 
-// --- 3. RUTAS ---
-
-app.get('/', (req, res) => res.send("🚀 API Simona Online"));
-
-// PRODUCTOS: Catálogo (Derecha)
+// OBTENER PRODUCTOS CON CÁLCULO DE STOCK REAL (Restando ventas de inversiones)
 app.get('/api/productos', async (req, res) => {
     try {
         const productos = await Producto.find().sort({ nombre: 1 });
@@ -92,40 +101,38 @@ app.get('/api/productos', async (req, res) => {
         const ventas = await Venta.find();
 
         const resultado = productos.map(p => {
-            const unidadesDisponibles = obtenerUnidadesDisponibles(p.nombre, inversiones, ventas);
+            const n = (p.nombre || "").toLowerCase().trim();
             
+            // Calculamos todo lo que entró por facturas
+            const ent = inversiones
+                .filter(i => (i.nombre || "").toLowerCase().trim() === n)
+                .reduce((acc, c) => acc + (Number(c.cantidadFormato) * Number(c.unidadesPorFormato) || 0), 0);
+            
+            // Calculamos todo lo que salió (Ventas normales y fiados)
+            let sal = 0;
+            ventas.forEach(v => {
+                (v.productos || []).forEach(it => {
+                    if ((it.nombre || "").toLowerCase().trim() === n) {
+                        sal += Number(it.cantidadSeleccionada);
+                    }
+                });
+            });
+
+            const base = ent - sal;
+
             return { 
                 ...p._doc, 
-                stock_actual: p.unidad_venta === 'UNIDAD' 
-                    ? unidadesDisponibles 
-                    : Math.floor(unidadesDisponibles / (p.unidades_por_paquete || 1)) 
+                stock_actual: p.unidad_venta === 'UNIDAD' ? base : Math.floor(base / (p.unidades_por_paquete || 1)) 
             };
         });
         res.json(resultado);
-    } catch (e) { res.status(500).json([]); }
+    } catch (e) {
+        console.error("Error al procesar stock:", e);
+        res.status(500).json([]);
+    }
 });
 
-// BUSCADOR DE INVERSIONES: Cuadro Naranja (Izquierda)
-app.get('/api/nombres-inversiones', async (req, res) => {
-    try {
-        const inversiones = await Inversion.find();
-        const ventas = await Venta.find();
-        const nombresUnicos = [...new Set(inversiones.map(i => (i.nombre || "").toUpperCase().trim()))];
-
-        const listaSugerencias = nombresUnicos.map(nombre => {
-            // USAMOS LA MISMA FUNCIÓN PARA QUE AMBOS LADOS COINCIDAN
-            const stockReal = obtenerUnidadesDisponibles(nombre, inversiones, ventas);
-            return {
-                nombre: nombre,
-                total: Math.max(0, stockReal)
-            };
-        });
-
-        res.json(listaSugerencias);
-    } catch (e) { res.json([]); }
-});
-
-// GUARDAR PRODUCTO
+// SINCRONIZAR O CREAR PRODUCTO DESDE EL INVENTARIO
 app.post('/api/productos', async (req, res) => {
     try {
         const { nombre, precio, unidad_venta, unidades_por_paquete } = req.body;
@@ -134,174 +141,87 @@ app.post('/api/productos', async (req, res) => {
             { nombre: nombre.toUpperCase().trim(), precio, unidad_venta, unidades_por_paquete }, 
             { upsert: true, new: true }
         );
+
+        await new Log({ accion: 'SINCRONIZACIÓN', detalle: `Se configuró catálogo para ${nombre.toUpperCase()}` }).save();
         res.json(prod);
-    } catch (e) { res.status(500).json({ error: e.message }); }
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
-// ELIMINAR MASIVO
+// MULTI-ELIMINACIÓN DE PRODUCTOS
 app.post('/api/productos/eliminar-masivo', async (req, res) => {
     try {
-        await Producto.deleteMany({ _id: { $in: req.body.ids } });
+        const { ids } = req.body;
+        await Producto.deleteMany({ _id: { $in: ids } });
+        await new Log({ accion: 'ELIMINACIÓN', detalle: `Se borraron ${ids.length} productos del catálogo.` }).save();
         res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
+    } catch (e) {
+        res.status(500).json({ success: false });
+    }
 });
 
+// BUSCADOR DE INVERSIONES (Muestra stock restante de facturas)
+app.get('/api/nombres-inversiones', async (req, res) => {
+    try {
+        const invs = await Inversion.find();
+        const vts = await Venta.find();
+        const tots = {};
+
+        invs.forEach(i => {
+            const n = (i.nombre || "S/N").toUpperCase().trim();
+            const unidades = (Number(i.cantidadFormato) * Number(i.unidadesPorFormato)) || 0;
+            if (!tots[n]) tots[n] = 0;
+            tots[n] += unidades;
+        });
+
+        vts.forEach(v => {
+            (v.productos || []).forEach(it => {
+                const nV = (it.nombre || "").toUpperCase().trim();
+                if (tots[nV] !== undefined) tots[nV] -= Number(it.cantidadSeleccionada);
+            });
+        });
+
+        const lista = Object.keys(tots).map(nombre => ({
+            nombre: nombre,
+            total: Math.max(0, tots[nombre])
+        }));
+
+        res.json(lista);
+    } catch (e) {
+        res.json([]);
+    }
+});
+
+/**
+ * SECCIÓN: VENTAS Y CAJA
+ */
+
+// REGISTRAR COBRO NORMAL (Efectivo/Yape/Tarjeta)
 app.post('/api/ventas', async (req, res) => {
     try {
         const { items, total, metodoPago } = req.body;
+        const v = new Venta({ productos: items, total, metodoPago, fecha: new Date() });
+        await v.save();
 
-        // 1. Guardamos la venta oficial
-        const nuevaVenta = new Venta({
-            productos: items,
-            total: total,
-            metodoPago: metodoPago,
-            fecha: new Date()
-        });
-        await nuevaVenta.save();
-
-        // 2. REGISTRO EN KARDEX (Para la tabla de Auditoría)
-        // Recorremos cada producto vendido para generar su movimiento de inventario
-        for (const it of items) {
-            await new Kardex({
-                nombre_producto: it.nombre,
-                cantidad: -it.cantidadSeleccionada, // Negativo porque sale stock
-                motivo: `VENTA DIRECTA (${metodoPago})`,
-                // Calculamos el stock que queda después de esta resta
-                stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada,
-                fecha: new Date()
-            }).save();
-        }
-
-        // 3. REGISTRO EN LOGS (Historial de acciones generales)
-        await new Log({
-            accion: 'VENTA',
-            detalle: `Cobro exitoso de S/. ${total.toFixed(2)} vía ${metodoPago}.`,
-            fecha: new Date()
-        }).save();
-
-        res.json({ success: true });
-
-    } catch (e) {
-        console.error("❌ Error en Ventas:", e);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-app.post('/api/fiados/masivo', async (req, res) => {
-    try {
-        const { cliente_id, items, total } = req.body;
-
-        // 1. Preparamos el detalle de productos para tu DASHBOARD de Clientes
-        const infoDashboard = items.map(it => ({
-            prod: it.nombre,
-            cant: it.cantidadSeleccionada,
-            precio: it.precio,
-            fecha: new Date()
-        }));
-
-        // 2. ACTUALIZACIÓN EN LA COLECCIÓN 'CLIENTES' (Para tu otro sistema)
-        // Usamos el driver nativo para asegurar que se cree el campo detalles_deuda
-        const db = mongoose.connection.db;
-        const opResult = await db.collection('clientes').findOneAndUpdate(
-            { _id: new mongoose.Types.ObjectId(cliente_id) },
-            { 
-                $inc: { deudaTotal: total },
-                $push: { detalles_deuda: { $each: infoDashboard } } 
-            },
-            { returnDocument: 'after' }
-        );
-
-        // 3. REGISTRAMOS LA VENTA (Para que el Stock Real baje en todo el sistema)
-        await new Venta({
-            productos: items,
-            total: total,
-            metodoPago: 'FIADO',
-            fecha: new Date()
-        }).save();
-
-        // 4. REGISTRO EN KARDEX (Auditoría de inventario)
+        // Registro en Kardex para cada producto
         for (const it of items) {
             await new Kardex({
                 nombre_producto: it.nombre,
                 cantidad: -it.cantidadSeleccionada,
-                motivo: 'VENTA AL FIADO',
-                stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada,
-                fecha: new Date()
+                motivo: `VENTA ${metodoPago}`,
+                stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada
             }).save();
         }
 
-        // 5. REGISTRO EN LOGS (Historial de acciones)
-        await new Log({
-            accion: 'FIADO',
-            detalle: `Se otorgó crédito de S/. ${total.toFixed(2)} con ${items.length} productos.`,
-            fecha: new Date()
-        }).save();
-
-        // 6. Registro en Movimientos (Para los tickets del historial del cliente)
-        await new MovimientoFiado({
-            cliente_id: new mongoose.Types.ObjectId(cliente_id),
-            tipo: 'DEUDA',
-            monto: total,
-            productos: infoDashboard,
-            saldo_al_momento: (opResult.value ? opResult.value.deudaTotal : total),
-            fecha: new Date()
-        }).save();
-
+        await new Log({ accion: 'VENTA', detalle: `Venta cobrada: S/. ${total} (${metodoPago})` }).save();
         res.json({ success: true });
-
     } catch (e) {
-        console.error("❌ Error en Fiado Masivo:", e);
-        res.status(500).json({ success: false, error: e.message });
+        res.status(500).json({ success: false });
     }
 });
 
-// PAGOS (ABONOS)
-app.post('/api/fiados/abono', async (req, res) => {
-    try {
-        const { cliente_id, monto } = req.body;
-        const c = await Cliente.findById(cliente_id);
-        const nS = (c.deudaTotal || 0) - monto;
-        await new MovimientoFiado({ cliente_id: new mongoose.Types.ObjectId(cliente_id), tipo: 'PAGO', monto, saldo_al_momento: nS }).save();
-        if (nS <= 0.1) await Cliente.findByIdAndUpdate(cliente_id, { $set: { deudaTotal: 0, detalles_deuda: [] } });
-        else await Cliente.findByIdAndUpdate(cliente_id, { $set: { deudaTotal: nS } });
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ success: false }); }
-});
-app.get('/api/auditoria', async (req, res) => {
-    // Busca los logs reales en la base de datos
-    const logs = await Log.find().sort({ fecha: -1 }).limit(100);
-    res.json(logs);
-});
-
-app.get('/api/kardex', async (req, res) => {
-    // Busca los movimientos de inventario reales
-    const movimientos = await Kardex.find().sort({ fecha: -1 }).limit(100);
-    res.json(movimientos);
-});
-
-app.delete('/api/clientes/:id', async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // 1. Borramos al cliente de la tabla clientes
-        await Cliente.findByIdAndDelete(id);
-        
-        // 2. Borramos todos sus movimientos de la tabla movimientofiados
-        await MovimientoFiado.deleteMany({ 
-            cliente_id: new mongoose.Types.ObjectId(id) 
-        });
-
-        res.json({ success: true, message: "Cliente borrado" });
-    } catch (e) {
-        console.error(e);
-        res.status(500).json({ success: false, error: e.message });
-    }
-});
-
-// CLIENTES, REPORTES Y AUDITORÍA
-app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
-app.post('/api/clientes', async (req, res) => { const n = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0, detalles_deuda: [] }); await n.save(); res.json(n); });
-app.get('/api/clientes/:id/movimientos', async (req, res) => res.json(await MovimientoFiado.find({ cliente_id: new mongoose.Types.ObjectId(req.params.id) }).sort({ fecha: -1 })));
-
+// REPORTE DE CAJA (Ganancia Real vs Fiado)
 app.get('/api/reportes/ventas', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
@@ -310,130 +230,131 @@ app.get('/api/reportes/ventas', async (req, res) => {
         const fI = new Date(desde); fI.setHours(0,0,0,0);
         const fF = new Date(hasta); fF.setHours(23,59,59,999);
 
-        // 1. Buscamos todas las ventas y abonos del periodo seleccionado
-        const ventas = await Venta.find({ fecha: { $gte: fI, $lte: fF } });
-        const abonos = await MovimientoFiado.find({ fecha: { $gte: fI, $lte: fF }, tipo: 'PAGO' });
+        const vts = await Venta.find({ fecha: { $gte: fI, $lte: fF } });
+        const abs = await MovimientoFiado.find({ fecha: { $gte: fI, $lte: fF }, tipo: 'PAGO' });
 
-        const totalVentasDirectas = ventas
-            .filter(v => v.metodoPago !== 'FIADO')
-            .reduce((acc, v) => acc + (Number(v.total) || 0), 0);
-
-        const totalAbonosHoy = abonos.reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
-
-        const totalFiadosEmitidos = ventas
-            .filter(v => v.metodoPago === 'FIADO')
-            .reduce((acc, v) => acc + (Number(v.total) || 0), 0);
-        const dineroRealEnMano = totalVentasDirectas + totalAbonosHoy;
-
-        const saldoPendienteReal = Math.max(0, totalFiadosEmitidos - totalAbonosHoy);
+        const ingresoVts = vts.filter(v => v.metodoPago !== 'FIADO').reduce((acc, v) => acc + v.total, 0);
+        const ingresoAbs = abs.reduce((acc, a) => acc + a.monto, 0);
+        const totalFiado = vts.filter(v => v.metodoPago === 'FIADO').reduce((acc, v) => acc + v.total, 0);
 
         res.json({
-            ventas: ventas.map(v => ({ ...v._doc, items: v.productos })),
-            abonos: abonos,
-            totalGananciaReal: dineroRealEnMano,
-            totalFiadoPeriodo: saldoPendienteReal // <--- AHORA SÍ DISMINUYE
+            ventas: vts.map(x => ({ ...x._doc, items: x.productos })),
+            abonos: abs,
+            totalGananciaReal: ingresoVts + ingresoAbs,
+            totalFiadoPeriodo: Math.max(0, totalFiado - ingresoAbs)
         });
-
     } catch (e) {
-        console.error("Error en reporte:", e);
-        res.status(500).json({ totalGananciaReal: 0, totalFiadoPeriodo: 0 });
+        res.status(500).json({ totalGananciaReal: 0 });
     }
 });
-app.get('/api/dashboard/rentabilidad', async (req, res) => {
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+
+/**
+ * SECCIÓN: CLIENTES Y CRÉDITOS
+ */
+
+app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
+
+app.post('/api/clientes', async (req, res) => {
     try {
-        const db = mongoose.connection.db;
-        if (!db) return res.status(503).json({ error: "Conectando a BD..." });
+        const n = new Cliente({ nombre: req.body.nombre.toUpperCase(), deudaTotal: 0, detalles_deuda: [] });
+        await n.save();
+        res.json(n);
+    } catch (e) { res.status(500).json({ error: "Error al crear cliente" }); }
+});
 
-        const { desde, hasta, producto } = req.query;
+app.delete('/api/clientes/:id', async (req, res) => {
+    try {
+        await Cliente.findByIdAndDelete(req.params.id);
+        await MovimientoFiado.deleteMany({ cliente_id: new mongoose.Types.ObjectId(req.params.id) });
+        res.json({ success: true });
+    } catch (e) { res.status(500).json({ success: false }); }
+});
 
-        // 1. Filtro de Inversiones
-        let queryInv = producto ? { nombre: { $regex: new RegExp(producto, 'i') } } : {};
+app.get('/api/clientes/:id/movimientos', async (req, res) => {
+    try {
+        const m = await MovimientoFiado.find({ cliente_id: new mongoose.Types.ObjectId(req.params.id) }).sort({ fecha: -1 });
+        res.json(m);
+    } catch (e) { res.status(500).json([]); }
+});
 
-        // 2. Filtro de Ventas (buscando el producto dentro del array)
-        let queryVts = {};
-        if (producto) {
-            queryVts = {
-                "productos": { 
-                    $elemMatch: { 
-                        $or: [
-                            { "nombre_producto": { $regex: new RegExp(producto, 'i') } },
-                            { "nombre": { $regex: new RegExp(producto, 'i') } }
-                        ] 
-                    } 
-                }
-            };
-        }
+// REGISTRO DE FIADO (Inyección en Cliente y descuento de Stock)
+app.post('/api/fiados/masivo', async (req, res) => {
+    try {
+        const { cliente_id, items, total } = req.body;
+        const c = await Cliente.findById(cliente_id);
+        if (!c) return res.status(404).json({ error: "No existe el cliente" });
 
-        if (desde || hasta) {
-            const f = {};
-            if (desde) f.$gte = new Date(desde);
-            if (hasta) f.$lte = new Date(hasta);
-            queryInv.fecha = f;
-            queryVts.fecha = f;
-        }
+        const nS = (c.deudaTotal || 0) + total;
+        const infoProd = items.map(it => ({ 
+            nombre: it.nombre, 
+            cant: it.cantidadSeleccionada, 
+            precio: it.precio, 
+            fecha: new Date() 
+        }));
 
-        // 3. Ejecutar consultas
-        const [invs, vts, clts] = await Promise.all([
-            db.collection('inversions').find(queryInv).toArray().catch(() => []),
-            db.collection('ventas').find(queryVts).toArray().catch(() => []),
-            db.collection('clientes').find({}).toArray().catch(() => [])
-        ]);
-
-        // --- LÓGICA DE CÁLCULO CORREGIDA ---
-
-        const totalInversion = invs.reduce((acc, i) => acc + (Number(i.costoTotal || i.costo_total || 0)), 0);
-        
-        // Sumar ingresos totales de ventas (solo de los productos filtrados si hay filtro)
-        const totalVentas = vts.reduce((acc, v) => {
-            if (producto) {
-                const subtotal = v.productos
-                    .filter(p => new RegExp(producto, 'i').test(p.nombre_producto || p.nombre || ""))
-                    .reduce((sum, p) => sum + (Number(p.subtotal || p.precio_total || 0)), 0);
-                return acc + subtotal;
-            }
-            return acc + (Number(v.total || 0));
-        }, 0);
-
-        // CORRECCIÓN DE FIADOS:
-        let totalFiados = 0;
-        if (producto) {
-            // Si hay producto, calculamos la deuda solo de las ventas filtradas que fueron fiadas
-            totalFiados = vts.reduce((acc, v) => {
-                // Si la venta tiene saldo pendiente (fiado)
-                const deudaDeEstaVenta = Number(v.total || 0) - Number(v.monto_pagado || v.pagado || 0);
-                if (deudaDeEstaVenta > 0) {
-                    // Calculamos qué parte de esa deuda le corresponde al producto filtrado
-                    const proporcionProducto = v.productos
-                        .filter(p => new RegExp(producto, 'i').test(p.nombre_producto || p.nombre || ""))
-                        .reduce((sum, p) => sum + (Number(p.subtotal || p.precio_total || 0)), 0);
-                    
-                    // Si la venta es de 100 y el producto es de 50, se asume que el fiado es proporcional
-                    return acc + proporcionProducto; 
-                }
-                return acc;
-            }, 0);
-        } else {
-            // Si no hay filtro, mostramos la deuda total de todos los clientes (como antes)
-            totalFiados = clts.reduce((acc, c) => acc + (Number(c.deudaTotal || 0)), 0);
-        }
-
-        res.json({
-            inversionTotal: totalInversion,
-            ingresosTotalesVentas: totalVentas,
-            plataPorCobrar: totalFiados,
-            dineroEnCaja: totalVentas - totalFiados,
-            gananciaReal: (totalVentas - totalFiados) - totalInversion
+        // Inyectamos productos en la colección Clientes para tu Dashboard externo
+        await Cliente.findByIdAndUpdate(cliente_id, { 
+            $inc: { deudaTotal: total }, 
+            $push: { detalles_deuda: { $each: infoProd } } 
         });
 
+        // Guardamos como venta para stock
+        await new Venta({ productos: items, total, metodoPago: 'FIADO' }).save();
+
+        // Registro en historial de movimientos
+        await new MovimientoFiado({
+            cliente_id: new mongoose.Types.ObjectId(cliente_id),
+            tipo: 'DEUDA', monto: total, productos: infoProd, saldo_al_momento: nS, metodoPago: 'FIADO'
+        }).save();
+
+        // Kardex
+        for (const it of items) {
+            await new Kardex({ nombre_producto: it.nombre, cantidad: -it.cantidadSeleccionada, motivo: 'VENTA AL FIADO', stock_actual: (it.stock_actual || 0) - it.cantidadSeleccionada }).save();
+        }
+
+        res.json({ success: true });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: e.message });
+        console.error("Error al procesar fiado:", e);
+        res.status(500).json({ success: false });
     }
 });
 
+app.post('/api/fiados/abono', async (req, res) => {
+    try {
+        // CAPTURAMOS EL MÉTODO DE PAGO QUE VIENE DEL FRONTEND
+        const { cliente_id, monto, metodoPago } = req.body; 
+        
+        const c = await Cliente.findById(cliente_id);
+        const nS = (c.deudaTotal || 0) - Number(monto);
+
+        const abono = new MovimientoFiado({
+            cliente_id: new mongoose.Types.ObjectId(cliente_id),
+            tipo: 'PAGO',
+            monto: Number(monto),
+            metodoPago: metodoPago, // <--- AQUÍ SE GUARDA TU ELECCIÓN (YAPE, PLIN, etc.)
+            descripcion: 'ABONO CLIENTE',
+            saldo_al_momento: nS > 0 ? nS : 0,
+            fecha: new Date()
+        });
+        await abono.save();
+
+        // Actualizar el total del cliente
+        await Cliente.findByIdAndUpdate(cliente_id, { $set: { deudaTotal: nS > 0 ? nS : 0 } });
+        
+        res.json({ success: true });
+    } catch (e) {
+        res.status(500).json({ success: false });
+    }
+});
 app.get('/api/auditoria', async (req, res) => res.json(await Log.find().sort({ fecha: -1 }).limit(100)));
 app.get('/api/kardex', async (req, res) => res.json(await Kardex.find().sort({ fecha: -1 }).limit(100)));
 
+
+// --- ARRANQUE DEL SERVIDOR ---
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Servidor Simona en puerto ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log("-----------------------------------------");
+    console.log(`🚀 SERVIDOR SIMONA CORRIENDO EN PUERTO ${PORT}`);
+    console.log("⌚ FECHA DEL SISTEMA:", new Date().toLocaleString());
+    console.log("-----------------------------------------");
+});

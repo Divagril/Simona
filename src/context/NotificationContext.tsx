@@ -1,52 +1,62 @@
-// src/context/NotificationContext.tsx
-import React, { createContext, useState, useContext, type ReactNode } from 'react';
+import React, { createContext, useState, useContext, useCallback } from 'react';
+// Importamos el tipo de forma separada para evitar errores de TypeScript
+import type { ReactNode } from 'react';
+import { CheckCircle, AlertTriangle, X } from 'lucide-react';
+import './NotificationContext.css';
 
-// Definimos qué datos va a tener el contexto
+// 1. Definición de la Interface del Mensaje
 interface NotificationContextType {
   showNotification: (msg: string, isError?: boolean) => void;
 }
 
+// 2. Crear el Contexto
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-// El Proveedor que envolverá la App
+// 3. Crear el Proveedor
 export const NotificationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [notif, setNotif] = useState<{ msg: string; isError: boolean } | null>(null);
+  
+  // Usamos 'any' para evitar el error de NodeJS vs Navegador
+  const [timerId, setTimerId] = useState<any>(null);
 
-  const showNotification = (msg: string, isError = false) => {
+  const showNotification = useCallback((msg: string, isError = false) => {
+    // Si ya hay una notificación corriendo, la detenemos
+    if (timerId) clearTimeout(timerId);
+
     setNotif({ msg, isError });
-    // Desaparece a los 3 segundos
-    setTimeout(() => setNotif(null), 3000);
-  };
+
+    // Se oculta tras 3.5 segundos
+    const id = setTimeout(() => {
+      setNotif(null);
+    }, 3500);
+
+    setTimerId(id);
+  }, [timerId]);
 
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
       
-      {/* Estilo de la notificación (Igual al de tu Python) */}
+      {/* DISEÑO DE LA NOTIFICACIÓN */}
       {notif && (
-        <div style={{
-          position: 'fixed',
-          bottom: '30px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: notif.isError ? '#E74C3C' : '#27AE60',
-          color: 'white',
-          padding: '12px 25px',
-          borderRadius: '12px',
-          fontWeight: 'bold',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
-          zIndex: 9999,
-          border: '2px solid white',
-          fontSize: '15px'
-        }}>
-          {notif.isError ? '⚠️ ' : '✅ '} {notif.msg}
+        <div className={`notification-toast ${notif.isError ? 'error' : 'success'}`}>
+          <div className="notif-icon">
+            {notif.isError ? <AlertTriangle size={20} /> : <CheckCircle size={20} />}
+          </div>
+          <div className="notif-content">
+            <span className="notif-message">{notif.msg}</span>
+          </div>
+          <button className="notif-close" onClick={() => setNotif(null)}>
+            <X size={16} />
+          </button>
+          <div className="notif-progress-bar"></div>
         </div>
       )}
     </NotificationContext.Provider>
   );
 };
 
-// Hook para usar las notificaciones fácilmente
+// 4. Hook para usarlo fácilmente
 export const useNotification = () => {
   const context = useContext(NotificationContext);
   if (!context) {

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Box, RefreshCw, Search, Package, Layers, 
-  DollarSign, Info, Trash2, CheckSquare, Square 
+  Box, RefreshCw, Search, CheckSquare, Square, Info, Trash2 
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import './Inventory.css'; // Importación de los estilos
 
 const Inventory: React.FC = () => {
   const { showNotification } = useNotification();
@@ -54,16 +54,14 @@ const Inventory: React.FC = () => {
   };
 
   const handleCambioFormato = (nuevoFormato: string) => {
-    const esPaqueteria = nuevoFormato === 'PAQUETE' || nuevoFormato === 'CAJA';
     setForm({ 
       ...form, 
       formato_compra: nuevoFormato, 
-      unidad_venta: esPaqueteria ? 'PAQUETE' : nuevoFormato, 
+      unidad_venta: nuevoFormato, // Ahora siempre coinciden
       conversion: '1' 
     });
   };
 
-  const esDetallable = form.formato_compra === 'PAQUETE' || form.formato_compra === 'CAJA';
 
   const handleGuardar = async () => {
     if (!form.nombre) return showNotification("Seleccione un producto", true);
@@ -100,7 +98,7 @@ const Inventory: React.FC = () => {
   return (
     <div className="inventory-responsive-container">
       
-      {/* 1. SECCIÓN DE GESTIÓN (IZQUIERDA / ARRIBA) */}
+      {/* 1. SECCIÓN DE GESTIÓN */}
       <div className="management-panel">
         <div className="card-glass">
           <h2 className="panel-title"><Box size={20} color="#2563eb" /> Gestión</h2>
@@ -127,13 +125,6 @@ const Inventory: React.FC = () => {
             </select>
           </div>
 
-          {esDetallable && (
-            <div className="toggle-container">
-              <button className={`btn-tgl ${form.unidad_venta === 'PAQUETE' ? 'on' : ''}`} onClick={() => setForm({...form, unidad_venta: 'PAQUETE'})}>Por {form.formato_compra}</button>
-              <button className={`btn-tgl ${form.unidad_venta === 'UNIDAD' ? 'on' : ''}`} onClick={() => setForm({...form, unidad_venta: 'UNIDAD'})}>Por Unidad</button>
-            </div>
-          )}
-
           <div className="form-item">
             <label>PRECIO VENTA</label>
             <div className="price-input-wrapper">
@@ -146,7 +137,7 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. SECCIÓN DE TABLA (DERECHA / ABAJO) */}
+      {/* 2. SECCIÓN DE TABLA */}
       <div className="table-panel">
         <div className="card-glass h-full">
           <div className="table-header-row">
@@ -207,92 +198,6 @@ const Inventory: React.FC = () => {
           )}
         </div>
       </div>
-
-      <style>{`
-        /* --- LAYOUT BASE (MOBILE FIRST) --- */
-        .inventory-responsive-container {
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          padding: 15px;
-          background-color: #f1f5f9;
-          min-height: 100vh;
-        }
-
-        .card-glass {
-          background: white;
-          padding: 20px;
-          border-radius: 16px;
-          border: 1px solid #e2e8f0;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-          display: flex;
-          flex-direction: column;
-        }
-
-        .h-full { height: 100%; }
-
-        /* --- PANELES --- */
-        .management-panel { width: 100%; }
-        .table-panel { width: 100%; flex: 1; min-height: 500px; }
-
-        /* --- FORMULARIO --- */
-        .panel-title { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; margin-bottom: 20px; font-weight: 800; }
-        .form-item { margin-bottom: 15px; }
-        .form-item label { font-size: 10px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; }
-        .input-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; }
-        
-        .price-input-wrapper { display: flex; align-items: center; background: #f8fafc; border: 2px solid #2563eb; border-radius: 12px; overflow: hidden; }
-        .currency { padding: 0 15px; font-weight: 900; color: #2563eb; }
-        .price-input { flex: 1; padding: 12px; border: none; background: transparent; font-size: 1.5rem; font-weight: 800; color: #2563eb; outline: none; }
-
-        .btn-main-save { margin-top: 10px; background: #22c55e; color: white; padding: 16px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.2); }
-
-        .status-info-bar { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 12px; }
-        .yellow { background: #fffbeb; border: 1px solid #f59e0b; color: #b45309; }
-        .red { background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; }
-
-        .toggle-container { display: flex; gap: 8px; margin-bottom: 15px; }
-        .btn-tgl { flex: 1; padding: 10px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
-        .btn-tgl.on { background: #2563eb; color: white; border-color: #2563eb; }
-
-        /* --- TABLA --- */
-        .table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-        .actions-wrapper { display: flex; gap: 10px; align-items: center; width: 100%; justify-content: space-between; }
-        .search-pill { flex: 1; display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 15px; border-radius: 20px; border: 1px solid #e2e8f0; }
-        .search-pill input { background: transparent; border: none; outline: none; width: 100%; font-size: 14px; }
-        
-        .refresh-square { background: #1abc9c; color: white; border: none; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 0 #16a085; }
-        .refresh-square:active { transform: translateY(2px); box-shadow: none; }
-
-        .scrollable-table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; border: 1px solid #f1f5f9; border-radius: 12px; }
-        .inventory-table { width: 100%; border-collapse: collapse; min-width: 450px; }
-        .inventory-table th { background: #f8fafc; padding: 12px; text-align: left; font-size: 11px; color: #64748b; position: sticky; top: 0; z-index: 5; }
-        .inventory-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
-        
-        .prod-name-cell { display: flex; flex-direction: column; gap: 2px; }
-        .mode-badge { font-size: 9px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
-        
-        .stock-badge { padding: 4px 12px; border-radius: 12px; font-weight: 900; font-size: 12px; }
-        .in { background: #dcfce7; color: #166534; }
-        .out { background: #fee2e2; color: #991b1b; }
-
-        .footer-delete { display: flex; justify-content: flex-end; padding-top: 15px; }
-        .btn-delete-pro { background: #ef4444; color: white; padding: 12px 20px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
-
-        .check-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; }
-        .active-row { background: #f0f7ff; }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        /* --- MEDIA QUERIES PARA PC --- */
-        @media (min-width: 900px) {
-          .inventory-responsive-container { flex-direction: row; height: calc(100vh - 40px); overflow: hidden; }
-          .management-panel { flex: 0 0 350px; }
-          .table-panel { min-height: auto; }
-          .actions-wrapper { width: auto; }
-          .search-pill { width: 200px; }
-        }
-      `}</style>
     </div>
   );
 };

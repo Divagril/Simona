@@ -1,0 +1,45 @@
+/* --- PANTALLA DE CARGA INICIAL --- */
+.auth-loading-screen {
+    position: fixed;
+    inset: 0;
+    background-color: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    font-family: 'Inter', sans-serif;
+}
+
+/* El spinner circular */
+.auth-loader {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #e2e8f0;
+    border-top: 5px solid #3b82f6; /* Color azul profesional */
+    border-radius: 50%;
+    animation: authSpin 0.8s linear infinite;
+    margin-bottom: 20px;
+}
+
+.auth-loading-screen p {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+@keyframes authSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Transición suave para el contenido una vez autenticado */
+.auth-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

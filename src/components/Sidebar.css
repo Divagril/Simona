@@ -1,0 +1,164 @@
+/* =========================================
+   CONTENEDOR PRINCIPAL DEL SIDEBAR
+   ========================================= */
+.sidebar-main {
+    width: 280px;
+    height: 100vh;
+    background-color: #2c3e50; /* Azul oscuro elegante */
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease, width 0.3s ease;
+    flex-shrink: 0;
+    z-index: 2000;
+    position: relative;
+    box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+}
+
+/* Estado cuando el menú está oculto */
+.sidebar-main.collapsed {
+    margin-left: -280px; /* Se desliza fuera de la pantalla */
+}
+
+/* =========================================
+   HEADER: BOTÓN X BLANCO Y TÍTULO
+   ========================================= */
+.sidebar-header {
+    padding: 30px 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+/* El cuadro blanco redondeado con la X */
+.sidebar-close-btn {
+    background-color: white !important;
+    color: #2c3e50 !important;
+    border: none !important;
+    width: 46px;
+    height: 46px;
+    border-radius: 12px; /* Redondeado exacto de la imagen */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+}
+
+.sidebar-close-btn:active {
+    transform: scale(0.9);
+}
+
+.sidebar-brand {
+    color: white;
+    font-size: 22px;
+    font-weight: 800; /* Texto grueso y profesional */
+    letter-spacing: -0.5px;
+}
+
+/* =========================================
+   BOTÓN PARA ABRIR (CUANDO ESTÁ CERRADO)
+   ========================================= */
+.sidebar-open-toggle {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 1500;
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.2s;
+}
+
+.sidebar-open-toggle:hover {
+    background-color: #34495e;
+    transform: scale(1.05);
+}
+
+/* =========================================
+   MENÚ DE NAVEGACIÓN
+   ========================================= */
+.sidebar-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 25px;
+    text-decoration: none;
+    color: rgba(255, 255, 255, 0.85);
+    transition: background 0.2s, color 0.2s;
+    border-left: 4px solid transparent;
+}
+
+/* Estilo para la opción que está abierta actualmente */
+.nav-item.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    border-left: 4px solid #1abc9c; /* Línea verde agua a la izquierda */
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: white;
+}
+
+.item-icon {
+    font-size: 24px; /* Emojis grandes */
+    width: 40px;
+    display: flex;
+    justify-content: center;
+}
+
+.item-text {
+    font-size: 17px;
+    font-weight: 700;
+}
+
+/* =========================================
+   FOOTER: BOTÓN CERRAR SESIÓN
+   ========================================= */
+.sidebar-footer {
+    padding: 10px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logout-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: #ec7063; /* Color rojo suave para salir */
+}
+
+.logout-btn:hover {
+    background-color: rgba(236, 112, 99, 0.1);
+}
+
+/* =========================================
+   RESPONSIVO (CELULARES)
+   ========================================= */
+@media (max-width: 768px) {
+    .sidebar-main {
+        position: fixed;
+        left: 0;
+        top: 0;
+    }
+
+    .sidebar-main.collapsed {
+        transform: translateX(-100%); /* Desaparece por la izquierda en móvil */
+    }
+}
