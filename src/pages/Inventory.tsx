@@ -4,12 +4,11 @@ import {
   Box, RefreshCw, Search, CheckSquare, Square, Info, Trash2 
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
-import './Inventory.css'; // Importación de los estilos
+import './Inventory.css'; 
 
 const Inventory: React.FC = () => {
   const { showNotification } = useNotification();
   
-  // --- ESTADOS ---
   const [productos, setProductos] = useState<any[]>([]);
   const [sugerencias, setSugerencias] = useState<{nombre: string, total: number}[]>([]);
   const [busqueda, setBusqueda] = useState('');
@@ -57,11 +56,10 @@ const Inventory: React.FC = () => {
     setForm({ 
       ...form, 
       formato_compra: nuevoFormato, 
-      unidad_venta: nuevoFormato, // Ahora siempre coinciden
+      unidad_venta: nuevoFormato, 
       conversion: '1' 
     });
   };
-
 
   const handleGuardar = async () => {
     if (!form.nombre) return showNotification("Seleccione un producto", true);
@@ -98,10 +96,10 @@ const Inventory: React.FC = () => {
   return (
     <div className="inventory-responsive-container">
       
-      {/* 1. SECCIÓN DE GESTIÓN */}
+      {/* 1. PANEL IZQUIERDO: GESTIÓN */}
       <div className="management-panel">
-        <div className="card-glass">
-          <h2 className="panel-title"><Box size={20} color="#2563eb" /> Gestión</h2>
+        <div className="card-glass fill-height">
+          <h2 className="panel-title"><Box size={20} color="#2563eb" /> Gestión de Inventario</h2>
           
           <div className="form-item">
             <label>PRODUCTO DE INVERSIÓN</label>
@@ -114,12 +112,12 @@ const Inventory: React.FC = () => {
           {form.nombre && (
             <div className={`stock-info-bar ${unidadesEnInversion > 0 ? 'yellow' : 'red'}`}>
               <Info size={16} />
-              <span>RESTANTE: <strong>{unidadesEnInversion} unid.</strong></span>
+              <span>STOCK RESTANTE: <strong>{unidadesEnInversion} unid.</strong></span>
             </div>
           )}
 
           <div className="form-item">
-            <label>FORMATO COMPRA</label>
+            <label>FORMATO COMPRA / VENTA</label>
             <select className="input-field" value={form.formato_compra} onChange={e => handleCambioFormato(e.target.value)}>
               {formatosCompra.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
@@ -137,11 +135,11 @@ const Inventory: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. SECCIÓN DE TABLA */}
+      {/* 2. PANEL DERECHO: CATÁLOGO */}
       <div className="table-panel">
-        <div className="card-glass h-full">
+        <div className="card-glass fill-height">
           <div className="table-header-row">
-            <h3>Catálogo ({prodsFiltrados.length})</h3>
+            <h3>Catálogo Actual ({prodsFiltrados.length})</h3>
             <div className="actions-wrapper">
               <div className="search-pill">
                 <Search size={16} />
@@ -171,7 +169,11 @@ const Inventory: React.FC = () => {
                   <tr key={p._id} className={seleccionados.includes(p._id) ? 'active-row' : ''}>
                     <td style={{ textAlign: 'center' }}>
                       <button onClick={() => toggleSeleccion(p._id)} className="check-btn">
-                        {seleccionados.includes(p._id) ? <CheckSquare size={18} color="#2563eb" /> : <Square size={18} />}
+                        {seleccionados.includes(p._id) ? (
+                          <CheckSquare size={20} color="#2563eb" /> /* Azul cuando está marcado */
+                        ) : (
+                          <Square size={20} /> /* Gris cuando está vacío */
+                        )}
                       </button>
                     </td>
                     <td>

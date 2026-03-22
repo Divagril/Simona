@@ -1,16 +1,17 @@
-/* --- LAYOUT BASE (MOBILE FIRST) --- */
+/* --- LAYOUT BASE --- */
 .inventory-responsive-container {
     display: flex;
     flex-direction: column;
     gap: 20px;
     padding: 15px;
     background-color: #f1f5f9;
-    min-height: 100vh;
+    height: calc(100vh - 45px); /* Altura fija de la pantalla */
+    overflow: hidden;
 }
 
 .card-glass {
     background: white;
-    padding: 20px;
+    padding: 25px;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     box-shadow: 0 4px 6px rgba(0,0,0,0.02);
@@ -18,66 +19,124 @@
     flex-direction: column;
 }
 
-.h-full { height: 100%; }
+/* CLASE CRÍTICA: Fuerza a la tarjeta a llenar el espacio disponible */
+.fill-height {
+    flex: 1;
+}
 
 /* --- PANELES --- */
-.management-panel { width: 100%; }
-.table-panel { width: 100%; flex: 1; min-height: 500px; }
+.management-panel { 
+    width: 100%; 
+    display: flex;
+    flex-direction: column;
+}
+
+.table-panel { 
+    width: 100%; 
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Permite scroll interno */
+}
 
 /* --- FORMULARIO --- */
-.panel-title { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; margin-bottom: 20px; font-weight: 800; }
-.form-item { margin-bottom: 15px; }
-.form-item label { font-size: 10px; font-weight: 800; color: #64748b; margin-bottom: 5px; display: block; }
-.input-field { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #cbd5e1; outline: none; }
+.panel-title { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; margin-bottom: 25px; font-weight: 800; }
+.form-item { margin-bottom: 20px; }
+.form-item label { font-size: 11px; font-weight: 800; color: #64748b; margin-bottom: 8px; display: block; letter-spacing: 0.5px; }
 
-.price-input-wrapper { display: flex; align-items: center; background: #f8fafc; border: 2px solid #2563eb; border-radius: 12px; overflow: hidden; }
-.currency { padding: 0 15px; font-weight: 900; color: #2563eb; }
-.price-input { flex: 1; padding: 12px; border: none; background: transparent; font-size: 1.5rem; font-weight: 800; color: #2563eb; outline: none; }
+.input-field { 
+    width: 100%; 
+    padding: 14px; 
+    border-radius: 12px; 
+    border: 1.5px solid #cbd5e1; 
+    outline: none; 
+    background-color: #f8fafc;
+    font-weight: 600;
+}
 
-.btn-main-save { margin-top: 10px; background: #22c55e; color: white; padding: 16px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.2); }
+.input-field:focus { border-color: #2563eb; background-color: #fff; }
 
-.stock-info-bar { display: flex; gap: 8px; align-items: center; padding: 10px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 12px; }
-.stock-info-bar.yellow { background: #fffbeb; border: 1px solid #f59e0b; color: #b45309; }
-.stock-info-bar.red { background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; }
+.price-input-wrapper { display: flex; align-items: center; background: #f8fafc; border: 2.5px solid #2563eb; border-radius: 14px; overflow: hidden; }
+.currency { padding: 0 15px; font-weight: 900; color: #2563eb; font-size: 1.2rem; }
+.price-input { flex: 1; padding: 15px; border: none; background: transparent; font-size: 1.8rem; font-weight: 900; color: #2563eb; outline: none; }
 
-.toggle-container { display: flex; gap: 8px; margin-bottom: 15px; }
-.btn-tgl { flex: 1; padding: 10px; border: 1px solid #cbd5e1; background: white; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
-.btn-tgl.on { background: #2563eb; color: white; border-color: #2563eb; }
+.btn-main-save { 
+    margin-top: auto; /* Empuja el botón al final del formulario */
+    background: #22c55e; 
+    color: white; 
+    padding: 18px; 
+    border: none; 
+    border-radius: 14px; 
+    font-weight: 900; 
+    cursor: pointer; 
+    box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+/* --- ESTILO DE LOS CHECKBOXES (CORREGIDO) --- */
+.check-btn {
+    background: transparent !important; /* Elimina el fondo gris */
+    border: none !important;           /* Elimina el borde negro */
+    padding: 8px !important;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    outline: none !important;
+    color: #94a3b8; /* Color gris suave para el cuadro vacío */
+}
+
+/* Efecto al pasar el mouse sobre el cuadrito */
+.check-btn:hover {
+    background-color: #f1f5f9 !important;
+    color: #2563eb; /* Se pone azul al acercar el mouse */
+}
+
+/* Cuando está seleccionado (Active) */
+.active-row .check-btn {
+    color: #2563eb;
+}
+
+/* Asegurar que el icono dentro no se deforme */
+.check-btn svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+.stock-info-bar { display: flex; gap: 10px; align-items: center; padding: 12px 15px; border-radius: 10px; margin-bottom: 20px; font-size: 13px; }
+.yellow { background: #fffbeb; border: 1px solid #f59e0b; color: #b45309; }
+.red { background: #fee2e2; border: 1px solid #ef4444; color: #991b1b; }
 
 /* --- TABLA --- */
-.table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
-.actions-wrapper { display: flex; gap: 10px; align-items: center; width: 100%; justify-content: space-between; }
-.search-pill { flex: 1; display: flex; align-items: center; gap: 8px; background: #f1f5f9; padding: 8px 15px; border-radius: 20px; border: 1px solid #e2e8f0; }
+.table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.actions-wrapper { display: flex; gap: 12px; align-items: center; }
+.search-pill { flex: 1; display: flex; align-items: center; gap: 10px; background: #f1f5f9; padding: 10px 18px; border-radius: 25px; border: 1px solid #e2e8f0; }
 .search-pill input { background: transparent; border: none; outline: none; width: 100%; font-size: 14px; }
 
-.refresh-square { background: #1abc9c; color: white; border: none; width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 3px 0 #16a085; }
-.refresh-square:active { transform: translateY(2px); box-shadow: none; }
+.refresh-square { background: #1abc9c; color: white; border: none; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 0 #16a085; }
 
-.scrollable-table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; border: 1px solid #f1f5f9; border-radius: 12px; }
-.inventory-table { width: 100%; border-collapse: collapse; min-width: 450px; }
-.inventory-table th { background: #f8fafc; padding: 12px; text-align: left; font-size: 11px; color: #64748b; position: sticky; top: 0; z-index: 5; }
-.inventory-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; }
+.scrollable-table-wrapper { flex: 1; overflow-y: auto; border: 1px solid #f1f5f9; border-radius: 14px; }
+.inventory-table { width: 100%; border-collapse: collapse; }
+.inventory-table th { background: #f8fafc; padding: 15px; text-align: left; font-size: 0.7rem; color: #64748b; text-transform: uppercase; position: sticky; top: 0; z-index: 5; border-bottom: 2px solid #f1f5f9; }
+.inventory-table td { padding: 18px 15px; border-bottom: 1px solid #f1f5f9; }
 
-.prod-name-cell { display: flex; flex-direction: column; gap: 2px; }
-.mode-badge { font-size: 9px; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
-
-.stock-badge { padding: 4px 12px; border-radius: 12px; font-weight: 900; font-size: 12px; }
-.stock-badge.in { background: #dcfce7; color: #166534; }
-.stock-badge.out { background: #fee2e2; color: #991b1b; }
+.mode-badge { font-size: 9px; color: #94a3b8; font-weight: 800; text-transform: uppercase; margin-top: 4px; display: block; }
+.stock-badge { padding: 5px 14px; border-radius: 20px; font-weight: 900; font-size: 13px; }
+.in { background: #dcfce7; color: #166534; }
+.out { background: #fee2e2; color: #991b1b; }
 
 .footer-delete { display: flex; justify-content: flex-end; padding-top: 15px; }
-.btn-delete-pro { background: #ef4444; color: white; padding: 12px 20px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2); }
+.btn-delete-pro { background: #ef4444; color: white; padding: 14px 25px; border-radius: 12px; border: none; font-weight: 800; cursor: pointer; display: flex; align-items: center; gap: 8px; }
 
-.check-btn { background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; }
 .active-row { background: #f0f7ff; }
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
 /* --- MEDIA QUERIES PARA PC --- */
 @media (min-width: 900px) {
-    .inventory-responsive-container { flex-direction: row; height: calc(100vh - 40px); overflow: hidden; }
-    .management-panel { flex: 0 0 350px; }
+    .inventory-responsive-container { flex-direction: row; }
+    .management-panel { flex: 0 0 380px; }
     .table-panel { min-height: auto; }
-    .actions-wrapper { width: auto; }
-    .search-pill { width: 200px; }
 }
