@@ -318,34 +318,53 @@ app.post('/api/fiados/masivo', async (req, res) => {
         res.status(500).json({ success: false });
     }
 });
-
 app.post('/api/fiados/abono', async (req, res) => {
     try {
-        // CAPTURAMOS EL MÉTODO DE PAGO QUE VIENE DEL FRONTEND
         const { cliente_id, monto, metodoPago } = req.body; 
         
         const c = await Cliente.findById(cliente_id);
-        const nS = (c.deudaTotal || 0) - Number(monto);
+        if (!c) return res.status(404).json({ error: "Cliente no encontrado" });
 
+        // Calculamos el nuevo saldo
+        let nS = (c.deudaTotal || 0) - Number(monto);
+        if (nS < 0) nS = 0; // Evitamos deudas negativas
+
+        // --- LÓGICA DE LIMPIEZA TOTAL ---
+        let updateData = { $set: { deudaTotal: nS } };
+        
+        // Si el cliente ya no debe nada (Saldo 0), vaciamos los detalles por producto
+        if (nS === 0) {
+            updateData.$set.detalles_deuda = []; 
+        }
+
+        // Actualizamos al cliente
+        await Cliente.findByIdAndUpdate(cliente_id, updateData);
+
+        // Registramos el movimiento en el historial
         const abono = new MovimientoFiado({
             cliente_id: new mongoose.Types.ObjectId(cliente_id),
             tipo: 'PAGO',
             monto: Number(monto),
-            metodoPago: metodoPago, // <--- AQUÍ SE GUARDA TU ELECCIÓN (YAPE, PLIN, etc.)
-            descripcion: 'ABONO CLIENTE',
-            saldo_al_momento: nS > 0 ? nS : 0,
+            metodoPago: metodoPago,
+            descripcion: nS === 0 ? 'PAGO TOTAL - CUENTA LIMPIA' : 'ABONO PARCIAL',
+            saldo_al_momento: nS,
             fecha: new Date()
         });
         await abono.save();
 
-        // Actualizar el total del cliente
-        await Cliente.findByIdAndUpdate(cliente_id, { $set: { deudaTotal: nS > 0 ? nS : 0 } });
+        // LOG de auditoría
+        await new Log({ 
+            accion: 'COBRO', 
+            detalle: `Cliente ${c.nombre} pagó S/. ${monto}. Saldo restante: S/. ${nS}` 
+        }).save();
         
-        res.json({ success: true });
+        res.json({ success: true, nuevoSaldo: nS });
     } catch (e) {
+        console.error("Error en abono:", e);
         res.status(500).json({ success: false });
     }
 });
+
 app.get('/api/auditoria', async (req, res) => res.json(await Log.find().sort({ fecha: -1 }).limit(100)));
 app.get('/api/kardex', async (req, res) => res.json(await Kardex.find().sort({ fecha: -1 }).limit(100)));
 
