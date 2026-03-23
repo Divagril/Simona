@@ -74,16 +74,22 @@ const Clients: React.FC = () => {
 
   const handleAbonar = async () => {
     if (!selectedClient || !montoAbono) return;
-    setProcesando(true);
     try {
-      await registrarAbono(selectedClient._id, Number(montoAbono), metodoPago); 
+      const res = await registrarAbono(selectedClient._id, Number(montoAbono), metodoPago); 
+      
+      // Si hubo vuelto, avisamos con una notificación especial
+      if (res.vuelto > 0) {
+        showNotification(`✅ Pago recibido. DAR VUELTO: S/. ${res.vuelto.toFixed(2)}`);
+      } else {
+        showNotification(`✅ Pago de S/. ${montoAbono} registrado`);
+      }
+
       setMontoAbono('');
-      showNotification(`✅ S/. ${montoAbono} registrado`);
-      await cargarClientes();
-      const movs = await getMovimientosCliente(selectedClient._id);
-      setMovimientos(movs); 
-    } catch (error) { showNotification("Error", true); }
-    finally { setProcesando(false); }
+      cargarClientes();
+      seleccionarCliente(selectedClient);
+    } catch (error) {
+      showNotification("Error pago", true);
+    }
   };
 
   const handleImprimir = (mov: any) => {

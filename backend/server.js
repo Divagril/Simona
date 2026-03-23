@@ -323,49 +323,51 @@ app.post('/api/fiados/masivo', async (req, res) => {
         res.status(500).json({ success: false });
     }
 });
+
 app.post('/api/fiados/abono', async (req, res) => {
     try {
         const { cliente_id, monto, metodoPago } = req.body; 
-        
         const c = await Cliente.findById(cliente_id);
         if (!c) return res.status(404).json({ error: "Cliente no encontrado" });
 
-        // Calculamos el nuevo saldo
-        let nS = (c.deudaTotal || 0) - Number(monto);
-        if (nS < 0) nS = 0; // Evitamos deudas negativas
+        const deudaActual = Number(c.deudaTotal) || 0;
+        const montoEntregado = Number(monto);
 
-        // --- LÓGICA DE LIMPIEZA TOTAL ---
-        let updateData = { $set: { deudaTotal: nS } };
-        
-        // Si el cliente ya no debe nada (Saldo 0), vaciamos los detalles por producto
-        if (nS === 0) {
-            updateData.$set.detalles_deuda = []; 
-        }
+        // --- LÓGICA DE VUELTO INTELIGENTE ---
+        // Si me dan 12 por una deuda de 1, el ingreso real es 1.
+        const montoRealIngreso = montoEntregado > deudaActual ? deudaActual : montoEntregado;
+        const vueltoEntregado = montoEntregado > deudaActual ? montoEntregado - deudaActual : 0;
 
-        // Actualizamos al cliente
-        await Cliente.findByIdAndUpdate(cliente_id, updateData);
+        // El nuevo saldo siempre será 0 si el monto es mayor o igual a la deuda
+        const nuevoSaldo = montoEntregado >= deudaActual ? 0 : deudaActual - montoEntregado;
 
-        // Registramos el movimiento en el historial
+        // 1. Actualizamos al cliente
+        await Cliente.findByIdAndUpdate(cliente_id, { 
+            $set: { 
+                deudaTotal: nuevoSaldo,
+                detalles_deuda: nuevoSaldo === 0 ? [] : c.detalles_deuda // Limpia productos si pagó todo
+            } 
+        });
+
+        // 2. Registramos el abono con el MONTO REAL que entra a caja (montoRealIngreso)
         const abono = new MovimientoFiado({
             cliente_id: new mongoose.Types.ObjectId(cliente_id),
             tipo: 'PAGO',
-            monto: Number(monto),
+            monto: montoRealIngreso, // Solo guardamos lo que NO es vuelto
             metodoPago: metodoPago,
-            descripcion: nS === 0 ? 'PAGO TOTAL - CUENTA LIMPIA' : 'ABONO PARCIAL',
-            saldo_al_momento: nS,
+            descripcion: vueltoEntregado > 0 ? `PAGO CON VUELTO (Recibió: ${montoEntregado}, Vuelto: ${vueltoEntregado})` : 'ABONO A CUENTA',
+            saldo_al_momento: nuevoSaldo,
             fecha: new Date()
         });
         await abono.save();
 
-        // LOG de auditoría
-        await new Log({ 
-            accion: 'COBRO', 
-            detalle: `Cliente ${c.nombre} pagó S/. ${monto}. Saldo restante: S/. ${nS}` 
-        }).save();
-        
-        res.json({ success: true, nuevoSaldo: nS });
+        res.json({ 
+            success: true, 
+            vuelto: vueltoEntregado, 
+            ingresoCaja: montoRealIngreso 
+        });
+
     } catch (e) {
-        console.error("Error en abono:", e);
         res.status(500).json({ success: false });
     }
 });
