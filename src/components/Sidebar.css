@@ -126,7 +126,21 @@
     font-size: 17px;
     font-weight: 700;
 }
+/* --- BOTÓN DE INVERSIÓN --- */
+.external-link-btn {
+    margin-top: 10px;
+    background-color: rgba(26, 188, 156, 0.1); /* Fondo verde agua muy suave */
+    border-left: 4px solid #1abc9c !important; /* Borde verde agua */
+    color: #1abc9c !important;
+}
 
+.external-link-btn:hover {
+    background-color: rgba(26, 188, 156, 0.2);
+}
+
+.external-link-btn .item-text {
+    color: #1abc9c;
+}
 /* =========================================
    FOOTER: BOTÓN CERRAR SESIÓN
    ========================================= */

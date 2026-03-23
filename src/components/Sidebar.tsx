@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, Menu, LogOut } from 'lucide-react';
+import { X, Menu, LogOut, ExternalLink } from 'lucide-react'; // Añadimos ExternalLink
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -23,7 +23,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
   return (
     <>
-      {/* Botón para abrir el menú en PC si está colapsado */}
       {isCollapsed && (
         <button className="sidebar-open-toggle" onClick={() => setIsCollapsed(false)}>
           <Menu size={24} />
@@ -32,7 +31,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
 
       <aside className={`sidebar-main ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
-          {/* Botón X Blanco como en tu imagen */}
           <button className="sidebar-close-btn" onClick={() => setIsCollapsed(true)}>
             <X size={22} strokeWidth={3} />
           </button>
@@ -50,6 +48,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
               <span className="item-text">{item.name}</span>
             </NavLink>
           ))}
+
+          {/* --- BOTÓN DE INVERSIÓN (LINK EXTERNO) --- */}
+          <a 
+            href="https://inversion-simona.onrender.com/#/dashboard" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="nav-item external-link-btn"
+          >
+            <span className="item-icon">💰</span>
+            <span className="item-text">Inversiones</span>
+            <ExternalLink size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
+          </a>
         </nav>
 
         <div className="sidebar-footer">
