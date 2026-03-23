@@ -221,7 +221,6 @@ app.post('/api/ventas', async (req, res) => {
     }
 });
 
-// REPORTE DE CAJA (Ganancia Real vs Fiado)
 app.get('/api/reportes/ventas', async (req, res) => {
     try {
         const { desde, hasta } = req.query;
@@ -230,27 +229,33 @@ app.get('/api/reportes/ventas', async (req, res) => {
         const fI = new Date(desde); fI.setHours(0,0,0,0);
         const fF = new Date(hasta); fF.setHours(23,59,59,999);
 
+        // 1. Obtener todas las ventas y abonos del periodo
         const vts = await Venta.find({ fecha: { $gte: fI, $lte: fF } });
         const abs = await MovimientoFiado.find({ fecha: { $gte: fI, $lte: fF }, tipo: 'PAGO' });
 
-        const ingresoVts = vts.filter(v => v.metodoPago !== 'FIADO').reduce((acc, v) => acc + v.total, 0);
-        const ingresoAbs = abs.reduce((acc, a) => acc + a.monto, 0);
-        const totalFiado = vts.filter(v => v.metodoPago === 'FIADO').reduce((acc, v) => acc + v.total, 0);
+        // 2. DINERO EN CAJA: Ventas (Efectivo/Yape/Plin) + Abonos recibidos
+        const ingresosVentasReales = vts
+            .filter(v => v.metodoPago !== 'FIADO')
+            .reduce((acc, v) => acc + (Number(v.total) || 0), 0);
+        
+        const ingresosPorAbonos = abs.reduce((acc, a) => acc + (Number(a.monto) || 0), 0);
+
+        // 3. POR COBRAR: Sumamos la deuda actual de TODOS los clientes en la base de datos
+        // Esto asegura que el número siempre sea real, sin importar las fechas
+        const todosLosClientes = await Cliente.find();
+        const deudaGlobalActual = todosLosClientes.reduce((acc, c) => acc + (Number(c.deudaTotal) || 0), 0);
 
         res.json({
             ventas: vts.map(x => ({ ...x._doc, items: x.productos })),
             abonos: abs,
-            totalGananciaReal: ingresoVts + ingresoAbs,
-            totalFiadoPeriodo: Math.max(0, totalFiado - ingresoAbs)
+            totalGananciaReal: ingresosVentasReales + ingresosPorAbonos, // Dinero que de verdad tienes
+            totalFiadoPeriodo: deudaGlobalActual // Lo que te deben todos hoy
         });
     } catch (e) {
-        res.status(500).json({ totalGananciaReal: 0 });
+        console.error("Error en reporte:", e);
+        res.status(500).json({ totalGananciaReal: 0, totalFiadoPeriodo: 0 });
     }
 });
-
-/**
- * SECCIÓN: CLIENTES Y CRÉDITOS
- */
 
 app.get('/api/clientes/deudas', async (req, res) => res.json(await Cliente.find().sort({ nombre: 1 })));
 

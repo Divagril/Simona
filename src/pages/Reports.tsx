@@ -123,7 +123,7 @@ const Reports: React.FC = () => {
                   <td>
                     <div className="concept-stack">
                         <strong>{v.metodoPago === 'FIADO' ? '📝 FIADO' : '🛒 VENTA'}</strong>
-                        <small>{v.metodoPago}</small>
+                        <small className="method-tag">{v.metodoPago !== 'FIADO' ? v.metodoPago : 'Pendiente'}</small>
                     </div>
                   </td>
                   <td className={`col-amount ${v.metodoPago === 'FIADO' ? '' : 'text-green'}`}>
