@@ -24,7 +24,19 @@ const Inventory: React.FC = () => {
     conversion: '1'
   });
 
-  const formatosCompra = ['UNIDAD', 'BOTELLA', 'LATA', 'KG', 'LITRO', 'METRO', 'PAQUETE', 'CAJA', 'GALÓN DE GAS'];
+  const formatosCompra = [
+    'UNIDAD', 
+    'BOTELLA', 
+    'LATA', 
+    'KG', 
+    'LITRO', 
+    'METRO', 
+    'PAQUETE', 
+    'CAJA', 
+    'SACO',      // <--- AÑADIDO
+    'PLANCHA',   // <--- AÑADIDO
+    'GALÓN DE GAS'
+];
   const API_URL = 'https://simona-backend.onrender.com/api';
 
   const cargarDatos = async () => {
@@ -67,13 +79,12 @@ const Inventory: React.FC = () => {
       await axios.post(`${API_URL}/productos`, {
         nombre: form.nombre,
         precio: Number(form.precio),
-        unidad_venta: form.unidad_venta,
-        unidades_por_paquete: Number(form.conversion) || 1
+        unidad_venta: form.formato_compra, // Usamos el formato elegido (SACO, PLANCHA, etc.)
+        unidades_por_paquete: 1
       });
       showNotification("✅ Guardado");
       cargarDatos();
-      setForm({ nombre: '', formato_compra: 'PAQUETE', unidad_venta: 'PAQUETE', precio: '', conversion: '1' });
-      setUnidadesEnInversion(0);
+      setForm({ nombre: '', formato_compra: 'UNIDAD', unidad_venta: 'UNIDAD', precio: '', conversion: '1' });
     } catch (e) { showNotification("Error al guardar", true); }
   };
 
