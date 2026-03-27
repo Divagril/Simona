@@ -33,8 +33,10 @@ const Inventory: React.FC = () => {
     'METRO', 
     'PAQUETE', 
     'CAJA', 
-    'SACO',      // <--- AÑADIDO
-    'PLANCHA',   // <--- AÑADIDO
+    'SACO',    
+    'PLANCHA',   
+    'TIRA',   
+    'BOLSA', 
     'GALÓN DE GAS'
 ];
   const API_URL = 'https://simona-backend.onrender.com/api';

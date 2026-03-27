@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { X, Menu, LogOut, ExternalLink } from 'lucide-react'; // Añadimos ExternalLink
+import { X, Menu, LogOut, ExternalLink } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
@@ -21,16 +21,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
     { path: '/config', name: 'Configuración', icon: '⚙️' },
   ];
 
+  // FUNCIÓN PARA CERRAR EL MENÚ AL TOCAR UNA OPCIÓN (IMPORTANTE)
+  const handleLinkClick = () => {
+    setIsCollapsed(true); // Esto cierra la hamburguesa automáticamente
+  };
+
   return (
     <>
-      {isCollapsed && (
-        <button className="sidebar-open-toggle" onClick={() => setIsCollapsed(false)}>
-          <Menu size={24} />
-        </button>
+      {/* Botón hamburguesa (Solo se ve cuando el menú está cerrado) */}
+      <button className="sidebar-open-toggle" onClick={() => setIsCollapsed(false)}>
+        <Menu size={24} />
+      </button>
+
+      {/* Sombra de fondo cuando el menú está abierto (clic aquí también cierra) */}
+      {!isCollapsed && (
+        <div className="sidebar-overlay-mobile" onClick={() => setIsCollapsed(true)}></div>
       )}
 
       <aside className={`sidebar-main ${isCollapsed ? 'collapsed' : ''}`}>
         <div className="sidebar-header">
+          {/* Botón X para cerrar manualmente */}
           <button className="sidebar-close-btn" onClick={() => setIsCollapsed(true)}>
             <X size={22} strokeWidth={3} />
           </button>
@@ -43,18 +53,20 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, setIsCollapsed }) => {
               key={item.path} 
               to={item.path} 
               className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}
+              onClick={handleLinkClick} // <--- Cierra el menú aquí
             >
               <span className="item-icon">{item.icon}</span>
               <span className="item-text">{item.name}</span>
             </NavLink>
           ))}
 
-          {/* --- BOTÓN DE INVERSIÓN (LINK EXTERNO) --- */}
+          {/* Link externo de Inversiones */}
           <a 
-            href="https://inversion-simona.onrender.com/#/dashboard" 
+            href="https://inversion-simona.onrender.com/#/inversion" 
             target="_blank" 
             rel="noopener noreferrer"
             className="nav-item external-link-btn"
+            onClick={handleLinkClick} // <--- También cierra al ir a inversiones
           >
             <span className="item-icon">💰</span>
             <span className="item-text">Inversiones</span>
