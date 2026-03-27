@@ -27,7 +27,7 @@ function AppContent() {
       {/* Solo mostrar Sidebar si está autenticado */}
       {isAuthenticated && <Sidebar isCollapsed={isCollapsed} setIsCollapsed={setIsCollapsed} />}
       
-      <main className={isAuthenticated ? "content-area" : "login-area"}>
+      <main className={`${isAuthenticated ? "content-area" : "login-area"} ${isCollapsed ? "pushed-content" : ""}`}>
         <Routes>
           {/* Ruta Pública */}
           <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/pos" />} />

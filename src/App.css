@@ -145,6 +145,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+/* Espacio reservado para el botón hamburguesa en PC */
+@media (min-width: 1025px) {
+  .content-area.pushed-content {
+    padding-left: 70px !important; /* Crea el espacio para que el botón no tape nada */
+    transition: padding-left 0.3s ease;
+  }
+  
+  .content-area {
+    transition: padding-left 0.3s ease;
+  }
+}
 
 /* =========================================
    RESPONSIVO GLOBAL
