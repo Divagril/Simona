@@ -122,8 +122,11 @@ app.get('/api/productos', async (req, res) => {
 
             return { 
                 ...p._doc, 
-                stock_actual: p.unidad_venta === 'UNIDAD' ? base : Math.floor(base / (p.unidades_por_paquete || 1)) 
+                stock_actual: (p.unidad_venta === 'UNIDAD' || p.unidad_venta === 'KG') 
+                    ? Number(base.toFixed(3)) 
+                    : Math.floor(base / (p.unidades_por_paquete || 1)) 
             };
+
         });
         res.json(resultado);
     } catch (e) {

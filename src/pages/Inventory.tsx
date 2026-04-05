@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  Box, RefreshCw, Search, CheckSquare, Square, Info, Trash2 
+  Box, RefreshCw, Search, CheckSquare, Square, Info, Trash2, Edit3, XCircle 
 } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import './Inventory.css'; 
@@ -15,30 +15,19 @@ const Inventory: React.FC = () => {
   const [cargando, setCargando] = useState(false);
   const [unidadesEnInversion, setUnidadesEnInversion] = useState<number>(0);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
+  
+  // ESTADO PARA EDICIÓN
+  const [editando, setEditando] = useState(false);
 
   const [form, setForm] = useState({
     nombre: '',
-    formato_compra: 'PAQUETE',
-    unidad_venta: 'PAQUETE',
+    formato_compra: 'UNIDAD',
+    unidad_venta: 'UNIDAD',
     precio: '',
     conversion: '1'
   });
 
-  const formatosCompra = [
-    'UNIDAD', 
-    'BOTELLA', 
-    'LATA', 
-    'KG', 
-    'LITRO', 
-    'METRO', 
-    'PAQUETE', 
-    'CAJA', 
-    'SACO',    
-    'PLANCHA',   
-    'TIRA',   
-    'BOLSA', 
-    'GALÓN DE GAS'
-];
+  const formatosCompra = ['UNIDAD', 'BOTELLA', 'LATA', 'KG', 'LITRO', 'METRO', 'PAQUETE', 'CAJA', 'SACO', 'PLANCHA', 'TIRA', 'BOLSA', 'GALÓN DE GAS'];
   const API_URL = 'https://simona-backend.onrender.com/api';
 
   const cargarDatos = async () => {
@@ -50,7 +39,6 @@ const Inventory: React.FC = () => {
       ]);
       setProductos(Array.isArray(resP.data) ? resP.data : []);
       setSugerencias(Array.isArray(resS.data) ? resS.data : []);
-      setSeleccionados([]);
     } catch (e) {
       showNotification("Error de conexión", true);
     } finally {
@@ -60,19 +48,26 @@ const Inventory: React.FC = () => {
 
   useEffect(() => { cargarDatos(); }, []);
 
-  const handleCambioProducto = (nombreElegido: string) => {
-    const encontrado = sugerencias.find(s => s.nombre === nombreElegido);
-    setForm(prev => ({ ...prev, nombre: nombreElegido }));
-    setUnidadesEnInversion(encontrado ? encontrado.total : 0);
+  // FUNCIÓN PARA CARGAR DATOS EN EL FORMULARIO
+  const prepararEdicion = (prod: any) => {
+    setEditando(true);
+    setForm({
+      nombre: prod.nombre,
+      formato_compra: prod.unidad_venta || 'UNIDAD',
+      unidad_venta: prod.unidad_venta || 'UNIDAD',
+      precio: prod.precio.toString(),
+      conversion: '1'
+    });
+    // Buscar stock restante de la inversión original
+    const inv = sugerencias.find(s => s.nombre === prod.nombre);
+    setUnidadesEnInversion(inv ? inv.total : 0);
+    showNotification("✏️ Producto cargado para editar");
   };
 
-  const handleCambioFormato = (nuevoFormato: string) => {
-    setForm({ 
-      ...form, 
-      formato_compra: nuevoFormato, 
-      unidad_venta: nuevoFormato, 
-      conversion: '1' 
-    });
+  const cancelarEdicion = () => {
+    setEditando(false);
+    setForm({ nombre: '', formato_compra: 'UNIDAD', unidad_venta: 'UNIDAD', precio: '', conversion: '1' });
+    setUnidadesEnInversion(0);
   };
 
   const handleGuardar = async () => {
@@ -81,17 +76,13 @@ const Inventory: React.FC = () => {
       await axios.post(`${API_URL}/productos`, {
         nombre: form.nombre,
         precio: Number(form.precio),
-        unidad_venta: form.formato_compra, // Usamos el formato elegido (SACO, PLANCHA, etc.)
+        unidad_venta: form.formato_compra,
         unidades_por_paquete: 1
       });
-      showNotification("✅ Guardado");
+      showNotification(editando ? "✅ Actualizado" : "✅ Guardado");
       cargarDatos();
-      setForm({ nombre: '', formato_compra: 'UNIDAD', unidad_venta: 'UNIDAD', precio: '', conversion: '1' });
+      cancelarEdicion();
     } catch (e) { showNotification("Error al guardar", true); }
-  };
-
-  const toggleSeleccion = (id: string) => {
-    setSeleccionados(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const eliminarMasivo = async () => {
@@ -100,6 +91,7 @@ const Inventory: React.FC = () => {
     try {
       await axios.post(`${API_URL}/productos/eliminar-masivo`, { ids: seleccionados });
       showNotification(`🗑️ Eliminados`);
+      setSeleccionados([]);
       cargarDatos();
     } catch (e) { showNotification("Error al eliminar", true); }
   };
@@ -109,14 +101,25 @@ const Inventory: React.FC = () => {
   return (
     <div className="inventory-responsive-container">
       
-      {/* 1. PANEL IZQUIERDO: GESTIÓN */}
       <div className="management-panel">
-        <div className="card-glass fill-height">
-          <h2 className="panel-title"><Box size={20} color="#2563eb" /> Gestión de Inventario</h2>
+        <div className={`card-glass fill-height ${editando ? 'edit-mode-border' : ''}`}>
+          <h2 className="panel-title">
+            {editando ? <Edit3 size={20} color="#f59e0b" /> : <Box size={20} color="#2563eb" />}
+            {editando ? 'Editando Producto' : 'Gestión de Inventario'}
+          </h2>
           
           <div className="form-item">
-            <label>PRODUCTO DE INVERSIÓN</label>
-            <select className="input-field" value={form.nombre} onChange={e => handleCambioProducto(e.target.value)}>
+            <label>PRODUCTO</label>
+            <select 
+                className="input-field" 
+                value={form.nombre} 
+                onChange={e => {
+                    const encontrado = sugerencias.find(s => s.nombre === e.target.value);
+                    setForm({...form, nombre: e.target.value});
+                    setUnidadesEnInversion(encontrado ? encontrado.total : 0);
+                }}
+                disabled={editando} // No cambiar nombre mientras se edita para evitar duplicados
+            >
               <option value="">-- SELECCIONE --</option>
               {sugerencias.map((s, i) => <option key={i} value={s.nombre}>{s.nombre}</option>)}
             </select>
@@ -125,13 +128,13 @@ const Inventory: React.FC = () => {
           {form.nombre && (
             <div className={`stock-info-bar ${unidadesEnInversion > 0 ? 'yellow' : 'red'}`}>
               <Info size={16} />
-              <span>STOCK RESTANTE: <strong>{unidadesEnInversion} unid.</strong></span>
+              <span>RESTANTE EN INVERSIÓN: <strong>{unidadesEnInversion}</strong></span>
             </div>
           )}
 
           <div className="form-item">
-            <label>FORMATO COMPRA / VENTA</label>
-            <select className="input-field" value={form.formato_compra} onChange={e => handleCambioFormato(e.target.value)}>
+            <label>FORMATO VENTA</label>
+            <select className="input-field" value={form.formato_compra} onChange={e => setForm({...form, formato_compra: e.target.value, unidad_venta: e.target.value})}>
               {formatosCompra.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </div>
@@ -144,11 +147,20 @@ const Inventory: React.FC = () => {
             </div>
           </div>
 
-          <button className="btn-main-save" onClick={handleGuardar}>SINCRONIZAR E INVENTARIAR</button>
+          <div className="btn-group-vertical">
+            <button className={`btn-main-save ${editando ? 'btn-update' : ''}`} onClick={handleGuardar}>
+                {editando ? 'ACTUALIZAR PRODUCTO' : 'SINCRONIZAR E INVENTARIAR'}
+            </button>
+            
+            {editando && (
+                <button className="btn-cancel-edit" onClick={cancelarEdicion}>
+                    <XCircle size={18} /> CANCELAR EDICIÓN
+                </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* 2. PANEL DERECHO: CATÁLOGO */}
       <div className="table-panel">
         <div className="card-glass fill-height">
           <div className="table-header-row">
@@ -158,9 +170,7 @@ const Inventory: React.FC = () => {
                 <Search size={16} />
                 <input type="text" placeholder="Buscar..." value={busqueda} onChange={e => setBusqueda(e.target.value)} />
               </div>
-              <button onClick={cargarDatos} className={`refresh-square ${cargando ? 'spin' : ''}`}>
-                <RefreshCw size={20} />
-              </button>
+              <button onClick={cargarDatos} className="refresh-square"><RefreshCw size={20} /></button>
             </div>
           </div>
 
@@ -168,35 +178,33 @@ const Inventory: React.FC = () => {
             <table className="inventory-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px' }}>
-                    <button onClick={() => setSeleccionados(seleccionados.length === prodsFiltrados.length ? [] : prodsFiltrados.map(p => p._id))} className="check-btn">
-                      {seleccionados.length === prodsFiltrados.length && productos.length > 0 ? <CheckSquare size={18} color="#2563eb" /> : <Square size={18} />}
-                    </button>
-                  </th>
+                  <th style={{ width: '40px' }}></th>
                   <th>PRODUCTO</th>
                   <th style={{ textAlign: 'center' }}>STOCK</th>
+                  <th style={{ width: '50px' }}></th>
                 </tr>
               </thead>
               <tbody>
                 {prodsFiltrados.map(p => (
                   <tr key={p._id} className={seleccionados.includes(p._id) ? 'active-row' : ''}>
                     <td style={{ textAlign: 'center' }}>
-                      <button onClick={() => toggleSeleccion(p._id)} className="check-btn">
-                        {seleccionados.includes(p._id) ? (
-                          <CheckSquare size={20} color="#2563eb" /> /* Azul cuando está marcado */
-                        ) : (
-                          <Square size={20} /> /* Gris cuando está vacío */
-                        )}
+                      <button onClick={() => setSeleccionados(prev => prev.includes(p._id) ? prev.filter(i => i !== p._id) : [...prev, p._id])} className="check-btn">
+                        {seleccionados.includes(p._id) ? <CheckSquare size={18} color="#2563eb" /> : <Square size={18} />}
                       </button>
                     </td>
-                    <td>
+                    <td onClick={() => prepararEdicion(p)} style={{cursor: 'pointer'}}>
                       <div className="prod-name-cell">
                         <strong>{p.nombre?.toUpperCase()}</strong>
-                        <span className="mode-badge">{p.unidad_venta}</span>
+                        <span className="mode-badge">{p.unidad_venta} • S/. {p.precio.toFixed(2)}</span>
                       </div>
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <span className={`stock-badge ${p.stock_actual > 0 ? 'in' : 'out'}`}>{p.stock_actual}</span>
+                    </td>
+                    <td>
+                        <button className="btn-table-edit" onClick={() => prepararEdicion(p)}>
+                            <Edit3 size={16} />
+                        </button>
                     </td>
                   </tr>
                 ))}
